@@ -172,17 +172,19 @@ def find_latest_darshan_log(before_files):
     return max(new_files_full, key=os.path.getmtime)
 
 
-# =============================================================================
-# RUNNING A SINGLE PROFILE
-# =============================================================================
+def needs_setup(params):
+    """
+    Returns True if this profile involves reads and therefore requires a
+    setup pass (mode 0) to pre-populate files before the measured run.
+    metadata_heavy never needs setup — it creates and deletes its own files.
+    """
+    return params["read_ratio"] > 0.0
 
-def run_profile(name, params, run_index, modules, output_dir, dry_run):
-    """Run one profile once and parse the resulting Darshan log."""
 
-    label = f"{name}_run{run_index}"
+def build_workload_cmd(name, params, mode):
+    """Build the CLI arg list for the synthetic_workload binary."""
     pattern_int = ACCESS_PATTERN_MAP[params["access_pattern"]]
-
-    workload_cmd = [
+    return [
         WORKLOAD_BIN,
         name,
         str(params["read_ratio"]),
@@ -194,25 +196,64 @@ def run_profile(name, params, run_index, modules, output_dir, dry_run):
         str(params["num_phases"]),
         str(params["fsync_interval"]),
         WORKLOAD_WORK_DIR,
+        str(mode),   # 0 = setup, 1 = workload
     ]
+
+
+# =============================================================================
+# RUNNING A SINGLE PROFILE
+# =============================================================================
+
+def run_profile(name, params, run_index, modules, output_dir, dry_run):
+    """
+    Run one profile once and parse the resulting Darshan log.
+
+    For profiles with read_ratio > 0:
+      1. Run binary in mode 0 (setup) WITHOUT LD_PRELOAD — writes files only,
+         no Darshan instrumentation, no log generated.
+      2. Run binary in mode 1 (workload) WITH LD_PRELOAD — measured run,
+         reads from pre-existing files, Darshan records only the target I/O.
+
+    For pure-write profiles (read_ratio == 0):
+      - Run binary in mode 1 directly under Darshan. No setup needed.
+
+    metadata_heavy:
+      - Always run in mode 1 directly. It manages its own files internally.
+    """
+    label = f"{name}_run{run_index}"
+    setup_required = needs_setup(params) and name != "metadata_heavy"
+
+    setup_cmd    = build_workload_cmd(name, params, mode=0)
+    workload_cmd = build_workload_cmd(name, params, mode=1)
 
     module_flags = [f"--{m}" for m in modules]
     parse_cmd = [
         sys.executable, PARSE_SCRIPT,
         "--label", label,
         "--output-dir", output_dir,
-    ] + module_flags + ["--log", "<log>"]   # placeholder
-
-    print(f"\n  [{label}] {' '.join(workload_cmd)}")
+    ] + module_flags + ["--log", "<log>"]
 
     if dry_run:
+        if setup_required:
+            print(f"  [{label}] Would run setup (no Darshan): {' '.join(setup_cmd)}")
+        print(f"  [{label}] Would run workload (Darshan): {' '.join(workload_cmd)}")
         print(f"  [{label}] Would parse: {' '.join(parse_cmd)}")
         return True
 
-    # Snapshot log dir before run
+    # --- Setup phase (no Darshan) ---
+    if setup_required:
+        print(f"  [{label}] Setup (no instrumentation): writing files...")
+        # Run without LD_PRELOAD so Darshan does not record the setup writes
+        clean_env = {k: v for k, v in os.environ.items() if k != "LD_PRELOAD"}
+        result = subprocess.run(setup_cmd, env=clean_env)
+        if result.returncode != 0:
+            print(f"  [{label}] Setup exited with code {result.returncode} — skipping workload.")
+            return False
+
+    # --- Workload phase (Darshan attached) ---
+    print(f"  [{label}] Workload (instrumented): {' '.join(workload_cmd)}")
     before_files = set(os.listdir(DARSHAN_LOG_DIR))
 
-    # Run workload under Darshan
     env = os.environ.copy()
     if DARSHAN_PRELOAD and os.path.isfile(DARSHAN_PRELOAD):
         env["LD_PRELOAD"] = DARSHAN_PRELOAD
@@ -225,15 +266,13 @@ def run_profile(name, params, run_index, modules, output_dir, dry_run):
         print(f"  [{label}] Workload exited with code {result.returncode} — skipping parse.")
         return False
 
-    # Locate new log
+    # --- Locate and parse the Darshan log ---
     log_path = find_latest_darshan_log(before_files)
     if not log_path:
         print(f"  [{label}] No new .darshan log found in {DARSHAN_LOG_DIR} — skipping parse.")
         return False
 
     print(f"  [{label}] Log: {log_path}")
-
-    # Parse
     parse_cmd[-1] = log_path
     parse_result = subprocess.run(parse_cmd)
     if parse_result.returncode != 0:
