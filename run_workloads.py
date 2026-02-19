@@ -2,7 +2,7 @@
 """
 run_workloads.py
 
-Compiles synthetic_workload.c, reads workload profiles from profiles.json,
+Compiles posix_synthetic_workload.c, reads workload profiles from profiles.json,
 runs each profile under Darshan instrumentation, then invokes parse_darshan.py
 on the resulting log file.
 
@@ -38,8 +38,8 @@ import sys
 
 WORKLOADS_DIR    = "./workloads"
 PROFILES_JSON    = "./workloads/profiles.json"
-WORKLOAD_SRC     = "./workloads/synthetic_workload.c"
-WORKLOAD_BIN     = "./workloads/synthetic_workload"
+WORKLOAD_SRC      = "./workloads/posix_synthetic_workload.c"
+WORKLOAD_BIN      = "./workloads/posix_synthetic_workload"
 WORKLOAD_WORK_DIR = "./workloads/tmp"          # scratch dir for workload files
 PARSE_SCRIPT     = "./parse_darshan.py"
 OUTPUT_DIR       = "./darshan_output"
@@ -62,7 +62,7 @@ ACCESS_PATTERN_MAP = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Compile synthetic_workload.c, run profiles, parse Darshan logs."
+        description="Compile posix_synthetic_workload.c, run profiles, parse Darshan logs."
     )
     parser.add_argument(
         "--runs",
@@ -107,7 +107,7 @@ def parse_args():
 # =============================================================================
 
 def compile_workload(dry_run):
-    """Compile synthetic_workload.c → synthetic_workload binary."""
+    """Compile posix_synthetic_workload.c → posix_synthetic_workload binary."""
     cmd = ["gcc", "-O2", "-o", WORKLOAD_BIN, WORKLOAD_SRC]
     print(f"Compiling: {' '.join(cmd)}")
     if dry_run:
@@ -174,15 +174,19 @@ def find_latest_darshan_log(before_files):
 
 def needs_setup(params):
     """
-    Returns True if this profile involves reads and therefore requires a
-    setup pass (mode 0) to pre-populate files before the measured run.
-    metadata_heavy never needs setup — it creates and deletes its own files.
+    Returns True only for pure-read profiles (read_ratio == 1.0).
+    These need a setup pass to pre-populate files before the measured run.
+
+    Mixed profiles (0 < read_ratio < 1.0) create their own files in workload
+    mode — the write phases handle file creation, so no setup is needed.
+
+    metadata_heavy never needs setup — it manages its own files internally.
     """
-    return params["read_ratio"] > 0.0
+    return params["read_ratio"] >= 1.0
 
 
 def build_workload_cmd(name, params, mode):
-    """Build the CLI arg list for the synthetic_workload binary."""
+    """Build the CLI arg list for the posix_synthetic_workload binary."""
     pattern_int = ACCESS_PATTERN_MAP[params["access_pattern"]]
     return [
         WORKLOAD_BIN,
