@@ -1,20 +1,23 @@
 /*
- * synthetic_workload.c
+ * posix_synthetic_workload.c
  *
- * Simulates configurable I/O workloads for Darshan instrumentation.
+ * Simulates configurable POSIX I/O workloads for Darshan instrumentation.
+ * Uses raw POSIX syscalls (open/read/write/lseek/fsync) — Darshan records
+ * these under the POSIX module. Does not simulate MPI-IO or STDIO.
+ *
  * All parameters are passed as CLI arguments by run_workloads.py.
  *
  * Usage:
- *   ./synthetic_workload <profile_name> <read_ratio> <access_pattern>
- *                        <stride_size> <op_size> <num_ops> <num_files>
- *                        <num_phases> <fsync_interval> <work_dir> <mode>
+ *   ./posix_synthetic_workload <profile_name> <read_ratio> <access_pattern>
+ *                              <stride_size> <op_size> <num_ops> <num_files>
+ *                              <num_phases> <fsync_interval> <work_dir> <mode>
  *
  * access_pattern: 0 = sequential, 1 = random, 2 = strided
  *
  * mode:
  *   0 = SETUP   — write files to disk without Darshan attached.
- *                 Run this first for any profile that involves reads,
- *                 so the files exist before the measured run begins.
+ *                 Only needed for pure-read profiles (read_ratio == 1.0).
+ *                 Mixed profiles create their own files in workload mode.
  *                 No reads are performed. No cleanup.
  *   1 = WORKLOAD — the measured run. Darshan is attached.
  *                 For pure-read profiles: skips all writes, reads from
@@ -76,27 +79,84 @@ static char *make_buffer(long size)
 }
 
 /* -------------------------------------------------------------------------
- * Utility: simple LCG random offset within [0, max_offset]
- * aligned to op_size boundaries
+ * Utility: retry write until all 'size' bytes are written.
+ * Returns 0 on success, -1 on error (errno set by underlying write).
  * ---------------------------------------------------------------------- */
-static long random_offset(long max_offset, long op_size, unsigned int *seed)
+static int full_write(int fd, const char *buf, long size)
 {
-    long range = max_offset / op_size;
-    if (range <= 0)
+    long remaining = size;
+    while (remaining > 0)
+    {
+        ssize_t n = write(fd, buf + (size - remaining), (size_t)remaining);
+        if (n < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            return -1;
+        }
+        remaining -= n;
+    }
+    return 0;
+}
+
+/* -------------------------------------------------------------------------
+ * Utility: retry read until all 'size' bytes are read or EOF.
+ * Returns bytes actually read (< size only on EOF), -1 on error.
+ * ---------------------------------------------------------------------- */
+static long full_read(int fd, char *buf, long size)
+{
+    long total = 0;
+    while (total < size)
+    {
+        ssize_t n = read(fd, buf + total, (size_t)(size - total));
+        if (n < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            return -1;
+        }
+        if (n == 0)
+            break; /* EOF */
+        total += n;
+    }
+    return total;
+}
+
+/* -------------------------------------------------------------------------
+ * Utility: random aligned block offset within [0, file_size - op_size].
+ * Guarantees offset + op_size <= file_size.
+ * ---------------------------------------------------------------------- */
+static long random_offset(long file_size, long op_size, unsigned int *seed)
+{
+    /* Number of complete blocks that fit, starting from offset 0 */
+    long num_blocks = (file_size - op_size) / op_size + 1;
+    if (num_blocks <= 0)
         return 0;
-    long block = (long)(rand_r(seed) % range);
+    long block = (long)(rand_r(seed) % (unsigned long)num_blocks);
     return block * op_size;
 }
 
 /* -------------------------------------------------------------------------
  * Single-file workload: write phase
+ *
+ * Parameters:
+ *   fd             — open file descriptor
+ *   p              — profile
+ *   ops_in_phase   — number of write ops to perform this phase
+ *   file_size      — total file size (fixed); random writes stay within this
+ *   write_offset   — cursor for sequential writes (in/out)
+ *   stride_cursor  — global op index for strided writes (in/out)
+ *   global_op      — global op count for fsync_interval (in/out)
+ *   buf            — pre-allocated write buffer of p->op_size bytes
+ *   seed           — PRNG state (in/out)
+ * Returns 0 on success, -1 if a fatal I/O error occurred (file should be
+ * abandoned — Darshan counters for it will be incomplete).
  * ---------------------------------------------------------------------- */
-static void do_write_phase(int fd, const Profile *p, long ops_in_phase,
-                           long *write_offset, unsigned int *seed)
+static int do_write_phase(int fd, const Profile *p, long ops_in_phase,
+                          long file_size, long *write_offset,
+                          long *stride_cursor, long *global_op,
+                          char *buf, unsigned int *seed)
 {
-    char *buf = make_buffer(p->op_size);
-    long file_size = p->num_ops * p->op_size;
-
     for (long i = 0; i < ops_in_phase; i++)
     {
         long offset;
@@ -108,49 +168,58 @@ static void do_write_phase(int fd, const Profile *p, long ops_in_phase,
         }
         else if (p->access_pattern == PATTERN_RANDOM)
         {
-            /* random write: random chunk size append — seek to random position
-             * within already-written extent, then write */
-            long written_so_far = *write_offset;
-            if (written_so_far == 0)
-                offset = 0;
-            else
-                offset = random_offset(written_so_far, p->op_size, seed);
-            *write_offset += p->op_size; /* track total bytes written */
+            /* Random overwrite within the fixed file extent */
+            offset = random_offset(file_size, p->op_size, seed);
         }
-        else
+        else /* PATTERN_STRIDED */
         {
-            /* strided */
-            offset = (i * p->stride_size) % (file_size > 0 ? file_size : p->stride_size);
+            /* Continuous stride index across phases.
+             * Round down to op_size boundary so the offset is always
+             * block-aligned even when stride_size is not a multiple of op_size. */
+            long raw = (*stride_cursor * p->stride_size) %
+                       (file_size > 0 ? file_size : p->stride_size);
+            offset = (raw / p->op_size) * p->op_size;
+            (*stride_cursor)++;
         }
 
         if (lseek(fd, offset, SEEK_SET) < 0)
         {
             perror("lseek (write)");
-            free(buf);
-            return;
+            return -1;
         }
-        if (write(fd, buf, p->op_size) < 0)
+        if (full_write(fd, buf, p->op_size) < 0)
         {
             perror("write");
-            free(buf);
-            return;
+            return -1;
         }
 
-        if (p->fsync_interval > 0 && (i + 1) % p->fsync_interval == 0)
+        (*global_op)++;
+        if (p->fsync_interval > 0 && *global_op % p->fsync_interval == 0)
             fsync(fd);
     }
-
-    free(buf);
+    return 0;
 }
 
 /* -------------------------------------------------------------------------
  * Single-file workload: read phase
+ *
+ * Parameters:
+ *   fd             — open file descriptor
+ *   p              — profile
+ *   ops_in_phase   — number of read ops to perform this phase
+ *   file_size      — total file size; random/strided offsets stay within this
+ *   read_offset    — cursor for sequential reads (in/out)
+ *   stride_cursor  — global op index for strided reads (in/out)
+ *   global_op      — global op count for fsync_interval (in/out)
+ *   buf            — pre-allocated read buffer of p->op_size bytes
+ *   seed           — PRNG state (in/out)
+ * Returns 0 on success, -1 if a fatal I/O error occurred.
  * ---------------------------------------------------------------------- */
-static void do_read_phase(int fd, const Profile *p, long ops_in_phase,
-                          long *read_offset, long file_size, unsigned int *seed)
+static int do_read_phase(int fd, const Profile *p, long ops_in_phase,
+                         long file_size, long *read_offset,
+                         long *stride_cursor, long *global_op,
+                         char *buf, unsigned int *seed)
 {
-    char *buf = make_buffer(p->op_size);
-
     for (long i = 0; i < ops_in_phase; i++)
     {
         long offset;
@@ -160,33 +229,34 @@ static void do_read_phase(int fd, const Profile *p, long ops_in_phase,
             offset = *read_offset;
             *read_offset += p->op_size;
             if (*read_offset + p->op_size > file_size)
-                *read_offset = 0;
+                *read_offset = 0; /* wrap */
         }
         else if (p->access_pattern == PATTERN_RANDOM)
         {
             offset = random_offset(file_size, p->op_size, seed);
         }
-        else
+        else /* PATTERN_STRIDED */
         {
-            /* strided */
-            offset = (i * p->stride_size) % (file_size > 0 ? file_size : p->stride_size);
+            long raw = (*stride_cursor * p->stride_size) %
+                       (file_size > 0 ? file_size : p->stride_size);
+            offset = (raw / p->op_size) * p->op_size;
+            (*stride_cursor)++;
         }
 
         if (lseek(fd, offset, SEEK_SET) < 0)
         {
             perror("lseek (read)");
-            free(buf);
-            return;
+            return -1;
         }
-        if (read(fd, buf, p->op_size) < 0)
+        if (full_read(fd, buf, p->op_size) < 0)
         {
             perror("read");
-            free(buf);
-            return;
+            return -1;
         }
-    }
 
-    free(buf);
+        (*global_op)++;
+    }
+    return 0;
 }
 
 /* -------------------------------------------------------------------------
@@ -230,7 +300,7 @@ static void run_setup(const Profile *p)
         char *buf = make_buffer(p->op_size);
         for (long i = 0; i < w_ops; i++)
         {
-            if (write(fd, buf, p->op_size) < 0)
+            if (full_write(fd, buf, p->op_size) < 0)
             {
                 perror("setup: write");
                 break;
@@ -252,22 +322,21 @@ static void run_file_workload(const Profile *p, const char *filepath,
 {
     unsigned int seed = (unsigned int)time(NULL) ^ (unsigned int)getpid();
 
-    /* In workload mode for pure-read profiles, files already exist from setup.
-     * Open without truncating. For write/mixed profiles, create fresh. */
-    int flags;
-    long file_size;
-
+    /* File size = full dataset regardless of read/write split so that random
+     * and strided reads always cover the intended data extent. */
+    long file_size = (total_write_ops + total_read_ops) * p->op_size;
     if (p->mode == MODE_WORKLOAD && p->read_ratio >= 1.0)
     {
-        /* File was pre-populated by setup — open read-only, don't touch it */
+        /* Pure-read: file was pre-populated by setup with num_ops * op_size bytes */
+        file_size = (total_read_ops > 0 ? total_read_ops : p->num_ops) * p->op_size;
+    }
+
+    /* Open flags */
+    int flags;
+    if (p->mode == MODE_WORKLOAD && p->read_ratio >= 1.0)
         flags = O_RDONLY;
-        file_size = p->num_ops * p->op_size;
-    }
     else
-    {
         flags = O_RDWR | O_CREAT | O_TRUNC;
-        file_size = (total_write_ops > 0 ? total_write_ops : total_read_ops) * p->op_size;
-    }
 
     int fd = open(filepath, flags, 0644);
     if (fd < 0)
@@ -283,21 +352,18 @@ static void run_file_workload(const Profile *p, const char *filepath,
             perror("ftruncate");
     }
 
-    /* Divide ops evenly across phases, alternating write→read */
-    long write_ops_per_write_phase = 0;
-    long read_ops_per_read_phase = 0;
+    /* Allocate buffer once for all phases */
+    char *buf = make_buffer(p->op_size);
+
+    /* Count write vs read phases.
+     * Phase ordering: W, R, W, R, ... (phase 0 = write).
+     * Exception: pure-read workload mode → all phases are reads. */
     int write_phases = 0;
     int read_phases = 0;
 
-    /* Count how many of the num_phases are write vs read phases.
-     * Phase 1 is always write. Phases alternate W, R, W, R, ...
-     * Exception: read_ratio == 1.0 in WORKLOAD mode → no writes at all,
-     *            file already exists from setup. All phases are reads. */
     if (p->mode == MODE_WORKLOAD && p->read_ratio >= 1.0)
     {
-        /* Pure read workload mode: every phase is a read phase */
         read_phases = p->num_phases;
-        write_phases = 0;
     }
     else
     {
@@ -310,36 +376,36 @@ static void run_file_workload(const Profile *p, const char *filepath,
         }
     }
 
-    if (write_phases > 0)
-        write_ops_per_write_phase = total_write_ops / write_phases;
-    if (read_phases > 0)
-        read_ops_per_read_phase = total_read_ops / read_phases;
+    long write_ops_per_write_phase = (write_phases > 0) ? total_write_ops / write_phases : 0;
+    long read_ops_per_read_phase = (read_phases > 0) ? total_read_ops / read_phases : 0;
 
-    long write_offset = 0;
-    long read_offset = 0;
+    /* Cursors */
+    long write_offset = 0;        /* sequential write cursor */
+    long read_offset = 0;         /* sequential read cursor  */
+    long write_stride_cursor = 0; /* global strided-write op index */
+    long read_stride_cursor = 0;  /* global strided-read op index  */
+    long global_op = 0;           /* global op count for fsync_interval */
     long write_phase_count = 0;
     long read_phase_count = 0;
 
     for (int ph = 0; ph < p->num_phases; ph++)
     {
-        /* In pure-read workload mode all phases are read phases */
-        int is_write_phase;
-        if (p->mode == MODE_WORKLOAD && p->read_ratio >= 1.0)
-        {
-            is_write_phase = 0;
-        }
-        else
-        {
-            is_write_phase = (ph % 2 == 0);
-        }
+        int is_write_phase = (p->mode == MODE_WORKLOAD && p->read_ratio >= 1.0)
+                                 ? 0
+                                 : (ph % 2 == 0);
 
         if (is_write_phase && write_phase_count < write_phases)
         {
-            /* Last write phase gets any remainder ops */
             long ops = (write_phase_count == write_phases - 1)
                            ? (total_write_ops - write_ops_per_write_phase * (write_phases - 1))
                            : write_ops_per_write_phase;
-            do_write_phase(fd, p, ops, &write_offset, &seed);
+            if (do_write_phase(fd, p, ops, file_size, &write_offset,
+                               &write_stride_cursor, &global_op, buf, &seed) < 0)
+            {
+                fprintf(stderr, "[%s] write phase %ld failed — abandoning file\n",
+                        p->profile_name, write_phase_count);
+                break;
+            }
             write_phase_count++;
         }
         else if (!is_write_phase && read_phase_count < read_phases)
@@ -347,11 +413,18 @@ static void run_file_workload(const Profile *p, const char *filepath,
             long ops = (read_phase_count == read_phases - 1)
                            ? (total_read_ops - read_ops_per_read_phase * (read_phases - 1))
                            : read_ops_per_read_phase;
-            do_read_phase(fd, p, ops, &read_offset, file_size, &seed);
+            if (do_read_phase(fd, p, ops, file_size, &read_offset,
+                              &read_stride_cursor, &global_op, buf, &seed) < 0)
+            {
+                fprintf(stderr, "[%s] read phase %ld failed — abandoning file\n",
+                        p->profile_name, read_phase_count);
+                break;
+            }
             read_phase_count++;
         }
     }
 
+    free(buf);
     fsync(fd);
     close(fd);
 }
@@ -377,7 +450,7 @@ static void run_metadata_workload(const Profile *p)
             fprintf(stderr, "open (meta create) failed: %s\n", strerror(errno));
             continue;
         }
-        if (write(fd, buf, p->op_size) < 0)
+        if (full_write(fd, buf, p->op_size) < 0)
             perror("write (meta)");
         if (p->fsync_interval > 0)
             fsync(fd);
@@ -406,7 +479,7 @@ int main(int argc, char *argv[])
                 "Usage: %s <profile_name> <read_ratio> <access_pattern (0|1|2)>\n"
                 "          <stride_size> <op_size> <num_ops> <num_files>\n"
                 "          <num_phases> <fsync_interval> <work_dir> <mode (0|1)>\n"
-                "  mode 0 = setup (write files, no Darshan)\n"
+                "  mode 0 = setup (write files only, no Darshan — pure-read profiles only)\n"
                 "  mode 1 = workload (measured run, Darshan attached)\n",
                 argv[0]);
         return 1;
@@ -443,7 +516,11 @@ int main(int argc, char *argv[])
     }
 
     /* Ensure work directory exists */
-    mkdir(p.work_dir, 0755);
+    if (mkdir(p.work_dir, 0755) < 0 && errno != EEXIST)
+    {
+        fprintf(stderr, "mkdir failed for %s: %s\n", p.work_dir, strerror(errno));
+        return 1;
+    }
 
     /* Metadata workload: always runs as a single measured pass — no setup needed */
     if (strcmp(p.profile_name, "metadata_heavy") == 0)

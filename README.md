@@ -33,15 +33,14 @@ pfs/
 ├── run_workloads.py          # Compiles workload binary, runs profiles, invokes parser
 ├── parse_darshan.py          # Parses .darshan logs → CSV
 ├── parse_darshan_README.md   # Full reference for parse_darshan.py
-├── io.c                      # Standalone example workload (stdio sequential write)
 ├── darshan_output/           # Created automatically — CSV output lives here
 │   ├── global.csv            # One row per run, all counters across all modules
 │   └── <label>_<modules>.csv # Per-run, per-file counters for each run
 ├── workloads/
-│   ├── synthetic_workload.c  # Single C program that simulates all workload types
-│   ├── profiles.json         # Defines all workload classes and their parameters
-│   ├── tmp/                  # Scratch dir — workload files written and deleted here
-│   └── README.md             # How synthetic_workload.c works, profile reference
+│   ├── posix_synthetic_workload.c  # Single C POSIX program that simulates all workload types
+│   ├── profiles.json               # Defines all workload classes and their parameters
+│   ├── tmp/                        # Scratch dir — workload files written and deleted here
+│   └── README.md                   # How posix_synthetic_workload.c works, profile reference
 └── README.md
 ```
 
@@ -87,11 +86,11 @@ See [`workloads/README.md`](workloads/README.md) for how profiles are defined an
 
 ```bash
 # Compile the workload binary
-gcc -O2 -o workloads/synthetic_workload workloads/synthetic_workload.c
+gcc -O2 -o workloads/posix_synthetic_workload workloads/posix_synthetic_workload.c
 
-# Run under Darshan instrumentation
-LD_PRELOAD=/path/to/libdarshan.so ./workloads/synthetic_workload \
-    write_heavy 0.0 0 0 65536 10000 1 1 0 ./workloads/tmp
+# Run under Darshan instrumentation (mode 1 = workload)
+LD_PRELOAD=/path/to/libdarshan.so ./workloads/posix_synthetic_workload \
+    write_heavy 0.0 0 0 65536 10000 1 1 0 ./workloads/tmp 1
 
 # Parse the resulting log
 python parse_darshan.py --log /tmp/<logfile>.darshan --label write_heavy --posix

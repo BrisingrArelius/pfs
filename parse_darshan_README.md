@@ -30,7 +30,7 @@ python parse_darshan.py --log run.darshan --label checkpoint --posix --mpi
 | `--mpi` | `MPI-IO` | MPI-IO calls: independent, collective, split, non-blocking operations |
 | `--stdio` | `STDIO` | Buffered C stdio: `fopen()`, `fread()`, `fwrite()`, `fflush()` |
 
-> **Note:** Your workload determines which modules will have data. For example, a program using `fopen`/`fprintf` (like `io.c`) will produce STDIO records, not POSIX records directly.
+> **Note:** Your workload determines which modules will have data. The synthetic workload (`posix_synthetic_workload.c`) uses raw POSIX syscalls and only produces POSIX module records. A program using `fopen`/`fprintf` would produce STDIO records instead.
 
 ---
 
