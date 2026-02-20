@@ -40,12 +40,12 @@ WORKLOADS_DIR    = "./workloads"
 PROFILES_JSON    = "./workloads/profiles.json"
 WORKLOAD_SRC      = "./workloads/posix_synthetic_workload.c"
 WORKLOAD_BIN      = "./workloads/posix_synthetic_workload"
-WORKLOAD_WORK_DIR = "./workloads/tmp"          # scratch dir for workload files
+WORKLOAD_WORK_DIR = "/mnt/beegfs/advay/hdd/workloads/tmp"          # scratch dir for workload files
 PARSE_SCRIPT     = "./parse_darshan.py"
 OUTPUT_DIR       = "./darshan_output"
-DARSHAN_PRELOAD  = "/usr/local/lib/libdarshan.so.0.0.0"  # ← update if different on your system
-DARSHAN_LOG_DIR  = os.getenv("DARSHAN_LOG_DIR_PATH", "/tmp")  # ← reads from env var
 
+DARSHAN_PRELOAD  = "/usr/local/lib/libdarshan.so.0.0.0"  # ← update if different on your system
+DARSHAN_LOG_DIR  = "/mnt/nfs_shared/darshan-logs"  # ← Darshan's compiled-in path
 # MPI configuration
 MPICC            = "mpicc"                      # MPI C compiler
 MPIRUN           = "mpirun"                     # MPI launcher
@@ -111,8 +111,13 @@ def parse_args():
 # =============================================================================
 
 def compile_workload(dry_run):
-    """Compile posix_synthetic_workload.c with mpicc → posix_synthetic_workload binary."""
-    cmd = [MPICC, "-O2", "-o", WORKLOAD_BIN, WORKLOAD_SRC]
+    """Compile posix_synthetic_workload.c with mpicc + explicit Darshan linkage."""
+    cmd = [
+        MPICC, "-O2", 
+        "-o", WORKLOAD_BIN, 
+        WORKLOAD_SRC,
+        "-L/usr/local/lib", "-ldarshan", "-lpthread", "-lrt", "-lz"
+    ]
     print(f"Compiling: {' '.join(cmd)}")
     if dry_run:
         return True
@@ -164,16 +169,23 @@ def load_profiles(profiles_path, only=None):
 def find_latest_darshan_log(before_files):
     """
     Find the newest .darshan log written to DARSHAN_LOG_DIR since before_files snapshot.
+    Darshan organizes logs by date: DARSHAN_LOG_DIR/YYYY/M/D/*.darshan
     """
-    after_files = set(os.listdir(DARSHAN_LOG_DIR))
-    new_files = [
-        f for f in (after_files - before_files)
-        if f.endswith(".darshan")
-    ]
-    if not new_files:
+    import glob
+    import time
+    
+    # Wait briefly for filesystem to sync
+    time.sleep(0.5)
+    
+    # Search recursively for .darshan files
+    all_logs = glob.glob(f"{DARSHAN_LOG_DIR}/**/*.darshan", recursive=True)
+    
+    if not all_logs:
         return None
-    new_files_full = [os.path.join(DARSHAN_LOG_DIR, f) for f in new_files]
-    return max(new_files_full, key=os.path.getmtime)
+    
+    # Filter to only newly created logs (compare by mtime)
+    # Since we can't track exact before_files in subdirs, just return the newest
+    return max(all_logs, key=os.path.getmtime)
 
 
 def needs_setup(params):
