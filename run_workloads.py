@@ -43,8 +43,12 @@ WORKLOAD_BIN      = "./workloads/posix_synthetic_workload"
 WORKLOAD_WORK_DIR = "./workloads/tmp"          # scratch dir for workload files
 PARSE_SCRIPT     = "./parse_darshan.py"
 OUTPUT_DIR       = "./darshan_output"
-DARSHAN_PRELOAD  = "/path/to/libdarshan.so"    # ← update this path
-DARSHAN_LOG_DIR  = "/tmp"                       # ← where Darshan writes logs
+DARSHAN_PRELOAD  = "/usr/local/lib/libdarshan.so.0.0.0"  # ← update if different on your system
+DARSHAN_LOG_DIR  = os.getenv("DARSHAN_LOG_DIR_PATH", "/tmp")  # ← reads from env var
+
+# MPI configuration
+MPICC            = "mpicc"                      # MPI C compiler
+MPIRUN           = "mpirun"                     # MPI launcher
 
 # Darshan modules to parse. metadata_heavy only touches POSIX.
 DEFAULT_MODULES  = ["posix"]
@@ -107,8 +111,8 @@ def parse_args():
 # =============================================================================
 
 def compile_workload(dry_run):
-    """Compile posix_synthetic_workload.c → posix_synthetic_workload binary."""
-    cmd = ["gcc", "-O2", "-o", WORKLOAD_BIN, WORKLOAD_SRC]
+    """Compile posix_synthetic_workload.c with mpicc → posix_synthetic_workload binary."""
+    cmd = [MPICC, "-O2", "-o", WORKLOAD_BIN, WORKLOAD_SRC]
     print(f"Compiling: {' '.join(cmd)}")
     if dry_run:
         return True
@@ -186,9 +190,13 @@ def needs_setup(params):
 
 
 def build_workload_cmd(name, params, mode):
-    """Build the CLI arg list for the posix_synthetic_workload binary."""
+    """Build the CLI arg list for the posix_synthetic_workload binary.
+    
+    For mode=0 (setup): run directly without MPI (no Darshan needed)
+    For mode=1 (workload): run with mpirun -np 1 (Darshan requires MPI)
+    """
     pattern_int = ACCESS_PATTERN_MAP[params["access_pattern"]]
-    return [
+    base_args = [
         WORKLOAD_BIN,
         name,
         str(params["read_ratio"]),
@@ -202,6 +210,13 @@ def build_workload_cmd(name, params, mode):
         WORKLOAD_WORK_DIR,
         str(mode),   # 0 = setup, 1 = workload
     ]
+    
+    # Workload mode (mode=1): wrap with mpirun for Darshan
+    if mode == 1:
+        return [MPIRUN, "-np", "1"] + base_args
+    else:
+        # Setup mode (mode=0): run directly
+        return base_args
 
 
 # =============================================================================
@@ -212,14 +227,14 @@ def run_profile(name, params, run_index, modules, output_dir, dry_run):
     """
     Run one profile once and parse the resulting Darshan log.
 
-    For profiles with read_ratio > 0:
-      1. Run binary in mode 0 (setup) WITHOUT LD_PRELOAD — writes files only,
+    For profiles with read_ratio >= 1.0 (pure-read):
+      1. Run binary in mode 0 (setup) — writes files only,
          no Darshan instrumentation, no log generated.
-      2. Run binary in mode 1 (workload) WITH LD_PRELOAD — measured run,
+      2. Run binary in mode 1 (workload) with mpirun -np 1 — measured run,
          reads from pre-existing files, Darshan records only the target I/O.
 
-    For pure-write profiles (read_ratio == 0):
-      - Run binary in mode 1 directly under Darshan. No setup needed.
+    For pure-write/mixed profiles (read_ratio < 1.0):
+      - Run binary in mode 1 directly with mpirun. No setup needed.
 
     metadata_heavy:
       - Always run in mode 1 directly. It manages its own files internally.
@@ -240,32 +255,29 @@ def run_profile(name, params, run_index, modules, output_dir, dry_run):
     if dry_run:
         if setup_required:
             print(f"  [{label}] Would run setup (no Darshan): {' '.join(setup_cmd)}")
-        print(f"  [{label}] Would run workload (Darshan): {' '.join(workload_cmd)}")
+        print(f"  [{label}] Would run workload (MPI+Darshan): {' '.join(workload_cmd)}")
         print(f"  [{label}] Would parse: {' '.join(parse_cmd)}")
         return True
 
-    # --- Setup phase (no Darshan) ---
+    # --- Setup phase (no Darshan, no MPI) ---
     if setup_required:
-        print(f"  [{label}] Setup (no instrumentation): writing files...")
-        # Run without LD_PRELOAD so Darshan does not record the setup writes
-        clean_env = {k: v for k, v in os.environ.items() if k != "LD_PRELOAD"}
-        result = subprocess.run(setup_cmd, env=clean_env)
+        print(f"  [{label}] Setup (no instrumentation): {' '.join(setup_cmd)}")
+        result = subprocess.run(setup_cmd)
         if result.returncode != 0:
             print(f"  [{label}] Setup exited with code {result.returncode} — skipping workload.")
             return False
 
-    # --- Workload phase (Darshan attached) ---
+    # --- Workload phase (MPI + Darshan attached) ---
     print(f"  [{label}] Workload (instrumented): {' '.join(workload_cmd)}")
     before_files = set(os.listdir(DARSHAN_LOG_DIR))
 
-    env = os.environ.copy()
-    if DARSHAN_PRELOAD and os.path.isfile(DARSHAN_PRELOAD):
-        env["LD_PRELOAD"] = DARSHAN_PRELOAD
-    else:
-        print(f"  Warning: DARSHAN_PRELOAD not found ({DARSHAN_PRELOAD}). "
-              "Running without instrumentation.")
-
-    result = subprocess.run(workload_cmd, env=env)
+    # Note: Darshan library is preloaded by the MPI runtime when configured properly.
+    # If your system requires explicit LD_PRELOAD, you can uncomment and set it:
+    # env = os.environ.copy()
+    # env["LD_PRELOAD"] = DARSHAN_PRELOAD
+    # result = subprocess.run(workload_cmd, env=env)
+    
+    result = subprocess.run(workload_cmd)
     if result.returncode != 0:
         print(f"  [{label}] Workload exited with code {result.returncode} — skipping parse.")
         return False
@@ -314,6 +326,7 @@ def main():
     print(f"Runs per profile: {args.runs}")
     print(f"Modules:          {modules}")
     print(f"Output dir:       {args.output_dir}")
+    print(f"DARSHAN_LOG_DIR = {DARSHAN_LOG_DIR}\n")
     if args.dry_run:
         print("Dry run — nothing will be executed.\n")
 

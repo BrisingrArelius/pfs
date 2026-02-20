@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <errno.h>
+#include <mpi.h>
 
 /* Run mode constants */
 #define MODE_SETUP 0
@@ -473,15 +474,25 @@ static void run_metadata_workload(const Profile *p)
  * ---------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
+    /* Initialize MPI (required for Darshan to activate) */
+    MPI_Init(&argc, &argv);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     if (argc < 12)
     {
-        fprintf(stderr,
-                "Usage: %s <profile_name> <read_ratio> <access_pattern (0|1|2)>\n"
-                "          <stride_size> <op_size> <num_ops> <num_files>\n"
-                "          <num_phases> <fsync_interval> <work_dir> <mode (0|1)>\n"
-                "  mode 0 = setup (write files only, no Darshan — pure-read profiles only)\n"
-                "  mode 1 = workload (measured run, Darshan attached)\n",
-                argv[0]);
+        if (rank == 0)
+        {
+            fprintf(stderr,
+                    "Usage: %s <profile_name> <read_ratio> <access_pattern (0|1|2)>\n"
+                    "          <stride_size> <op_size> <num_ops> <num_files>\n"
+                    "          <num_phases> <fsync_interval> <work_dir> <mode (0|1)>\n"
+                    "  mode 0 = setup (write files only, no Darshan — pure-read profiles only)\n"
+                    "  mode 1 = workload (measured run, Darshan attached)\n",
+                    argv[0]);
+        }
+        MPI_Finalize();
         return 1;
     }
 
@@ -501,24 +512,32 @@ int main(int argc, char *argv[])
     /* Validate */
     if (p.op_size <= 0 || p.num_ops <= 0 || p.num_phases < 1)
     {
-        fprintf(stderr, "Invalid parameters: op_size, num_ops must be >0; num_phases >= 1\n");
+        if (rank == 0)
+            fprintf(stderr, "Invalid parameters: op_size, num_ops must be >0; num_phases >= 1\n");
+        MPI_Finalize();
         return 1;
     }
     if (p.access_pattern == PATTERN_STRIDED && p.stride_size <= 0)
     {
-        fprintf(stderr, "stride_size must be >0 for strided access pattern\n");
+        if (rank == 0)
+            fprintf(stderr, "stride_size must be >0 for strided access pattern\n");
+        MPI_Finalize();
         return 1;
     }
     if (p.mode != MODE_SETUP && p.mode != MODE_WORKLOAD)
     {
-        fprintf(stderr, "mode must be 0 (setup) or 1 (workload)\n");
+        if (rank == 0)
+            fprintf(stderr, "mode must be 0 (setup) or 1 (workload)\n");
+        MPI_Finalize();
         return 1;
     }
 
     /* Ensure work directory exists */
     if (mkdir(p.work_dir, 0755) < 0 && errno != EEXIST)
     {
-        fprintf(stderr, "mkdir failed for %s: %s\n", p.work_dir, strerror(errno));
+        if (rank == 0)
+            fprintf(stderr, "mkdir failed for %s: %s\n", p.work_dir, strerror(errno));
+        MPI_Finalize();
         return 1;
     }
 
@@ -527,10 +546,13 @@ int main(int argc, char *argv[])
     {
         if (p.mode == MODE_SETUP)
         {
-            printf("[setup] metadata_heavy has no setup phase — nothing to do.\n");
+            if (rank == 0)
+                printf("[setup] metadata_heavy has no setup phase — nothing to do.\n");
+            MPI_Finalize();
             return 0;
         }
         run_metadata_workload(&p);
+        MPI_Finalize();
         return 0;
     }
 
@@ -538,6 +560,7 @@ int main(int argc, char *argv[])
     if (p.mode == MODE_SETUP)
     {
         run_setup(&p);
+        MPI_Finalize();
         return 0;
     }
 
@@ -582,5 +605,6 @@ int main(int argc, char *argv[])
         unlink(filepath);
     }
 
+    MPI_Finalize();
     return 0;
 }
