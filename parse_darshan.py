@@ -21,7 +21,7 @@ import pandas as pd
 # OUTPUT CONFIGURATION
 # =============================================================================
 
-OUTPUT_DIR = "./darshan_output"
+OUTPUT_DIR = "./darshan_output_ssd"
 GLOBAL_CSV = "global.csv"
 
 # =============================================================================

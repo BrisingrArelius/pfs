@@ -40,9 +40,9 @@ WORKLOADS_DIR    = "./workloads"
 PROFILES_JSON    = "./workloads/profiles.json"
 WORKLOAD_SRC      = "./workloads/posix_synthetic_workload.c"
 WORKLOAD_BIN      = "./workloads/posix_synthetic_workload"
-WORKLOAD_WORK_DIR = "/mnt/beegfs/advay/hdd/workloads/tmp"          # scratch dir for workload files
+WORKLOAD_WORK_DIR = "/mnt/beegfs/advay/ssd/workloads/tmp"          # scratch dir for workload files
 PARSE_SCRIPT     = "./parse_darshan.py"
-OUTPUT_DIR       = "./darshan_output"
+OUTPUT_DIR       = "./darshan_output_ssd"
 
 DARSHAN_PRELOAD  = "/usr/local/lib/libdarshan.so.0.0.0"  # ← update if different on your system
 DARSHAN_LOG_DIR  = "/mnt/nfs_shared/darshan-logs"  # ← Darshan's compiled-in path
@@ -71,7 +71,7 @@ def parse_args():
     parser.add_argument(
         "--runs",
         type=int,
-        default=1,
+        default=5,
         help="Number of times to run each profile (default: 1)"
     )
     parser.add_argument(
