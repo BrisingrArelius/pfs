@@ -36,13 +36,14 @@ import sys
 # CONFIGURATION
 # =============================================================================
 
-WORKLOADS_DIR    = "./workloads"
-PROFILES_JSON    = "./workloads/profiles.json"
-WORKLOAD_SRC      = "./workloads/posix_synthetic_workload.c"
-WORKLOAD_BIN      = "./workloads/posix_synthetic_workload"
+SCRIPT_DIR       = os.path.dirname(os.path.abspath(__file__))
+WORKLOADS_DIR    = os.path.join(SCRIPT_DIR, "workloads")
+PROFILES_JSON    = os.path.join(WORKLOADS_DIR, "profiles.json")
+WORKLOAD_SRC     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload.c")
+WORKLOAD_BIN     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload")
 WORKLOAD_WORK_DIR = "/mnt/beegfs/advay/ssd/workloads/tmp"          # scratch dir for workload files
-PARSE_SCRIPT     = "./parse_darshan.py"
-OUTPUT_DIR       = "./darshan_output_ssd"
+PARSE_SCRIPT     = os.path.join(SCRIPT_DIR, "parse_darshan.py")
+OUTPUT_DIR       = "./output/ssd/darshan"
 
 DARSHAN_PRELOAD  = "/usr/local/lib/libdarshan.so.0.0.0"  # ← update if different on your system
 DARSHAN_LOG_DIR  = "/mnt/nfs_shared/darshan-logs"  # ← Darshan's compiled-in path

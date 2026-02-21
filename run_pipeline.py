@@ -41,18 +41,20 @@ BEEGFS_BASE = Path("/mnt/beegfs/advay")
 WORKLOAD_DIR_HDD = BEEGFS_BASE / "hdd" / "workloads" / "tmp"
 WORKLOAD_DIR_SSD = BEEGFS_BASE / "ssd" / "workloads" / "tmp"
 
-# Output directories (Darshan CSVs)
-DARSHAN_OUTPUT_HDD = BASE_DIR / "darshan_output_hdd"
-DARSHAN_OUTPUT_SSD = BASE_DIR / "darshan_output_ssd"
+# Output directories (Darshan CSVs and Analysis results)
+OUTPUT_BASE = BASE_DIR / "output"
+DARSHAN_OUTPUT_HDD = OUTPUT_BASE / "hdd" / "darshan"
+DARSHAN_OUTPUT_SSD = OUTPUT_BASE / "ssd" / "darshan"
 
 # Analysis output directories
-ANALYSIS_OUTPUT_HDD = BASE_DIR / "analysis_output_hdd"
-ANALYSIS_OUTPUT_SSD = BASE_DIR / "analysis_output_ssd"
+ANALYSIS_OUTPUT_HDD = OUTPUT_BASE / "hdd" / "analysis"
+ANALYSIS_OUTPUT_SSD = OUTPUT_BASE / "ssd" / "analysis"
 
 # Scripts
-RUN_WORKLOADS_SCRIPT = BASE_DIR / "run_workloads.py"
-PARSE_DARSHAN_SCRIPT = BASE_DIR / "parse_darshan.py"
-ANALYSIS_SCRIPT = BASE_DIR / "analysis.py"
+SCRIPTS_DIR = BASE_DIR / "scripts"
+RUN_WORKLOADS_SCRIPT = SCRIPTS_DIR / "run_workloads.py"
+PARSE_DARSHAN_SCRIPT = SCRIPTS_DIR / "parse_darshan.py"
+ANALYSIS_SCRIPT = SCRIPTS_DIR / "analysis.py"
 
 # =============================================================================
 # UTILITY FUNCTIONS

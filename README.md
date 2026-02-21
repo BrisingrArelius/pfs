@@ -1,14 +1,16 @@
-# pfs — Darshan I/O Counter Parser
+# BeeGFS Storage Pool Analysis
 
-A Python toolkit for extracting and analyzing Darshan I/O counters from workload runs to characterize workload behavior and inform storage tiering decisions.
+A comprehensive toolkit for analyzing I/O workload behavior on BeeGFS storage pools using Darshan instrumentation. Compare HDD vs SSD performance, identify discriminative I/O counters, and inform storage tiering decisions.
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Quick Start](#quick-start)
 - [Directory Structure](#directory-structure)
 - [Dependencies](#dependencies)
+- [Detailed Documentation](#detailed-documentation)
 - [Workflow](#workflow)
 - [Analysis](#analysis)
 - [Disclaimer](#disclaimer)
@@ -17,17 +19,33 @@ A Python toolkit for extracting and analyzing Darshan I/O counters from workload
 
 ## Overview
 
-This project instruments workloads with [Darshan](https://www.mcs.anl.gov/research/projects/darshan/), a lightweight I/O characterization library, and parses the resulting binary log files into CSV format for analysis.
+This project:
+1. **Runs synthetic workloads** on BeeGFS HDD and SSD storage pools
+2. **Instruments with Darshan** to capture I/O counters
+3. **Parses binary logs** to CSV format
+4. **Analyzes and visualizes** counter data to identify patterns
 
-**Key components:**
-- **Synthetic workloads** (`posix_synthetic_workload.c`) — Single C program that simulates 11 different workload types
-- **Parser** (`parse_darshan.py`) — Extracts counters from `.darshan` logs into CSV
-- **Analysis** (`analysis.py`) — Statistical analysis and visualizations to identify discriminative features
+**Use case:** Determine which I/O characteristics (sequential access, operation size, seek rate, etc.) predict whether a workload should be placed on HDD or SSD storage.
 
-**Output:**
-- **Per-run CSV**: One row per file accessed, counters for requested modules
-- **Global CSV**: One row per run with all counters (NaN for modules not collected)
-- **Analysis outputs**: Heatmaps, PCA plots, statistics
+---
+
+## Quick Start
+
+```bash
+# Full pipeline: Run workloads on both HDD and SSD pools, then analyze
+python3 run_pipeline.py --runs 5
+
+# HDD only (for testing)
+python3 run_pipeline.py --runs 3 --hdd-only
+
+# SSD only (for testing)
+python3 run_pipeline.py --runs 3 --ssd-only
+
+# Analyze existing data without re-running workloads
+python3 run_pipeline.py --analyze-only
+```
+
+**Results:** All outputs in `output/hdd/` and `output/ssd/` directories.
 
 ---
 
@@ -35,29 +53,36 @@ This project instruments workloads with [Darshan](https://www.mcs.anl.gov/resear
 
 ```
 pfs/
-├── run_workloads.py              # Orchestrator: compiles, runs profiles, parses logs
-├── parse_darshan.py              # Extracts counters from .darshan logs → CSV
-├── analysis.py                   # Statistical analysis & visualizations
-├── parse_darshan_README.md       # Full parser reference
-├── darshan_output/               # CSV outputs (created automatically)
-│   ├── global.csv                # One row per run, all counters
-│   └── <label>_<modules>.csv     # Per-run, per-file counters
-├── analysis_output/              # Analysis results (created by analysis.py)
-│   ├── heatmap_all_counters.png
-│   ├── heatmap_stable_counters.png
-│   ├── bar_charts_discriminative.png
-│   ├── pca_clustering.png
-│   ├── statistics.csv
-│   └── means_only.csv
-├── workloads/
-│   ├── posix_synthetic_workload.c  # POSIX I/O workload simulator
-│   ├── profiles.json               # Workload definitions
-│   ├── tmp/                        # Scratch directory for workload files
-│   └── README.md                   # Workload documentation
-├── pooling_scripts/              # BeeGFS storage pool management
-│   ├── configure_pools.sh
-│   └── reset_pools.sh
-└── README.md
+├── run_pipeline.py               # Main orchestration script
+├── README.md                     # This file
+├── output/                       # All results (created by pipeline)
+│   ├── hdd/
+│   │   ├── darshan/             # HDD pool Darshan CSVs
+│   │   │   ├── global.csv       # One row per run, all counters
+│   │   │   └── *.csv            # Per-run, per-file details
+│   │   └── analysis/            # HDD pool analysis results
+│   │       ├── heatmap_all_counters.png
+│   │       ├── heatmap_stable_counters.png
+│   │       ├── bar_charts_discriminative.png
+│   │       ├── pca_clustering.png
+│   │       ├── statistics.csv
+│   │       └── means_only.csv
+│   └── ssd/
+│       ├── darshan/             # SSD pool Darshan CSVs
+│       └── analysis/            # SSD pool analysis results
+└── scripts/
+    ├── run_workloads.py         # Compile, run, and parse workloads
+    ├── parse_darshan.py         # Extract counters from Darshan logs
+    ├── analysis.py              # Statistical analysis & visualization
+    ├── parse_darshan_README.md  # Parser documentation
+    ├── analysis_README.md       # Analysis documentation
+    ├── workloads/
+    │   ├── posix_synthetic_workload.c  # C workload simulator
+    │   ├── profiles.json               # 11 workload definitions
+    │   └── README.md                   # Workload documentation
+    └── pooling_scripts/         # BeeGFS pool management
+        ├── configure_pools.sh   # Create HDD/SSD pools
+        └── reset_pools.sh       # Reset to default pool
 ```
 
 ---
@@ -67,91 +92,80 @@ pfs/
 **Core tools:**
 - Python 3.8+
 - [pydarshan](https://github.com/darshan-hpc/darshan) — Darshan log parser
-- [pandas](https://pandas.pydata.org/) — Data manipulation
-- Darshan runtime (for instrumentation)
+---
 
-**Analysis tools (for `analysis.py`):**
-- [NumPy](https://numpy.org/)
-- [Matplotlib](https://matplotlib.org/)
-- [Seaborn](https://seaborn.pydata.org/)
-- [scikit-learn](https://scikit-learn.org/)
+## Dependencies
+
+**Required:**
+- Python 3.8+
+- [pydarshan](https://github.com/darshan-hpc/darshan) — Darshan log parser
+- [pandas](https://pandas.pydata.org/) — Data manipulation
+- [NumPy](https://numpy.org/) — Numerical computing
+- [Matplotlib](https://matplotlib.org/) — Plotting
+- [Seaborn](https://seaborn.pydata.org/) — Statistical visualization
+- [scikit-learn](https://scikit-learn.org/) — Machine learning (PCA)
+- Darshan runtime library (MPI-enabled)
+- MPI compiler (`mpicc`, `mpirun`)
 
 **Installation:**
 
 ```bash
-# Core
-pip install darshan pandas
-
-# Analysis
-pip install numpy matplotlib seaborn scikit-learn
-
-# Or all at once
 pip install darshan pandas numpy matplotlib seaborn scikit-learn
 ```
 
 ---
 
-## Workflow
+## Detailed Documentation
 
-### Quick Start: Full Pipeline
-
-**Run everything automatically** (workloads on both HDD and SSD pools, parse, analyze):
-
-```bash
-# Full pipeline: 5 runs per profile on both HDD and SSD
-python3 run_pipeline.py --runs 5
-
-# Test with fewer runs
-python3 run_pipeline.py --runs 3
-
-# Only HDD pool (for testing)
-python3 run_pipeline.py --runs 3 --hdd-only
-
-# Only SSD pool (for testing)
-python3 run_pipeline.py --runs 3 --ssd-only
-
-# Skip workloads, analyze existing data
-python3 run_pipeline.py --analyze-only
-```
-
-**What it does:**
-1. Configures BeeGFS storage pools (sets pool ID for directories)
-2. Runs workloads on HDD pool → `darshan_output_hdd/global.csv`
-3. Runs workloads on SSD pool → `darshan_output_ssd/global.csv`
-4. Analyzes both datasets → `analysis_output_hdd/` and `analysis_output_ssd/`
-5. Compares results to identify HDD vs SSD behavior differences
-
-**Outputs:**
-- `darshan_output_hdd/global.csv` — HDD pool counter data
-- `darshan_output_ssd/global.csv` — SSD pool counter data
-- `analysis_output_hdd/` — HDD visualizations and statistics
-- `analysis_output_ssd/` — SSD visualizations and statistics
+- **`scripts/workloads/README.md`** — Workload definitions and parameters
+- **`scripts/parse_darshan_README.md`** — Parser usage and counter details
+- **`scripts/analysis_README.md`** — Analysis methodology and interpretation
 
 ---
 
-### Manual Workflow (Step-by-Step)
+## Workflow
 
-### Step 1: Run workloads and generate logs
+The pipeline handles everything automatically. For manual control, see individual script documentation.
 
-**Option A — Automated (all profiles):**
+### Automated (Recommended)
 
 ```bash
-# Run all profiles once
-python run_workloads.py
-
-# Run all profiles 5 times each
-python run_workloads.py --runs 5
-
-# Run specific profiles
-python run_workloads.py --only read_heavy write_heavy --runs 10
+# Full pipeline: HDD + SSD pools, 5 runs each
+python3 run_pipeline.py --runs 5
 ```
 
-**Option B — Manual (single profile):**
+### Manual Steps
 
+If you need fine-grained control:
+
+**1. Configure BeeGFS pools** (one-time setup):
 ```bash
-# Compile
-mpicc -O2 -o workloads/posix_synthetic_workload workloads/posix_synthetic_workload.c \
-    -L/usr/local/lib -ldarshan -lpthread -lrt -lz
+cd scripts/pooling_scripts
+sudo ./configure_pools.sh
+```
+
+**2. Run workloads on HDD pool:**
+```bash
+python3 scripts/run_workloads.py --runs 5 \
+    --workload-dir /mnt/beegfs/advay/hdd/workloads/tmp \
+    --output output/hdd/darshan
+```
+
+**3. Run workloads on SSD pool:**
+```bash
+python3 scripts/run_workloads.py --runs 5 \
+    --workload-dir /mnt/beegfs/advay/ssd/workloads/tmp \
+    --output output/ssd/darshan
+```
+
+**4. Analyze results:**
+```bash
+python3 scripts/analysis.py --input output/hdd/darshan/global.csv \
+    --output-dir output/hdd/analysis
+
+python3 scripts/analysis.py --input output/ssd/darshan/global.csv \
+    --output-dir output/ssd/analysis
+```
 
 # Run (mode 1 = workload with Darshan instrumentation)
 mpirun -np 1 ./workloads/posix_synthetic_workload \
@@ -163,77 +177,31 @@ python parse_darshan.py --log /path/to/log.darshan --label write_heavy --posix
 
 **Output:**
 ```
-darshan_output/
-├── global.csv                     # Aggregated counters (one row per run)
-└── write_heavy_run1_posix.csv     # Per-file breakdown
-```
-
-See [`workloads/README.md`](workloads/README.md) for profile definitions and [`parse_darshan_README.md`](parse_darshan_README.md) for parser details.
-
-### Step 2: Analyze counter data
-
-Once you have multiple runs (5+ recommended):
-
-```bash
-python3 analysis.py --input ./darshan_output/global.csv
-```
-
-**Output:**
-```
-analysis_output/
-├── heatmap_all_counters.png        # Normalized heatmap (all counters)
-├── heatmap_stable_counters.png     # Stable counters only (low CV)
-├── bar_charts_discriminative.png   # Top N discriminative counters
-├── pca_clustering.png              # 2D PCA projection
-├── statistics.csv                  # Full statistics (mean/std/min/max/cv)
-└── means_only.csv                  # Summary (mean values only)
-```
-
 ---
 
 ## Analysis
 
-### What `analysis.py` does
+The analysis tool (`scripts/analysis.py`) processes Darshan counter data to identify patterns and discriminative features.
 
-Performs statistical analysis across multiple runs to identify:
+**Key outputs:**
+- **Heatmaps**: Visualize counter patterns across workload types
+- **Bar charts**: Show top discriminative counters with error bars
+- **PCA plot**: 2D projection showing workload clustering
+- **Statistics**: Mean, std, CV, min, max for each counter
 
-1. **Stable counters** — Low coefficient of variation (CV < threshold), consistent across runs → reliable for classification
-2. **Discriminative counters** — High variance across workload types → good predictors for storage placement
+**Example results:**
 
-**Key visualizations:**
-- **Heatmaps**: Normalized (0-1 scale) counter values across workloads. Normalization needed because counters have vastly different scales (bytes: millions, switches: <10).
-- **Bar charts**: Top N counters that best distinguish workload types (mean ± std)
-- **PCA plot**: 2D projection showing natural clustering of workloads
-
-### Options
-
-```bash
-python3 analysis.py --input ./darshan_output/global.csv \
-    --cv-threshold 0.15 \     # Stability threshold (default: 0.2)
-    --top-n 15 \              # Number of discriminative counters to plot (default: 10)
-    --output-dir ./results    # Output directory (default: ./analysis_output)
-```
-
-### Example: Storage Tiering Rules
-
-Use discriminative counters to build HDD vs SSD placement rules:
+Discriminative counters for HDD vs SSD placement:
 
 | Counter | HDD Friendly | SSD Friendly |
 |---------|-------------|-------------|
-| `POSIX_SEQ_READS/WRITES` | High (sequential) | Low (random) |
-| `POSIX_RW_SWITCHES` | Low (single-pass) | High (mixed I/O) |
-| `POSIX_SIZE_*_1M_4M` | High (large I/O) | Low (small I/O) |
-| `POSIX_SEEKS` | Low | High (random access) |
-| Timestamp duration | Long (sustained) | Short (bursty) |
+| `POSIX_SEQ_READ_RATIO` | High (>0.8) | Low (<0.5) |
+| `POSIX_RW_SWITCHES` | Low (<2) | High (>5) |
+| `POSIX_MEAN_WRITE_SIZE` | Large (>1MB) | Small (<64KB) |
+| `POSIX_SEEK_RATE` | Low (<0.1) | High (>0.5) |
+| `POSIX_WRITE_DURATION` | Long (sustained) | Short (bursty) |
 
-**Example rules:**
-```python
-if POSIX_SEQ_READS > 80%:
-    placement = "HDD"  # Sequential read-heavy
-elif POSIX_RW_SWITCHES > 5:
-    placement = "SSD"  # Mixed random I/O
-elif avg_op_size > 1MB:
-    placement = "HDD"  # Large block I/O
+**For detailed methodology and interpretation**, see `scripts/analysis_README.md`.
 ```
 
 ---
