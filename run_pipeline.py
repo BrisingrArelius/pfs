@@ -107,14 +107,19 @@ def set_storage_pool(directory, pool_id):
     
     # Verify the pool was set
     verify_cmd = ["beegfs-ctl", "--getentryinfo", str(directory)]
-    verify_result = run_command(verify_cmd, check=False, capture_output=True)
+    verify_result = subprocess.run(verify_cmd, capture_output=True, text=True)
     
-    if "Storage pool:" in verify_result.stdout:
-        print(f"✓ Storage pool set successfully")
-        print(verify_result.stdout)
+    # Check for "Storage Pool:" (capital P) in output
+    if f"Storage Pool: {pool_id}" in verify_result.stdout or f"Storage pool: {pool_id}" in verify_result.stdout:
+        print(f"✓ Storage pool {pool_id} set successfully")
+        # Print relevant line
+        for line in verify_result.stdout.split('\n'):
+            if 'Storage Pool' in line or 'Storage pool' in line:
+                print(f"  {line.strip()}")
         return True
     else:
         print(f"WARNING: Could not verify storage pool setting")
+        print(f"Output: {verify_result.stdout}")
         return False
 
 
