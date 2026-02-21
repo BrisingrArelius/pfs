@@ -94,6 +94,11 @@ def parse_args():
         help=f"Output directory for CSVs (default: {OUTPUT_DIR})"
     )
     parser.add_argument(
+        "--workload-dir",
+        default=WORKLOAD_WORK_DIR,
+        help=f"Directory where workload files are created (default: {WORKLOAD_WORK_DIR})"
+    )
+    parser.add_argument(
         "--profiles",
         default=PROFILES_JSON,
         help=f"Path to profiles JSON file (default: {PROFILES_JSON})"
@@ -201,7 +206,7 @@ def needs_setup(params):
     return params["read_ratio"] >= 1.0
 
 
-def build_workload_cmd(name, params, mode):
+def build_workload_cmd(name, params, mode, workload_dir):
     """Build the CLI arg list for the posix_synthetic_workload binary.
     
     For mode=0 (setup): run directly without MPI (no Darshan needed)
@@ -219,7 +224,7 @@ def build_workload_cmd(name, params, mode):
         str(params["num_files"]),
         str(params["num_phases"]),
         str(params["fsync_interval"]),
-        WORKLOAD_WORK_DIR,
+        workload_dir,  # Use passed directory instead of global
         str(mode),   # 0 = setup, 1 = workload
     ]
     
@@ -235,7 +240,7 @@ def build_workload_cmd(name, params, mode):
 # RUNNING A SINGLE PROFILE
 # =============================================================================
 
-def run_profile(name, params, run_index, modules, output_dir, dry_run):
+def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_run):
     """
     Run one profile once and parse the resulting Darshan log.
 
@@ -254,8 +259,8 @@ def run_profile(name, params, run_index, modules, output_dir, dry_run):
     label = f"{name}_run{run_index}"
     setup_required = needs_setup(params) and name != "metadata_heavy"
 
-    setup_cmd    = build_workload_cmd(name, params, mode=0)
-    workload_cmd = build_workload_cmd(name, params, mode=1)
+    setup_cmd    = build_workload_cmd(name, params, mode=0, workload_dir=workload_dir)
+    workload_cmd = build_workload_cmd(name, params, mode=1, workload_dir=workload_dir)
 
     module_flags = [f"--{m}" for m in modules]
     parse_cmd = [
@@ -332,12 +337,13 @@ def main():
     # Ensure directories exist
     os.makedirs(args.output_dir, exist_ok=True)
     if not args.dry_run:
-        os.makedirs(WORKLOAD_WORK_DIR, exist_ok=True)
+        os.makedirs(args.workload_dir, exist_ok=True)
 
     print(f"Profiles:         {[n for n, _ in profiles]}")
     print(f"Runs per profile: {args.runs}")
     print(f"Modules:          {modules}")
     print(f"Output dir:       {args.output_dir}")
+    print(f"Workload dir:     {args.workload_dir}")
     print(f"DARSHAN_LOG_DIR = {DARSHAN_LOG_DIR}\n")
     if args.dry_run:
         print("Dry run — nothing will be executed.\n")
@@ -351,7 +357,7 @@ def main():
         print(f"Profile: {name}  ({args.runs} run(s))")
         print(f"{'='*50}")
         for i in range(1, args.runs + 1):
-            success = run_profile(name, params, i, modules, args.output_dir, args.dry_run)
+            success = run_profile(name, params, i, modules, args.output_dir, args.workload_dir, args.dry_run)
             if success:
                 completed += 1
             else:
