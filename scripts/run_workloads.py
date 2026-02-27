@@ -162,6 +162,12 @@ def parse_args():
         help=f"Directory where workload files are created (default: auto-determined by storage pool)"
     )
     parser.add_argument(
+        "--storage-type",
+        choices=["hdd", "ssd"],
+        default=None,
+        help="Run only specific storage type (hdd or ssd). If not specified, runs both."
+    )
+    parser.add_argument(
         "--profiles",
         default=PROFILES_JSON,
         help=f"Path to profiles JSON file (default: {PROFILES_JSON})"
@@ -609,7 +615,10 @@ def main():
             skipped += skipped_count
             continue
         
-        for storage_type in ["hdd", "ssd"]:
+        # Determine which storage types to run
+        storage_types = [args.storage_type] if args.storage_type else ["hdd", "ssd"]
+        
+        for storage_type in storage_types:
             storage_config = STORAGE_POOLS[storage_type]
             output_dir = args.output_dir if args.output_dir else storage_config["output_dir"]
             workload_dir = args.workload_dir if args.workload_dir else storage_config["workload_dir"]
