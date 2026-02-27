@@ -182,7 +182,7 @@ def stage_setup_directories():
     print("\n✓ Directory setup complete")
 
 
-def stage_run_workloads_hdd(num_runs):
+def stage_run_workloads_hdd(num_runs, resume=False):
     """Stage 1a: Run workloads on HDD pool."""
     print("\n" + "="*80)
     print("STAGE 1a: Running workloads on HDD pool")
@@ -196,11 +196,14 @@ def stage_run_workloads_hdd(num_runs):
         "--workload-dir", str(WORKLOAD_DIR_HDD)
     ]
     
+    if resume:
+        cmd.append("--resume")
+    
     run_command(cmd)
     print("\n✓ HDD workloads complete")
 
 
-def stage_run_workloads_ssd(num_runs):
+def stage_run_workloads_ssd(num_runs, resume=False):
     """Stage 1b: Run workloads on SSD pool."""
     print("\n" + "="*80)
     print("STAGE 1b: Running workloads on SSD pool")
@@ -213,6 +216,9 @@ def stage_run_workloads_ssd(num_runs):
         "--output-dir", str(DARSHAN_OUTPUT_SSD),
         "--workload-dir", str(WORKLOAD_DIR_SSD)
     ]
+    
+    if resume:
+        cmd.append("--resume")
     
     run_command(cmd)
     print("\n✓ SSD workloads complete")
@@ -389,6 +395,12 @@ Examples:
         help="Only setup directories and configure storage pools"
     )
     
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from checkpoint - skip already completed runs"
+    )
+    
     args = parser.parse_args()
     
     print("\n" + "="*80)
@@ -412,10 +424,10 @@ Examples:
     # Stage 1: Run workloads
     if not args.analyze_only:
         if not args.ssd_only:
-            stage_run_workloads_hdd(args.runs)
+            stage_run_workloads_hdd(args.runs, resume=args.resume)
         
         if not args.hdd_only:
-            stage_run_workloads_ssd(args.runs)
+            stage_run_workloads_ssd(args.runs, resume=args.resume)
     else:
         print("\n⊙ Skipping workloads (--analyze-only mode)")
     

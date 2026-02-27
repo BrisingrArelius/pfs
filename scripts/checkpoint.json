@@ -1,0 +1,19 @@
+{
+    "large_contiguous_write_heavy_freq_1gb_hdd_run1": true,
+    "large_contiguous_write_heavy_freq_1gb_hdd_run2": true,
+    "large_contiguous_write_heavy_freq_1gb_hdd_run3": true,
+    "large_contiguous_write_heavy_freq_1gb_hdd_run4": true,
+    "large_contiguous_write_heavy_freq_1gb_hdd_run5": true,
+    "large_contiguous_write_heavy_freq_10gb_hdd_run1": true,
+    "large_contiguous_write_heavy_freq_10gb_hdd_run2": true,
+    "large_contiguous_write_heavy_freq_10gb_hdd_run3": true,
+    "large_contiguous_write_heavy_freq_10gb_hdd_run4": true,
+    "large_contiguous_write_heavy_freq_10gb_hdd_run5": true,
+    "large_contiguous_read_heavy_freq_1gb_hdd_run1": true,
+    "large_contiguous_read_heavy_freq_1gb_hdd_run2": true,
+    "large_contiguous_read_heavy_freq_1gb_hdd_run3": true,
+    "large_contiguous_read_heavy_freq_1gb_hdd_run4": true,
+    "large_contiguous_read_heavy_freq_1gb_hdd_run5": true,
+    "large_contiguous_read_heavy_freq_10gb_hdd_run1": true,
+    "last_updated": "2026-02-27 15:14:45"
+}
