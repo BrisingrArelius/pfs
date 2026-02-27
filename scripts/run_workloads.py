@@ -51,8 +51,9 @@ PARSE_SCRIPT     = os.path.join(SCRIPT_DIR, "parse_darshan.py")
 WORKLOAD_TIMEOUT = 600  # 10 minutes in seconds
 MAX_RETRIES = 2  # Total attempts per profile (original + 1 retry)
 
-# Error logging
+# Error logging and checkpoint tracking
 ERROR_LOG_FILE = os.path.join(SCRIPT_DIR, "errors.log")
+CHECKPOINT_FILE = os.path.join(SCRIPT_DIR, "checkpoint.json")
 
 # Storage pool configurations
 STORAGE_POOLS = {
@@ -127,6 +128,41 @@ def init_error_log():
         print(f"WARNING: Failed to initialize error log: {e}")
 
 
+def load_checkpoint():
+    """Load checkpoint data from file."""
+    if not os.path.exists(CHECKPOINT_FILE):
+        return {}
+    try:
+        with open(CHECKPOINT_FILE, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"WARNING: Failed to load checkpoint: {e}")
+        return {}
+
+
+def save_checkpoint(checkpoint_data):
+    """Save checkpoint data to file."""
+    try:
+        with open(CHECKPOINT_FILE, 'w') as f:
+            json.dump(checkpoint_data, f, indent=2)
+    except Exception as e:
+        print(f"WARNING: Failed to save checkpoint: {e}")
+
+
+def is_run_completed(checkpoint, profile_name, storage_type, run_index):
+    """Check if a specific run has been completed."""
+    key = f"{profile_name}_{storage_type}_run{run_index}"
+    return checkpoint.get(key, False)
+
+
+def mark_run_completed(checkpoint, profile_name, storage_type, run_index):
+    """Mark a specific run as completed in checkpoint."""
+    key = f"{profile_name}_{storage_type}_run{run_index}"
+    checkpoint[key] = True
+    checkpoint["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_checkpoint(checkpoint)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Compile posix_synthetic_workload.c, run profiles, parse Darshan logs."
@@ -176,6 +212,16 @@ def parse_args():
         "--dry-run",
         action="store_true",
         help="Print what would be run without executing anything"
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from checkpoint - skip already completed runs"
+    )
+    parser.add_argument(
+        "--reset-checkpoint",
+        action="store_true",
+        help="Clear checkpoint file and start fresh"
     )
     return parser.parse_args()
 
@@ -562,6 +608,24 @@ def main():
 
     modules = args.modules if args.modules else DEFAULT_MODULES
 
+    # Handle checkpoint reset
+    if args.reset_checkpoint:
+        if os.path.exists(CHECKPOINT_FILE):
+            os.remove(CHECKPOINT_FILE)
+            print(f"✓ Checkpoint cleared: {CHECKPOINT_FILE}")
+        else:
+            print("No checkpoint file found.")
+        return
+
+    # Load checkpoint
+    checkpoint = load_checkpoint() if args.resume else {}
+    if args.resume:
+        completed_runs = len([k for k in checkpoint.keys() if k != "last_updated"])
+        print(f"📍 Resume mode: Found {completed_runs} completed runs in checkpoint")
+        if "last_updated" in checkpoint:
+            print(f"   Last updated: {checkpoint['last_updated']}")
+        print(f"   Checkpoint file: {CHECKPOINT_FILE}")
+
     # Initialize error logging
     init_error_log()
 
@@ -635,6 +699,16 @@ def main():
             print(f"{'*'*70}")
             
             for run_index in range(1, args.runs + 1):
+                # Check if this run is already completed (resume mode)
+                if is_run_completed(checkpoint, name, storage_type, run_index):
+                    print(f"\n{'='*50}")
+                    print(f"{name}  [{storage_type.upper()}]  (run {run_index}/{args.runs})")
+                    print(f"{'='*50}")
+                    print(f"  ⏭️  Skipping - already completed (resume mode)")
+                    completed += 1
+                    skipped += 1
+                    continue
+                
                 print(f"\n{'='*50}")
                 print(f"{name}  [{storage_type.upper()}]  (run {run_index}/{args.runs})")
                 print(f"{'='*50}")
@@ -661,6 +735,8 @@ def main():
                     
                     if success:
                         completed += 1
+                        # Mark as completed in checkpoint
+                        mark_run_completed(checkpoint, name, storage_type, run_index)
                         # Reset timeout failure counter on success
                         if profile_key in profile_timeout_failures:
                             profile_timeout_failures[profile_key] = 0
@@ -699,6 +775,8 @@ def main():
     print(f"Failed:    {failed}")
     print(f"Skipped:   {skipped}")
     print(f"Error log: {ERROR_LOG_FILE}")
+    if args.resume or checkpoint:
+        print(f"Checkpoint: {CHECKPOINT_FILE}")
 
 
 if __name__ == "__main__":
