@@ -630,10 +630,9 @@ def main():
                 print(f"{name}  [{storage_type.upper()}]  (run {run_index}/{args.runs})")
                 print(f"{'='*50}")
                 
-                # Clear caches before each run (except the very first run)
-                if not (completed == 0):
-                    print(f"\n  Clearing caches before {name} [{storage_type}] run {run_index}...")
-                    clear_caches(args.dry_run)
+                # Clear caches before every run for consistent cold-start measurements
+                print(f"\n  Clearing caches before {name} [{storage_type}] run {run_index}...")
+                clear_caches(args.dry_run)
                 
                 # Try up to MAX_RETRIES times
                 attempt = 0
