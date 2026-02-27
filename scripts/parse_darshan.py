@@ -246,77 +246,44 @@ def load_report(log_path):
 
 def extract_module(report, module_name):
     """
-    Extract per-file counter data for a given module.
-
-    Returns a DataFrame with one row per file and all counters for that module
-    as columns. Counters missing from the log are filled with NaN.
-    Returns None if the module has no records in this log.
+    Extract and aggregate counter data for a given module directly.
+    
+    Optimized: Skip per-file DataFrame creation, aggregate directly from raw data.
+    Returns aggregated dict (one value per counter) for global.csv only.
+    Returns dict with NaN values if the module has no records in this log.
     """
     cfg = MODULE_CONFIG[module_name]
     darshan_key = cfg["darshan_key"]
     counter_dict = cfg["counters"]
 
     if darshan_key not in report.modules:
-        print(f"  [{module_name.upper()}] No records found in log — filling with NaN.")
-        return None
+        return {counter: float("nan") for counter in counter_dict}
 
     report.mod_read_all_records(darshan_key)
     raw = report.records[darshan_key].to_df()
 
-    # raw is a dict with "counters" (int) and "fcounters" (float) DataFrames
-    # each has a column "id" identifying the file record
     counters_df  = raw.get("counters")
     fcounters_df = raw.get("fcounters")
 
-    if counters_df is not None and fcounters_df is not None:
-        per_file_df = pd.merge(counters_df, fcounters_df, on="id", suffixes=("", "_f"))
-    elif counters_df is not None:
-        per_file_df = counters_df
-    elif fcounters_df is not None:
-        per_file_df = fcounters_df
-    else:
-        print(f"  [{module_name.upper()}] Empty records — filling with NaN.")
-        return None
+    if counters_df is None and fcounters_df is None:
+        return {counter: float("nan") for counter in counter_dict}
 
-    # Keep only the counters we care about, filling missing ones with NaN
-    result_cols = {}
-    for counter in counter_dict:
-        if counter in per_file_df.columns:
-            result_cols[counter] = per_file_df[counter]
-        else:
-            print(f"  [{module_name.upper()}] Counter not found in log: {counter} — filling with NaN.")
-            result_cols[counter] = float("nan")
-
-    # Preserve file id for the per-run CSV
-    result_df = pd.DataFrame(result_cols)
-    if "id" in per_file_df.columns:
-        result_df.insert(0, "file_id", per_file_df["id"])
-
-    return result_df
-
-
-# =============================================================================
-# AGGREGATION
-# =============================================================================
-
-def aggregate_module(per_file_df, module_name):
-    """
-    Aggregate a per-file DataFrame into a single dict (one value per counter)
-    using the aggregation strategy defined in the counter config.
-    """
-    counter_dict = MODULE_CONFIG[module_name]["counters"]
+    # Directly aggregate without creating intermediate per-file DataFrames
     aggregated = {}
-
+    
     for counter, strategy in counter_dict.items():
-        if counter not in per_file_df.columns:
+        # Find counter in int or float dataframes
+        col = None
+        if counters_df is not None and counter in counters_df.columns:
+            col = counters_df[counter].dropna()
+        elif fcounters_df is not None and counter in fcounters_df.columns:
+            col = fcounters_df[counter].dropna()
+        
+        if col is None or col.empty:
             aggregated[counter] = float("nan")
             continue
 
-        col = per_file_df[counter].dropna()
-        if col.empty:
-            aggregated[counter] = float("nan")
-            continue
-
+        # Apply aggregation strategy
         if strategy == "sum":
             aggregated[counter] = col.sum()
         elif strategy == "max":
@@ -332,51 +299,8 @@ def aggregate_module(per_file_df, module_name):
 
 
 # =============================================================================
-# FILE NAMING
-# =============================================================================
-
-def build_run_csv_name(label, modules, output_dir):
-    """
-    Build a unique per-run CSV filename.
-    Format: {label}_{mod1_mod2}.csv
-    If the file already exists, append _1, _2, etc.
-    """
-    modules_str = "_".join(sorted(modules))
-    base_name = f"{label}_{modules_str}"
-    candidate = os.path.join(output_dir, f"{base_name}.csv")
-
-    if not os.path.exists(candidate):
-        return candidate
-
-    i = 1
-    while True:
-        candidate = os.path.join(output_dir, f"{base_name}_{i}.csv")
-        if not os.path.exists(candidate):
-            return candidate
-        i += 1
-
-
-# =============================================================================
 # CSV WRITING
 # =============================================================================
-
-def write_per_run_csv(per_file_dfs, label, timestamp, output_path):
-    """
-    Write per-file CSV for this run.
-    Columns: timestamp, label, file_id, <module counters...>
-    One row per file, only columns for requested modules.
-    """
-    combined = pd.concat(per_file_dfs, axis=1)
-
-    # Remove duplicate file_id columns from concat
-    combined = combined.loc[:, ~combined.columns.duplicated()]
-
-    combined.insert(0, "label", label)
-    combined.insert(0, "timestamp", timestamp)
-
-    combined.to_csv(output_path, index=False)
-    print(f"  Per-run CSV written: {output_path}")
-
 
 def write_global_csv(aggregated_row, output_dir):
     """
@@ -429,9 +353,8 @@ def main():
     # Load the Darshan log
     report = load_report(args.log)
 
-    # Extract and aggregate each requested module
-    per_file_dfs  = []   # for per-run CSV
-    aggregated_row = {   # for global CSV
+    # Extract and aggregate each requested module directly
+    aggregated_row = {
         "timestamp":    timestamp,
         "label":        args.label,
         "modules_used": "_".join(sorted(requested_modules)),
@@ -439,25 +362,10 @@ def main():
 
     for module in requested_modules:
         print(f"Extracting {module.upper()} counters...")
-        per_file_df = extract_module(report, module)
-
-        if per_file_df is not None:
-            per_file_dfs.append(per_file_df)
-            agg = aggregate_module(per_file_df, module)
-        else:
-            # Module not in log — all counters NaN
-            agg = {counter: float("nan") for counter in MODULE_CONFIG[module]["counters"]}
-
+        agg = extract_module(report, module)
         aggregated_row.update(agg)
 
-    # Write per-run CSV (only if we got any data)
-    if per_file_dfs:
-        run_csv_path = build_run_csv_name(args.label, requested_modules, output_dir)
-        write_per_run_csv(per_file_dfs, args.label, timestamp, run_csv_path)
-    else:
-        print("  No per-file data extracted — skipping per-run CSV.")
-
-    # Write to global CSV
+    # Write to global CSV only (skip per-run CSV for performance)
     write_global_csv(aggregated_row, output_dir)
 
     print("\nDone.")

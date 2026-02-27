@@ -41,7 +41,7 @@ get_pool_id() {
 # ---------------------------------------------------------------------------
 
 echo "=== Returning all targets to Default pool (ID ${DEFAULT_POOL_ID}) ==="
-if ! sudo beegfs-ctl --addstoragepooltargets --poolid="${DEFAULT_POOL_ID}" --targets="${ALL_TARGETS}" 2>&1; then
+if ! sudo beegfs-ctl --modifystoragepool --id="${DEFAULT_POOL_ID}" --addtargets="${ALL_TARGETS}" 2>&1; then
     echo "ERROR: failed to move targets back to Default pool." >&2
     echo "Some targets may still be assigned to hdd/ssd pools." >&2
     exit 1
