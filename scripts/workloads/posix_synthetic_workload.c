@@ -44,6 +44,7 @@
 #define PATTERN_SEQUENTIAL 0
 #define PATTERN_RANDOM 1
 #define PATTERN_STRIDED 2
+#define PATTERN_ND_STRIDED 3
 
 /* -------------------------------------------------------------------------
  * Profile — populated from CLI args
@@ -80,10 +81,10 @@ static char *make_buffer(long size)
 }
 
 /* -------------------------------------------------------------------------
- * Utility: retry write until all 'size' bytes are written.
+ * Utility: retry write until all 'size' bytes are written (inlined for speed).
  * Returns 0 on success, -1 on error (errno set by underlying write).
  * ---------------------------------------------------------------------- */
-static int full_write(int fd, const char *buf, long size)
+static inline int full_write(int fd, const char *buf, long size)
 {
     long remaining = size;
     while (remaining > 0)
@@ -101,10 +102,10 @@ static int full_write(int fd, const char *buf, long size)
 }
 
 /* -------------------------------------------------------------------------
- * Utility: retry read until all 'size' bytes are read or EOF.
+ * Utility: retry read until all 'size' bytes are read or EOF (inlined for speed).
  * Returns bytes actually read (< size only on EOF), -1 on error.
  * ---------------------------------------------------------------------- */
-static long full_read(int fd, char *buf, long size)
+static inline long full_read(int fd, char *buf, long size)
 {
     long total = 0;
     while (total < size)
@@ -124,17 +125,90 @@ static long full_read(int fd, char *buf, long size)
 }
 
 /* -------------------------------------------------------------------------
+ * Fast inline LCG random number generator (faster than rand_r)
+ * ---------------------------------------------------------------------- */
+static inline unsigned int fast_rand(unsigned int *seed)
+{
+    *seed = (*seed * 1103515245U + 12345U) & 0x7fffffffU;
+    return *seed;
+}
+
+/* -------------------------------------------------------------------------
  * Utility: random aligned block offset within [0, file_size - op_size].
  * Guarantees offset + op_size <= file_size.
  * ---------------------------------------------------------------------- */
-static long random_offset(long file_size, long op_size, unsigned int *seed)
+static inline long random_offset(long file_size, long op_size, unsigned int *seed)
 {
     /* Number of complete blocks that fit, starting from offset 0 */
     long num_blocks = (file_size - op_size) / op_size + 1;
     if (num_blocks <= 0)
         return 0;
-    long block = (long)(rand_r(seed) % (unsigned long)num_blocks);
+    long block = (long)(fast_rand(seed) % (unsigned long)num_blocks);
     return block * op_size;
+}
+
+/* -------------------------------------------------------------------------
+ * Utility: calculate next offset based on access pattern (inlined for speed)
+ * ---------------------------------------------------------------------- */
+static inline long calculate_offset(const Profile *p, long file_size,
+                                    long *sequential_offset, long *stride_cursor,
+                                    unsigned int *seed)
+{
+    long offset;
+
+    if (p->access_pattern == PATTERN_SEQUENTIAL)
+    {
+        offset = *sequential_offset;
+        *sequential_offset += p->op_size;
+        if (*sequential_offset + p->op_size > file_size)
+            *sequential_offset = 0; /* wrap for reads */
+    }
+    else if (p->access_pattern == PATTERN_RANDOM)
+    {
+        offset = random_offset(file_size, p->op_size, seed);
+    }
+    else if (p->access_pattern == PATTERN_STRIDED)
+    {
+        long raw = (*stride_cursor * p->stride_size) %
+                   (file_size > 0 ? file_size : p->stride_size);
+        offset = (raw / p->op_size) * p->op_size;
+        (*stride_cursor)++;
+    }
+    else /* PATTERN_ND_STRIDED */
+    {
+        long row_stride = p->stride_size;
+        long col_stride = p->op_size;
+
+        long total_blocks = file_size / p->op_size;
+        long cols = row_stride / p->op_size;
+        if (cols < 1)
+            cols = 1;
+        long rows = total_blocks / cols;
+        if (rows < 1)
+            rows = 1;
+
+        long idx = *stride_cursor;
+        long row, col;
+
+        if ((idx / (rows * cols)) % 2 == 0)
+        {
+            /* Row-major */
+            row = (idx / cols) % rows;
+            col = idx % cols;
+        }
+        else
+        {
+            /* Column-major */
+            col = (idx / rows) % cols;
+            row = idx % rows;
+        }
+
+        long raw = (row * row_stride + col * col_stride) % file_size;
+        offset = (raw / p->op_size) * p->op_size;
+        (*stride_cursor)++;
+    }
+
+    return offset;
 }
 
 /* -------------------------------------------------------------------------
@@ -160,28 +234,7 @@ static int do_write_phase(int fd, const Profile *p, long ops_in_phase,
 {
     for (long i = 0; i < ops_in_phase; i++)
     {
-        long offset;
-
-        if (p->access_pattern == PATTERN_SEQUENTIAL)
-        {
-            offset = *write_offset;
-            *write_offset += p->op_size;
-        }
-        else if (p->access_pattern == PATTERN_RANDOM)
-        {
-            /* Random overwrite within the fixed file extent */
-            offset = random_offset(file_size, p->op_size, seed);
-        }
-        else /* PATTERN_STRIDED */
-        {
-            /* Continuous stride index across phases.
-             * Round down to op_size boundary so the offset is always
-             * block-aligned even when stride_size is not a multiple of op_size. */
-            long raw = (*stride_cursor * p->stride_size) %
-                       (file_size > 0 ? file_size : p->stride_size);
-            offset = (raw / p->op_size) * p->op_size;
-            (*stride_cursor)++;
-        }
+        long offset = calculate_offset(p, file_size, write_offset, stride_cursor, seed);
 
         if (lseek(fd, offset, SEEK_SET) < 0)
         {
@@ -223,26 +276,7 @@ static int do_read_phase(int fd, const Profile *p, long ops_in_phase,
 {
     for (long i = 0; i < ops_in_phase; i++)
     {
-        long offset;
-
-        if (p->access_pattern == PATTERN_SEQUENTIAL)
-        {
-            offset = *read_offset;
-            *read_offset += p->op_size;
-            if (*read_offset + p->op_size > file_size)
-                *read_offset = 0; /* wrap */
-        }
-        else if (p->access_pattern == PATTERN_RANDOM)
-        {
-            offset = random_offset(file_size, p->op_size, seed);
-        }
-        else /* PATTERN_STRIDED */
-        {
-            long raw = (*stride_cursor * p->stride_size) %
-                       (file_size > 0 ? file_size : p->stride_size);
-            offset = (raw / p->op_size) * p->op_size;
-            (*stride_cursor)++;
-        }
+        long offset = calculate_offset(p, file_size, read_offset, stride_cursor, seed);
 
         if (lseek(fd, offset, SEEK_SET) < 0)
         {
@@ -310,8 +344,6 @@ static void run_setup(const Profile *p)
         free(buf);
         fsync(fd);
         close(fd);
-        printf("[setup] %s written (%ld ops x %ld bytes)\n",
-               filepath, w_ops, p->op_size);
     }
 }
 
@@ -517,10 +549,10 @@ int main(int argc, char *argv[])
         MPI_Finalize();
         return 1;
     }
-    if (p.access_pattern == PATTERN_STRIDED && p.stride_size <= 0)
+    if ((p.access_pattern == PATTERN_STRIDED || p.access_pattern == PATTERN_ND_STRIDED) && p.stride_size <= 0)
     {
         if (rank == 0)
-            fprintf(stderr, "stride_size must be >0 for strided access pattern\n");
+            fprintf(stderr, "stride_size must be >0 for strided or nd_strided access pattern\n");
         MPI_Finalize();
         return 1;
     }
@@ -546,8 +578,6 @@ int main(int argc, char *argv[])
     {
         if (p.mode == MODE_SETUP)
         {
-            if (rank == 0)
-                printf("[setup] metadata_heavy has no setup phase — nothing to do.\n");
             MPI_Finalize();
             return 0;
         }
@@ -567,12 +597,6 @@ int main(int argc, char *argv[])
     /* Workload mode: measured run */
     long total_read_ops = (long)(p.num_ops * p.read_ratio);
     long total_write_ops = p.num_ops - total_read_ops;
-
-    printf("[workload] %s read_ops=%ld write_ops=%ld op_size=%ld num_files=%d "
-           "num_phases=%d fsync_interval=%d access_pattern=%d\n",
-           p.profile_name, total_read_ops, total_write_ops,
-           p.op_size, p.num_files, p.num_phases,
-           p.fsync_interval, p.access_pattern);
 
     /* Distribute ops across files */
     long ops_per_file = p.num_ops / p.num_files;

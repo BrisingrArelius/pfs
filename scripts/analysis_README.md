@@ -46,6 +46,17 @@ This document explains how `analysis.py` works, what it analyzes, and how to int
   - **Why useful?** Reveals mixed access patterns (e.g., mostly sequential with periodic random seeks)
 
 **Derived metrics** (computed automatically):
+- **Bandwidth (MB/s)**:
+  - `POSIX_READ_BW_MBps` = `BYTES_READ / (1024*1024) / READ_DURATION`
+  - `POSIX_WRITE_BW_MBps` = `BYTES_WRITTEN / (1024*1024) / WRITE_DURATION`
+  - `POSIX_TOTAL_BW_MBps` = Combined read+write bandwidth
+
+- **Latency (milliseconds)**:
+  - `POSIX_READ_LATENCY_ms` = `(READ_DURATION * 1000) / READS`
+  - `POSIX_WRITE_LATENCY_ms` = `(WRITE_DURATION * 1000) / WRITES`
+  - `POSIX_OPEN_LATENCY_ms` = `(OPEN_DURATION * 1000) / OPENS`
+  - `POSIX_CLOSE_LATENCY_ms` = `(CLOSE_DURATION * 1000) / number of files closed`
+
 - **Duration windows**: 
   - `POSIX_OPEN_DURATION` = `END_TIMESTAMP - START_TIMESTAMP` for open operations
   - `POSIX_READ_DURATION` = Duration of all read operations (seconds)
@@ -307,13 +318,28 @@ def recommend_storage(counters):
 
 ## Usage Examples
 
-### Basic Usage
+### Single Storage Type Analysis
 
 ```bash
-python3 analysis.py --input ./darshan_output/global.csv
+python3 analysis.py --input ./output/hdd/global.csv --output-dir ./output/hdd/analysis
 ```
 
-Output in `./analysis_output/`
+Output in `./output/hdd/analysis/`
+
+### HDD vs SSD Comparison Mode
+
+```bash
+python3 analysis.py --hdd ./output/hdd/global.csv --ssd ./output/ssd/global.csv \
+    --output-dir ./analysis_output/comparison
+```
+
+Generates comparison visualizations:
+- **`heatmap_hdd_ssd_interleaved.png`** — Interleaved heatmap with HDD/SSD profiles side-by-side for direct comparison
+- **`bandwidth_comparison.png`** — 3-panel figure: Read BW, Write BW, Total BW (HDD orange, SSD metric-color)
+- **`latency_comparison.png`** — 4-panel figure: Read, Write, Open, Close latencies (auto log-scale)
+- **`performance_gains.png`** — Speedup factors (SSD/HDD for bandwidth) and latency reductions (HDD/SSD)
+
+Also generates individual analysis for both storage types in separate subdirectories.
 
 ### Custom Thresholds
 

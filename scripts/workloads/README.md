@@ -62,13 +62,14 @@ Running the same profile multiple times (`--runs N`) overwrites the setup file e
 
 | Value | Pattern | Behavior |
 |---|---|---|
-| `0` | `sequential` | Offset advances linearly by `op_size` each operation |
+| `0` | `sequential` / `contiguous` | Offset advances linearly by `op_size` each operation |
 | `1` | `random` | Offset is a uniformly random `op_size`-aligned block within `[0, file_size − op_size]` — guarantees no out-of-bounds access |
 | `2` | `strided` | Offset = `(global_op_index × stride_size) % file_size`, rounded down to the nearest `op_size` boundary to maintain block alignment |
+| `3` | `nd_strided` | Multi-dimensional strided access simulating 2D array traversal. Alternates between row-major and column-major access patterns to create complex cache behavior. Uses `stride_size` as row stride. |
 
 The setup write (mode `0`) is always sequential regardless of the profile's access pattern — only the measured workload run uses the configured pattern.
 
-For strided workloads the stride cursor is global across phases — each phase continues from where the previous one left off, so the stride sequence is never reset.
+For strided and nd_strided workloads, the stride cursor is global across phases — each phase continues from where the previous one left off, so the stride sequence is never reset.
 
 ### Phases
 
@@ -115,21 +116,52 @@ Total data volume = `num_ops × op_size`.
 Defines all workload classes. Each entry is a named profile with the parameters above.
 `run_workloads.py` reads this file and passes each profile's values directly to the binary as CLI args.
 
+### Size Variants
+
+**All profiles now use `file_size_gb` to automatically generate multiple size variants.**
+
+Profiles include a `file_size_gb` field to automatically generate multiple size variants:
+
+```json
+"my_profile": {
+    "read_ratio": 1.0,
+    "access_pattern": "contiguous",
+    "op_size": 4096,
+    "num_ops": 50000,              // IGNORED - overwritten by calculation
+    "file_size_gb": [1, 10]
+}
+```
+
+This will generate two variants:
+- `my_profile_1gb` — `num_ops` calculated to produce ~1 GB total I/O
+- `my_profile_10gb` — `num_ops` calculated to produce ~10 GB total I/O
+
+**The `num_ops` field in the JSON is ignored and overwritten.** It's only kept for backward compatibility.
+
+**Calculation:** `num_ops = (target_size_bytes) / op_size`
+
+For example:
+- **Large ops** (4 MB): 1 GB → 256 ops, 10 GB → 2,560 ops, 100 GB → 25,600 ops
+- **Small ops** (4 KB): 1 GB → 262,144 ops, 10 GB → 2,621,440 ops, 100 GB → 26,214,400 ops
+
+**Execution Order:** For each profile variant, all runs complete on HDD, then SSD, before moving to the next profile:
+```
+profile1_1gb: HDD run1-5, then SSD run1-5
+profile2_1gb: HDD run1-5, then SSD run1-5
+...
+profile1_10gb: HDD run1-5, then SSD run1-5
+profile2_10gb: HDD run1-5, then SSD run1-5
+```
+
+HDD runs append to `./output/hdd/global.csv`, SSD runs append to `./output/ssd/global.csv`.
+
 ### Defined Profiles
 
-| Profile | Pattern | `op_size` | `num_ops` | `read_ratio` | `num_phases` | Notes |
-|---|---|---|---|---|---|---|
-| `write_heavy` | sequential | 64 KB | 10,000 | 0.0 | 1 | Pure sequential writes |
-| `read_heavy` | sequential | 64 KB | 10,000 | 1.0 | 2 | Setup pass writes file; workload reads only |
-| `random_read` | random | 4 KB | 10,000 | 1.0 | 2 | Setup pass writes file; workload reads at random offsets |
-| `random_write` | random | 4 KB | 10,000 | 0.0 | 1 | Random-offset overwrites within fixed file extent |
-| `mixed_rw` | sequential | 64 KB | 10,000 | 0.5 | 8 | 8 alternating phases (W,R,W,R,W,R,W,R), `RW_SWITCHES=7` |
-| `strided_read` | strided | 64 KB | 10,000 | 1.0 | 2 | Setup pass writes file; workload reads at 512 KB stride |
-| `strided_write` | strided | 64 KB | 10,000 | 0.0 | 1 | Strided writes at 512 KB stride |
-| `large_io` | sequential | 10 MB | 100 | 0.5 | 2 | 50 writes then 50 reads; no setup pass (mixed profile) |
-| `small_io` | random | 512 B | 50,000 | 0.5 | 2 | Many tiny random ops; no setup pass (mixed profile) |
-| `metadata_heavy` | sequential | 4 KB | — | 0.0 | 1 | `num_files=1000`: create/stat/delete each file; `fsync` after every write |
-| `sync_heavy` | sequential | 64 KB | 10,000 | 0.0 | 1 | `fsync` after every write (`fsync_interval=1`) |
+**Base profiles: 19**  
+**Size variants per profile: 2** (1GB, 10GB)  
+**Total profile variants: 38**
+
+Current profiles include various I/O patterns (sequential, random, strided, nd_strided) with different read/write ratios, operation sizes, and phase configurations. See `profiles.json` for the complete list.
 
 ### Adding a New Profile
 

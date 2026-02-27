@@ -32,20 +32,17 @@ This project:
 ## Quick Start
 
 ```bash
-# Full pipeline: Run workloads on both HDD and SSD pools, then analyze
-python3 run_pipeline.py --runs 5
+# Run workloads on both HDD and SSD storage pools (recommended)
+python3 scripts/run_workloads.py --runs 5
 
-# HDD only (for testing)
-python3 run_pipeline.py --runs 3 --hdd-only
-
-# SSD only (for testing)
-python3 run_pipeline.py --runs 3 --ssd-only
-
-# Analyze existing data without re-running workloads
-python3 run_pipeline.py --analyze-only
+# Analyze and compare HDD vs SSD performance
+python3 scripts/analysis.py --hdd ./output/hdd/global.csv \
+    --ssd ./output/ssd/global.csv --output-dir ./analysis_output/comparison
 ```
 
-**Results:** All outputs in `output/hdd/` and `output/ssd/` directories.
+**Results:** 
+- Darshan data: `output/hdd/global.csv` and `output/ssd/global.csv`
+- Comparison analysis: `./analysis_output/comparison/`
 
 ---
 
@@ -53,23 +50,12 @@ python3 run_pipeline.py --analyze-only
 
 ```
 pfs/
-├── run_pipeline.py               # Main orchestration script
 ├── README.md                     # This file
-├── output/                       # All results (created by pipeline)
+├── output/                       # All results (created by scripts)
 │   ├── hdd/
-│   │   ├── darshan/             # HDD pool Darshan CSVs
-│   │   │   ├── global.csv       # One row per run, all counters
-│   │   │   └── *.csv            # Per-run, per-file details
-│   │   └── analysis/            # HDD pool analysis results
-│   │       ├── heatmap_all_counters.png
-│   │       ├── heatmap_stable_counters.png
-│   │       ├── bar_charts_discriminative.png
-│   │       ├── pca_clustering.png
-│   │       ├── statistics.csv
-│   │       └── means_only.csv
+│   │   └── global.csv           # HDD workload runs (one row per run)
 │   └── ssd/
-│       ├── darshan/             # SSD pool Darshan CSVs
-│       └── analysis/            # SSD pool analysis results
+│       └── global.csv           # SSD workload runs (one row per run)
 └── scripts/
     ├── run_workloads.py         # Compile, run, and parse workloads
     ├── parse_darshan.py         # Extract counters from Darshan logs
@@ -78,7 +64,7 @@ pfs/
     ├── analysis_README.md       # Analysis documentation
     ├── workloads/
     │   ├── posix_synthetic_workload.c  # C workload simulator
-    │   ├── profiles.json               # 11 workload definitions
+    │   ├── profiles.json               # 19 workload profiles (38 variants)
     │   └── README.md                   # Workload documentation
     └── pooling_scripts/         # BeeGFS pool management
         ├── configure_pools.sh   # Create HDD/SSD pools
@@ -125,18 +111,7 @@ pip install darshan pandas numpy matplotlib seaborn scikit-learn
 
 ## Workflow
 
-The pipeline handles everything automatically. For manual control, see individual script documentation.
-
-### Automated (Recommended)
-
-```bash
-# Full pipeline: HDD + SSD pools, 5 runs each
-python3 run_pipeline.py --runs 5
-```
-
-### Manual Steps
-
-If you need fine-grained control:
+### Recommended Workflow
 
 **1. Configure BeeGFS pools** (one-time setup):
 ```bash
@@ -144,35 +119,48 @@ cd scripts/pooling_scripts
 sudo ./configure_pools.sh
 ```
 
-**2. Run workloads on HDD pool:**
+**2. Run workloads on both storage pools:**
 ```bash
-python3 scripts/run_workloads.py --runs 5 \
-    --workload-dir /mnt/beegfs/advay/hdd/workloads/tmp \
-    --output output/hdd/darshan
+cd /home/arelius/pfs
+python3 scripts/run_workloads.py --runs 5
 ```
 
-**3. Run workloads on SSD pool:**
+This automatically:
+- Compiles the workload binary
+- Runs all 19 profiles × 2 size variants (1GB, 10GB) × 5 runs
+- For each profile variant: runs 1-5 on HDD, then runs 1-5 on SSD
+- Clears system caches between each run (2 minute sleep)
+- Parses Darshan logs and appends to `output/hdd/global.csv` and `output/ssd/global.csv`
+
+**3. Analyze and compare results:**
 ```bash
-python3 scripts/run_workloads.py --runs 5 \
-    --workload-dir /mnt/beegfs/advay/ssd/workloads/tmp \
-    --output output/ssd/darshan
+python3 scripts/analysis.py --hdd ./output/hdd/global.csv \
+    --ssd ./output/ssd/global.csv --output-dir ./analysis_output/comparison
 ```
 
-**4. Analyze results:**
-```bash
-python3 scripts/analysis.py --input output/hdd/darshan/global.csv \
-    --output-dir output/hdd/analysis
+### Manual Control (Advanced)
 
-python3 scripts/analysis.py --input output/ssd/darshan/global.csv \
-    --output-dir output/ssd/analysis
+If you need to run specific profiles or storage types:
+
+### Manual Control (Advanced)
+
+If you need to run specific profiles or storage types:
+
+```bash
+# Run only specific profiles
+python3 scripts/run_workloads.py --runs 5 --only large_contiguous_write_heavy_freq
+
+# Run fewer iterations for testing
+python3 scripts/run_workloads.py --runs 3
+
+# Analyze single storage type
+python3 scripts/analysis.py --input ./output/hdd/global.csv \
+    --output-dir ./output/hdd/analysis
 ```
 
-# Run (mode 1 = workload with Darshan instrumentation)
-mpirun -np 1 ./workloads/posix_synthetic_workload \
-    write_heavy 0.0 0 0 65536 10000 1 1 0 ./workloads/tmp 1
+**Note:** `run_workloads.py` automatically handles both HDD and SSD storage pools. To modify storage pool paths or behavior, edit the `STORAGE_POOLS` configuration at the top of `scripts/run_workloads.py`.
 
-# Parse
-python parse_darshan.py --log /path/to/log.darshan --label write_heavy --posix
+---
 ```
 
 **Output:**

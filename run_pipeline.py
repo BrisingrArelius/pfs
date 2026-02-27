@@ -285,27 +285,48 @@ def stage_analyze_ssd():
 
 
 def stage_compare_results():
-    """Stage 4: Compare HDD vs SSD results."""
+    """Stage 4: Compare HDD vs SSD results with full visualization suite."""
     print("\n" + "="*80)
     print("STAGE 4: Comparing HDD vs SSD results")
     print("="*80)
     
-    hdd_csv = ANALYSIS_OUTPUT_HDD / "means_only.csv"
-    ssd_csv = ANALYSIS_OUTPUT_SSD / "means_only.csv"
+    hdd_csv = DARSHAN_OUTPUT_HDD / "global.csv"
+    ssd_csv = DARSHAN_OUTPUT_SSD / "global.csv"
     
     if not hdd_csv.exists() or not ssd_csv.exists():
-        print("ERROR: Analysis outputs not found")
-        return
+        print("ERROR: Darshan output CSVs not found")
+        print(f"  HDD: {hdd_csv} ({'exists' if hdd_csv.exists() else 'missing'})")
+        print(f"  SSD: {ssd_csv} ({'exists' if ssd_csv.exists() else 'missing'})")
+        return False
     
-    print("\nYou can now compare:")
-    print(f"  HDD: {ANALYSIS_OUTPUT_HDD}")
-    print(f"  SSD: {ANALYSIS_OUTPUT_SSD}")
-    print("\nKey files to compare:")
-    print("  - means_only.csv: Mean counter values per profile")
-    print("  - heatmap_all_counters.png: Visual comparison")
-    print("  - bar_charts_discriminative.png: Top predictors")
-    print("\nTo see differences in I/O behavior between HDD and SSD pools,")
-    print("compare the same workload profile across both outputs.")
+    # Create comparison output directory
+    comparison_output = OUTPUT_BASE / "comparison"
+    ensure_directory(comparison_output)
+    
+    # Run analysis in comparison mode to generate all visualizations
+    cmd = [
+        "python3", str(ANALYSIS_SCRIPT),
+        "--hdd", str(hdd_csv),
+        "--ssd", str(ssd_csv),
+        "--output-dir", str(comparison_output),
+        "--cv-threshold", "0.2",
+        "--top-n", "10"
+    ]
+    
+    run_command(cmd)
+    
+    print(f"\n✓ HDD vs SSD comparison complete")
+    print(f"\nResults in: {comparison_output}")
+    print("\nGenerated visualizations:")
+    print("  - heatmap_hdd_ssd_interleaved.png: Combined normalized heatmap")
+    print("  - bandwidth_comparison.png: Read/write/total bandwidth comparison")
+    print("  - latency_comparison.png: Open/close/read/write latency comparison")
+    print("  - performance_gains.png: Speedup and reduction quantification")
+    print("\nGenerated statistics:")
+    print("  - statistics.csv + means_only.csv: HDD detailed stats")
+    print("  - ssd_stats/statistics.csv + ssd_stats/means_only.csv: SSD detailed stats")
+    
+    return True
 
 
 # =============================================================================
@@ -397,7 +418,7 @@ Examples:
         print("\n⊙ Skipping workloads (--analyze-only mode)")
     
     # Stage 2: Parse (integrated into run_workloads.py)
-    # Stage 3: Analyze
+    # Stage 3: Analyze individual storage types (optional, for single-storage views)
     hdd_ok = ssd_ok = False
     
     if not args.ssd_only:
@@ -406,9 +427,16 @@ Examples:
     if not args.hdd_only:
         ssd_ok = stage_analyze_ssd()
     
-    # Stage 4: Compare
-    if hdd_ok and ssd_ok:
-        stage_compare_results()
+    # Stage 4: Compare (only if both HDD and SSD data exist)
+    if not args.hdd_only and not args.ssd_only:
+        # Check if we have data to compare
+        hdd_csv = DARSHAN_OUTPUT_HDD / "global.csv"
+        ssd_csv = DARSHAN_OUTPUT_SSD / "global.csv"
+        
+        if hdd_csv.exists() and ssd_csv.exists():
+            stage_compare_results()
+        else:
+            print("\n⊙ Skipping comparison - need both HDD and SSD data")
     
     elapsed = time.time() - start_time
     print("\n" + "="*80)
