@@ -191,7 +191,7 @@ def stage_run_workloads_hdd(num_runs):
     cmd = [
         "python3", str(RUN_WORKLOADS_SCRIPT),
         "--runs", str(num_runs),
-        "--output", str(DARSHAN_OUTPUT_HDD),
+        "--output-dir", str(DARSHAN_OUTPUT_HDD),
         "--workload-dir", str(WORKLOAD_DIR_HDD)
     ]
     
@@ -208,7 +208,7 @@ def stage_run_workloads_ssd(num_runs):
     cmd = [
         "python3", str(RUN_WORKLOADS_SCRIPT),
         "--runs", str(num_runs),
-        "--output", str(DARSHAN_OUTPUT_SSD),
+        "--output-dir", str(DARSHAN_OUTPUT_SSD),
         "--workload-dir", str(WORKLOAD_DIR_SSD)
     ]
     

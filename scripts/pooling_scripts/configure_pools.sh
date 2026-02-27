@@ -40,12 +40,14 @@ get_pool_id() {
     local desc="$1"
     sudo beegfs-ctl --liststoragepools 2>/dev/null \
         | awk -v d="$desc" '
-            /^[0-9]+/ {
+            /^[[:space:]]*[0-9]+/ {
                 # Pool ID is first field
                 pool_id = $1
-                # Description is everything after the first field
-                sub(/^[0-9]+[[:space:]]+/, "")
-                if ($0 == d) {
+                # Description is second field (skip leading spaces)
+                pool_desc = $2
+                # Trim whitespace from description
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", pool_desc)
+                if (pool_desc == d) {
                     print pool_id
                     exit
                 }
@@ -97,7 +99,7 @@ echo "SSD pool ID: ${SSD_POOL_ID}"
 
 echo ""
 echo "=== Assigning HDD targets (${HDD_TARGETS}) to pool ${HDD_POOL_ID} ==="
-if ! sudo beegfs-ctl --addstoragepooltargets --poolid="${HDD_POOL_ID}" --targets="${HDD_TARGETS}" 2>&1; then
+if ! sudo beegfs-ctl --modifystoragepool --id="${HDD_POOL_ID}" --addtargets="${HDD_TARGETS}" 2>&1; then
     echo "ERROR: failed to assign HDD targets to pool ${HDD_POOL_ID}." >&2
     echo "Verify that all target IDs in HDD_TARGETS exist and are accessible." >&2
     exit 1
@@ -105,7 +107,7 @@ fi
 
 echo ""
 echo "=== Assigning SSD targets (${SSD_TARGETS}) to pool ${SSD_POOL_ID} ==="
-if ! sudo beegfs-ctl --addstoragepooltargets --poolid="${SSD_POOL_ID}" --targets="${SSD_TARGETS}" 2>&1; then
+if ! sudo beegfs-ctl --modifystoragepool --id="${SSD_POOL_ID}" --addtargets="${SSD_TARGETS}" 2>&1; then
     echo "ERROR: failed to assign SSD targets to pool ${SSD_POOL_ID}." >&2
     echo "Verify that all target IDs in SSD_TARGETS exist and are accessible." >&2
     exit 1
