@@ -25,6 +25,8 @@
  *                 For pure-write/mixed profiles: writes and reads normally.
  */
 
+#define _GNU_SOURCE   /* required for O_DIRECT */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
