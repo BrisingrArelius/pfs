@@ -33,16 +33,18 @@ This project:
 
 ```bash
 # Run workloads on both HDD and SSD storage pools (recommended)
-python3 scripts/run_workloads.py --runs 5
+python3 run_pipeline.py --runs 5
 
-# Analyze and compare HDD vs SSD performance
-python3 scripts/analysis.py --hdd ./output/hdd/global.csv \
-    --ssd ./output/ssd/global.csv --output-dir ./analysis_output/comparison
+# Resume if interrupted
+python3 run_pipeline.py --runs 5 --resume
+
+# Analyze existing data only
+python3 run_pipeline.py --analyze-only
 ```
 
-**Results:** 
-- Darshan data: `output/hdd/global.csv` and `output/ssd/global.csv`
-- Comparison analysis: `./analysis_output/comparison/`
+**Results:**
+- Darshan data: `output/hdd/darshan/global.csv` and `output/ssd/darshan/global.csv`
+- Analysis output: `output/hdd/analysis/` and `output/ssd/analysis/`
 
 ---
 
@@ -50,34 +52,33 @@ python3 scripts/analysis.py --hdd ./output/hdd/global.csv \
 
 ```
 pfs/
-├── README.md                     # This file
-├── output/                       # All results (created by scripts)
+├── README.md
+├── run_pipeline.py              # Main entry point — runs full pipeline
+├── output/                      # All results (created by scripts)
 │   ├── hdd/
-│   │   └── global.csv           # HDD workload runs (one row per run)
+│   │   ├── darshan/
+│   │   │   └── global.csv      # HDD workload runs (one row per run)
+│   │   └── analysis/           # HDD analysis outputs
 │   └── ssd/
-│       └── global.csv           # SSD workload runs (one row per run)
+│       ├── darshan/
+│       │   └── global.csv      # SSD workload runs (one row per run)
+│       └── analysis/           # SSD analysis outputs
 └── scripts/
     ├── run_workloads.py         # Compile, run, and parse workloads
     ├── parse_darshan.py         # Extract counters from Darshan logs
     ├── analysis.py              # Statistical analysis & visualization
+    ├── checkpoint.json          # Resume state (auto-created)
     ├── parse_darshan_README.md  # Parser documentation
     ├── analysis_README.md       # Analysis documentation
     ├── workloads/
     │   ├── posix_synthetic_workload.c  # C workload simulator
-    │   ├── profiles.json               # 19 workload profiles (38 variants)
+    │   ├── profiles.json               # 19 workload profiles (57 variants)
     │   └── README.md                   # Workload documentation
     └── pooling_scripts/         # BeeGFS pool management
         ├── configure_pools.sh   # Create HDD/SSD pools
         └── reset_pools.sh       # Reset to default pool
 ```
 
----
-
-## Dependencies
-
-**Core tools:**
-- Python 3.8+
-- [pydarshan](https://github.com/darshan-hpc/darshan) — Darshan log parser
 ---
 
 ## Dependencies
@@ -92,8 +93,6 @@ pfs/
 - [scikit-learn](https://scikit-learn.org/) — Machine learning (PCA)
 - Darshan runtime library (MPI-enabled)
 - MPI compiler (`mpicc`, `mpirun`)
-
-**Installation:**
 
 ```bash
 pip install darshan pandas numpy matplotlib seaborn scikit-learn
@@ -121,49 +120,37 @@ sudo ./configure_pools.sh
 
 **2. Run workloads on both storage pools:**
 ```bash
-cd /home/arelius/pfs
-python3 scripts/run_workloads.py --runs 5
+python3 run_pipeline.py --runs 5
 ```
 
 This automatically:
-- Compiles the workload binary
-- Runs all 19 profiles × 2 size variants (1GB, 10GB) × 5 runs
-- For each profile variant: runs 1-5 on HDD, then runs 1-5 on SSD
-- Clears system caches between each run (2 minute sleep)
-- Parses Darshan logs and appends to `output/hdd/global.csv` and `output/ssd/global.csv`
+- Compiles the workload binary (with `O_DIRECT` for cache-bypass I/O)
+- Runs all 19 profiles × 3 size variants (100MB, 1GB, 10GB) × 5 runs on HDD, then SSD
+- Clears system caches before every run (2 minute stabilization wait)
+- Parses Darshan logs and appends to `output/hdd/darshan/global.csv` and `output/ssd/darshan/global.csv`
+
+**Resume if interrupted:**
+```bash
+python3 run_pipeline.py --runs 5 --resume
+```
 
 **3. Analyze and compare results:**
 ```bash
-python3 scripts/analysis.py --hdd ./output/hdd/global.csv \
-    --ssd ./output/ssd/global.csv --output-dir ./analysis_output/comparison
+python3 run_pipeline.py --analyze-only
 ```
 
 ### Manual Control (Advanced)
-
-If you need to run specific profiles or storage types:
-
-### Manual Control (Advanced)
-
-If you need to run specific profiles or storage types:
 
 ```bash
 # Run only specific profiles
-python3 scripts/run_workloads.py --runs 5 --only large_contiguous_write_heavy_freq
+python3 scripts/run_workloads.py --runs 5 --only large_contiguous_write_heavy_freq --storage-type hdd
 
 # Run fewer iterations for testing
-python3 scripts/run_workloads.py --runs 3
+python3 run_pipeline.py --runs 3
 
-# Analyze single storage type
-python3 scripts/analysis.py --input ./output/hdd/global.csv \
-    --output-dir ./output/hdd/analysis
-```
-
-**Note:** `run_workloads.py` automatically handles both HDD and SSD storage pools. To modify storage pool paths or behavior, edit the `STORAGE_POOLS` configuration at the top of `scripts/run_workloads.py`.
-
----
-```
-
-**Output:**
+# HDD or SSD only
+python3 run_pipeline.py --runs 5 --hdd-only
+python3 run_pipeline.py --runs 5 --ssd-only
 ```
 ---
 

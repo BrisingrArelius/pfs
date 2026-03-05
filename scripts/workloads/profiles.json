@@ -10,6 +10,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1048576000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -25,6 +26,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1048576000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -40,6 +42,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -55,6 +58,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1024000000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -70,6 +74,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -85,6 +90,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 838860800,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -100,6 +106,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1024000000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -115,6 +122,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 419430400,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -130,6 +138,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -145,6 +154,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 4096000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -160,6 +170,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1048576000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -175,6 +186,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1024000000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -190,6 +202,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1048576000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -205,6 +218,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 419430400,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -220,6 +234,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -235,6 +250,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -250,6 +266,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 20480000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -265,6 +282,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 838860800,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]
@@ -280,6 +298,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
+            0.1,
             1,
             10
         ]

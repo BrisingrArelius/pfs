@@ -4,7 +4,7 @@ This directory contains everything needed to simulate POSIX I/O workloads for Da
 Workloads are driven by a single C program (`posix_synthetic_workload.c`) and a JSON profile file (`profiles.json`).
 The runner script `run_workloads.py` (in the project root) compiles the binary, iterates over profiles, and invokes the Darshan parser automatically.
 
-> **Note:** `posix_synthetic_workload.c` uses raw POSIX syscalls (`open`/`read`/`write`/`lseek`/`fsync`).
+> **Note:** `posix_synthetic_workload.c` uses raw POSIX syscalls (`open`/`read`/`write`/`lseek`/`fsync`) with `O_DIRECT` to bypass the page cache and measure true storage throughput.
 > It only generates **POSIX module** data in Darshan logs. MPI-IO and STDIO workloads are not yet implemented.
 
 ---
@@ -99,13 +99,14 @@ This produces high `POSIX_OPENS`, `POSIX_STATS`, and `POSIX_FSYNCS` with minimal
 | Parameter | Type | Description |
 |---|---|---|
 | `read_ratio` | float 0.0–1.0 | Fraction of total ops that are reads |
-| `access_pattern` | `sequential` \| `random` \| `strided` | Access pattern (see above) |
-| `stride_size` | bytes | Distance between operation offsets (strided only) |
-| `op_size` | bytes | Size of each individual read or write |
-| `num_ops` | integer | Total number of I/O operations |
+| `access_pattern` | `sequential` \| `contiguous` \| `random` \| `strided` \| `nd_strided` | Access pattern (see above) |
+| `stride_size` | bytes | Distance between operation offsets (strided/nd_strided only) |
+| `op_size` | bytes | Size of each individual read or write. Must be a multiple of 4096 (required by `O_DIRECT`). |
+| `num_ops` | integer | Total number of I/O operations (overwritten when `file_size_gb` is used) |
 | `num_files` | integer | Spread ops across this many files |
 | `num_phases` | integer ≥ 1 | Number of alternating write/read phases |
 | `fsync_interval` | integer | Call `fsync()` every N writes (0 = never) |
+| `file_size_gb` | list of floats | Auto-generate size variants (e.g. `[0.1, 1, 10]` → 100MB, 1GB, 10GB) |
 
 Total data volume = `num_ops × op_size`.
 
@@ -118,7 +119,7 @@ Defines all workload classes. Each entry is a named profile with the parameters 
 
 ### Size Variants
 
-**All profiles now use `file_size_gb` to automatically generate multiple size variants.**
+**All profiles use `file_size_gb` to automatically generate multiple size variants.**
 
 Profiles include a `file_size_gb` field to automatically generate multiple size variants:
 
@@ -128,11 +129,12 @@ Profiles include a `file_size_gb` field to automatically generate multiple size 
     "access_pattern": "contiguous",
     "op_size": 4096,
     "num_ops": 50000,              // IGNORED - overwritten by calculation
-    "file_size_gb": [1, 10]
+    "file_size_gb": [0.1, 1, 10]
 }
 ```
 
-This will generate two variants:
+This will generate three variants:
+- `my_profile_100mb` — `num_ops` calculated to produce ~100 MB total I/O
 - `my_profile_1gb` — `num_ops` calculated to produce ~1 GB total I/O
 - `my_profile_10gb` — `num_ops` calculated to produce ~10 GB total I/O
 
@@ -141,25 +143,25 @@ This will generate two variants:
 **Calculation:** `num_ops = (target_size_bytes) / op_size`
 
 For example:
-- **Large ops** (4 MB): 1 GB → 256 ops, 10 GB → 2,560 ops, 100 GB → 25,600 ops
-- **Small ops** (4 KB): 1 GB → 262,144 ops, 10 GB → 2,621,440 ops, 100 GB → 26,214,400 ops
+- **Large ops** (4 MB): 100 MB → 25 ops, 1 GB → 256 ops, 10 GB → 2,560 ops
+- **Small ops** (4 KB): 100 MB → 25,600 ops, 1 GB → 262,144 ops, 10 GB → 2,621,440 ops
 
-**Execution Order:** For each profile variant, all runs complete on HDD, then SSD, before moving to the next profile:
+**Execution Order:** For each profile variant, all HDD runs complete first, then SSD:
 ```
-profile1_1gb: HDD run1-5, then SSD run1-5
-profile2_1gb: HDD run1-5, then SSD run1-5
+profile1_100mb: HDD run1-5, then SSD run1-5
+profile1_1gb:   HDD run1-5, then SSD run1-5
 ...
-profile1_10gb: HDD run1-5, then SSD run1-5
-profile2_10gb: HDD run1-5, then SSD run1-5
+profile2_100mb: HDD run1-5, then SSD run1-5
+...
 ```
 
-HDD runs append to `./output/hdd/global.csv`, SSD runs append to `./output/ssd/global.csv`.
+HDD runs append to `./output/hdd/darshan/global.csv`, SSD runs append to `./output/ssd/darshan/global.csv`.
 
 ### Defined Profiles
 
-**Base profiles: 19**  
-**Size variants per profile: 2** (1GB, 10GB)  
-**Total profile variants: 38**
+**Base profiles: 19**
+**Size variants per profile: 3** (100MB, 1GB, 10GB)
+**Total profile variants: 57**
 
 Current profiles include various I/O patterns (sequential, random, strided, nd_strided) with different read/write ratios, operation sizes, and phase configurations. See `profiles.json` for the complete list.
 
@@ -176,12 +178,15 @@ Add an entry to `profiles.json`:
     "num_ops":         20000,
     "num_files":       4,
     "num_phases":      2,
-    "fsync_interval":  0
+    "fsync_interval":  0,
+    "file_size_gb":    [0.1, 1, 10]
 }
 ```
 
 No code changes needed. Run with:
 
 ```bash
-python run_workloads.py --only my_workload --runs 5
+python3 run_pipeline.py --runs 5
+# or target just this profile:
+python3 scripts/run_workloads.py --only my_workload --runs 5
 ```

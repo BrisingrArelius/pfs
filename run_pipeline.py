@@ -414,8 +414,9 @@ Examples:
     
     start_time = time.time()
     
-    # Stage 0: Setup
-    stage_setup_directories()
+    # Stage 0: Setup (skip if analyze-only)
+    if not args.analyze_only:
+        stage_setup_directories()
     
     if args.setup_only:
         print("\n✓ Setup complete (--setup-only mode)")

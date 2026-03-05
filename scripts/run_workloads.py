@@ -263,13 +263,20 @@ def generate_size_variant(base_name, base_params, size_gb):
     
     # Calculate num_ops needed for target size
     target_bytes = size_gb * 1024 * 1024 * 1024
-    num_ops = target_bytes // op_size
+    num_ops = int(target_bytes // op_size)
     
     # Update parameters
     variant_params["num_ops"] = num_ops
     
-    # Generate variant name
-    variant_name = f"{base_name}_{size_gb}gb"
+    # Generate human-readable variant name
+    mb = size_gb * 1024
+    if mb < 1024:
+        size_label = f"{int(mb)}mb"
+    elif size_gb == int(size_gb):
+        size_label = f"{int(size_gb)}gb"
+    else:
+        size_label = f"{size_gb}gb"
+    variant_name = f"{base_name}_{size_label}"
     
     return (variant_name, variant_params)
 

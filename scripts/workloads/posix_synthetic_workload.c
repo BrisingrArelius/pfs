@@ -65,19 +65,23 @@ typedef struct
 } Profile;
 
 /* -------------------------------------------------------------------------
- * Utility: allocate and fill a buffer with deterministic data
+ * Utility: allocate and fill an O_DIRECT-compatible buffer.
+ * O_DIRECT requires buffers aligned to the filesystem block size (4096).
+ * Uses posix_memalign to guarantee 4096-byte alignment.
  * ---------------------------------------------------------------------- */
 static char *make_buffer(long size)
 {
-    char *buf = malloc(size);
-    if (!buf)
+    void *buf = NULL;
+    /* Align to 4096 — required for O_DIRECT */
+    if (posix_memalign(&buf, 4096, (size_t)size) != 0)
     {
-        fprintf(stderr, "malloc failed for buffer of size %ld\n", size);
+        fprintf(stderr, "posix_memalign failed for buffer of size %ld\n", size);
         exit(1);
     }
+    char *cbuf = (char *)buf;
     for (long i = 0; i < size; i++)
-        buf[i] = (char)(i & 0xFF);
-    return buf;
+        cbuf[i] = (char)(i & 0xFF);
+    return cbuf;
 }
 
 /* -------------------------------------------------------------------------
@@ -321,7 +325,7 @@ static void run_setup(const Profile *p)
 
         long file_size = w_ops * p->op_size;
 
-        int fd = open(filepath, O_RDWR | O_CREAT | O_TRUNC, 0644);
+        int fd = open(filepath, O_RDWR | O_CREAT | O_TRUNC | O_DIRECT, 0644);
         if (fd < 0)
         {
             fprintf(stderr, "setup: open failed for %s: %s\n", filepath, strerror(errno));
@@ -364,12 +368,12 @@ static void run_file_workload(const Profile *p, const char *filepath,
         file_size = (total_read_ops > 0 ? total_read_ops : p->num_ops) * p->op_size;
     }
 
-    /* Open flags */
+    /* Open flags — O_DIRECT bypasses page cache for true storage throughput */
     int flags;
     if (p->mode == MODE_WORKLOAD && p->read_ratio >= 1.0)
-        flags = O_RDONLY;
+        flags = O_RDONLY | O_DIRECT;
     else
-        flags = O_RDWR | O_CREAT | O_TRUNC;
+        flags = O_RDWR | O_CREAT | O_TRUNC | O_DIRECT;
 
     int fd = open(filepath, flags, 0644);
     if (fd < 0)
