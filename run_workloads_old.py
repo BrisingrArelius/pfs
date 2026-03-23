@@ -33,7 +33,6 @@ import subprocess
 import sys
 import time
 import signal
-import glob
 from datetime import datetime
 from pathlib import Path
 
@@ -49,7 +48,7 @@ WORKLOAD_BIN     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload_IOR.py"
 PARSE_SCRIPT     = os.path.join(SCRIPT_DIR, "parse_darshan.py")
 
 # Timeout configuration
-WORKLOAD_TIMEOUT = 1800  # 30 minutes in seconds
+WORKLOAD_TIMEOUT = 600  # 10 minutes in seconds
 MAX_RETRIES = 2  # Total attempts per profile (original + 1 retry)
 
 # Error logging and checkpoint tracking
@@ -68,11 +67,11 @@ STORAGE_POOLS = {
     }
 }
 
-DARSHAN_PRELOAD  = "/usr/local/lib/libdarshan.so.0.0.0"
-DARSHAN_LOG_DIR  = "/mnt/nfs_shared/darshan-logs"
+DARSHAN_PRELOAD  = "/usr/local/lib/libdarshan.so.0.0.0"  # ← update if different on your system
+DARSHAN_LOG_DIR  = "/mnt/nfs_shared/darshan-logs"  # ← Darshan's compiled-in path
 # MPI configuration
-MPICC            = "mpicc"
-MPIRUN           = "mpirun"
+MPICC            = "mpicc"                      # MPI C compiler
+MPIRUN           = "mpirun"                     # MPI launcher
 
 # Darshan modules to parse. metadata_heavy only touches POSIX.
 DEFAULT_MODULES  = ["posix"]
@@ -94,6 +93,7 @@ def log_error(message, profile_name=None, storage_type=None, run_index=None):
     """Log error to both console and error log file with timestamp."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
+    # Format the log message
     if profile_name:
         prefix = f"[{profile_name}"
         if storage_type:
@@ -105,8 +105,10 @@ def log_error(message, profile_name=None, storage_type=None, run_index=None):
     else:
         log_msg = f"{timestamp} {message}"
     
+    # Print to console
     print(f"ERROR: {log_msg}")
     
+    # Append to error log file
     try:
         with open(ERROR_LOG_FILE, 'a') as f:
             f.write(f"{log_msg}\n")
@@ -234,12 +236,13 @@ def compile_workload(dry_run):
         print("Dry run: skipping IOR version check")
         return True
 
-    import shutil
-    ior_path = shutil.which("ior")
-    if ior_path is None:
+    result = subprocess.run(["ior", "-v"], capture_output=True)
+    if result.returncode != 0:
         print("ERROR: IOR not found on PATH. Install IOR before running workloads.")
         return False
-    print(f"IOR found: {ior_path}\n")
+
+    version = result.stdout.decode().strip() or result.stderr.decode().strip()
+    print(f"IOR found: {version}\n")
 
     posix_bin = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload")
     if not os.path.isfile(posix_bin):
@@ -247,6 +250,7 @@ def compile_workload(dry_run):
         print(f"  Compile it with: mpicc -O2 -o {posix_bin} {WORKLOAD_SRC} -ldarshan -lpthread -lrt -lz")
 
     return True
+
 
 
 # =============================================================================
@@ -261,11 +265,14 @@ def generate_size_variant(base_name, base_params, size_gb):
     variant_params = base_params.copy()
     op_size = variant_params["op_size"]
     
+    # Calculate num_ops needed for target size
     target_bytes = size_gb * 1024 * 1024 * 1024
     num_ops = int(target_bytes // op_size)
     
+    # Update parameters
     variant_params["num_ops"] = num_ops
     
+    # Generate human-readable variant name
     mb = size_gb * 1024
     if mb < 1024:
         size_label = f"{int(mb)}mb"
@@ -296,25 +303,27 @@ def load_profiles(profiles_path, only=None):
         if only and name not in only:
             continue
         
+        # Validate access pattern
         if params["access_pattern"] not in ACCESS_PATTERN_MAP:
             print(f"Warning: unknown access_pattern '{params['access_pattern']}' "
                   f"in profile '{name}' — skipping.")
             continue
         
+        # Check if this profile has size variants
         if "file_size_gb" in params and isinstance(params["file_size_gb"], list):
+            # Generate a variant for each size
             size_variants = params["file_size_gb"]
             for size_gb in size_variants:
                 variant_name, variant_params = generate_size_variant(name, params, size_gb)
                 profiles.append((variant_name, variant_params))
         else:
+            # No variants, use profile as-is
             profiles.append((name, params))
 
     if only:
         found = {n for n, _ in profiles}
-        # Check against base names (before size variant suffix)
-        base_names_found = {"_".join(n.split("_")[:-1]) for n in found} | found
         for requested in only:
-            if requested not in base_names_found:
+            if requested not in found:
                 print(f"Warning: profile '{requested}' not found in {profiles_path}")
 
     return profiles
@@ -324,33 +333,26 @@ def load_profiles(profiles_path, only=None):
 # DARSHAN LOG DETECTION
 # =============================================================================
 
-def find_latest_darshan_log(before_time):
+def find_latest_darshan_log(before_files):
     """
-    Find the newest .darshan log written to DARSHAN_LOG_DIR after before_time.
-
-    before_time is a float timestamp (from time.time()) recorded just before
-    the workload run started. Only logs with mtime > before_time are considered,
-    ensuring we never pick up a stale log from a previous run.
-
+    Find the newest .darshan log written to DARSHAN_LOG_DIR since before_files snapshot.
     Darshan organizes logs by date: DARSHAN_LOG_DIR/YYYY/M/D/*.darshan
     """
-    # Wait briefly for filesystem to sync before scanning
-    time.sleep(1.0)
+    import glob
+    import time
     
+    # Wait briefly for filesystem to sync
+    time.sleep(0.5)
+    
+    # Search recursively for .darshan files
     all_logs = glob.glob(f"{DARSHAN_LOG_DIR}/**/*.darshan", recursive=True)
     
     if not all_logs:
         return None
     
-    # Filter to only logs created after the snapshot timestamp
-    new_logs = [l for l in all_logs if os.path.getmtime(l) > before_time]
-    
-    if not new_logs:
-        print(f"  WARNING: No new Darshan logs found after snapshot "
-              f"(checked {len(all_logs)} existing logs)")
-        return None
-    
-    return max(new_logs, key=os.path.getmtime)
+    # Filter to only newly created logs (compare by mtime)
+    # Since we can't track exact before_files in subdirs, just return the newest
+    return max(all_logs, key=os.path.getmtime)
 
 
 def needs_setup(params):
@@ -367,7 +369,7 @@ def needs_setup(params):
 
 
 def build_workload_cmd(name, params, mode, workload_dir):
-    """Build the CLI arg list for the IOR wrapper.
+    """Build the CLI arg list for the posix_synthetic_workload binary.
     
     For mode=0 (setup): run directly without MPI (no Darshan needed)
     For mode=1 (workload): run with mpirun -np 1 (Darshan requires MPI)
@@ -384,7 +386,7 @@ def build_workload_cmd(name, params, mode, workload_dir):
         str(params["num_files"]),
         str(params["num_phases"]),
         str(params["fsync_interval"]),
-        workload_dir,
+        workload_dir,  # Use passed directory instead of global
         str(mode),   # 0 = setup, 1 = workload
     ]
     
@@ -392,7 +394,7 @@ def build_workload_cmd(name, params, mode, workload_dir):
     if mode == 1:
         return [MPIRUN, "-np", "1"] + base_args
     else:
-        # Setup mode (mode=0): run directly, no MPI, no Darshan
+        # Setup mode (mode=0): run directly
         return base_args
 
 
@@ -409,6 +411,7 @@ def cleanup_workload_files(workload_dir, profile_name, dry_run=False):
         print(f"  [cleanup] Would remove files matching: {workload_dir}/workload_{profile_name}_f*")
         return
     
+    import glob
     pattern = os.path.join(workload_dir, f"workload_{profile_name}_f*")
     files = glob.glob(pattern)
     
@@ -427,10 +430,9 @@ def cleanup_workload_files(workload_dir, profile_name, dry_run=False):
         print(f"  [cleanup] Removed {removed_count} workload file(s) for {profile_name}")
 
 
-def run_with_timeout(cmd, timeout_seconds, label, env=None):
+def run_with_timeout(cmd, timeout_seconds, label):
     """
     Run a command with timeout. Kill process if it exceeds timeout.
-    env: optional environment dict — if None, inherits parent environment.
     
     Returns:
         tuple: (success: bool, timed_out: bool, returncode: int)
@@ -438,15 +440,16 @@ def run_with_timeout(cmd, timeout_seconds, label, env=None):
     print(f"  [{label}] Executing with {timeout_seconds}s timeout: {' '.join(cmd)}")
     
     try:
+        # Start process
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            preexec_fn=os.setsid,  # Create new process group for clean kill
-            env=env                 # None = inherit parent env
+            preexec_fn=os.setsid  # Create new process group for clean kill
         )
         
         try:
+            # Wait for completion with timeout
             stdout, stderr = process.communicate(timeout=timeout_seconds)
             
             if process.returncode != 0:
@@ -458,12 +461,15 @@ def run_with_timeout(cmd, timeout_seconds, label, env=None):
             return True, False, 0
             
         except subprocess.TimeoutExpired:
+            # Timeout occurred - kill entire process group
             print(f"  [{label}] TIMEOUT after {timeout_seconds}s - terminating process...")
             
             try:
+                # Kill process group (handles child processes too)
                 os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-                time.sleep(2)
+                time.sleep(2)  # Give it time to terminate gracefully
                 
+                # Force kill if still alive
                 if process.poll() is None:
                     os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                     process.wait(timeout=5)
@@ -499,6 +505,10 @@ def clear_caches(dry_run):
     subprocess.run(["sudo", "sync"], check=False)
     
     print("  [cache] Dropping page cache, dentries, and inodes...")
+    # echo 3 > /proc/sys/vm/drop_caches clears:
+    # 1 = page cache
+    # 2 = dentries and inodes
+    # 3 = both
     result = subprocess.run(
         ["sudo", "sh", "-c", "echo 3 > /proc/sys/vm/drop_caches"],
         check=False
@@ -508,7 +518,7 @@ def clear_caches(dry_run):
         print("  [cache] WARNING: Failed to drop caches (may need sudo privileges)")
     
     print("  [cache] Waiting 120 seconds for system to stabilize...")
-    time.sleep(120)  # Uncomment for real data collection runs
+    #time.sleep(120)
     print("  [cache] Cache clearing complete.\n")
 
 
@@ -521,13 +531,13 @@ def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_
     Run one profile once and parse the resulting Darshan log with timeout support.
 
     For profiles with read_ratio >= 1.0 (pure-read):
-      1. Run wrapper in mode 0 (setup) — writes files only,
+      1. Run binary in mode 0 (setup) — writes files only,
          no Darshan instrumentation, no log generated.
-      2. Run wrapper in mode 1 (workload) with mpirun -np 1 — measured run,
+      2. Run binary in mode 1 (workload) with mpirun -np 1 — measured run,
          reads from pre-existing files, Darshan records only the target I/O.
 
     For pure-write/mixed profiles (read_ratio < 1.0):
-      - Run wrapper in mode 1 directly with mpirun. No setup needed.
+      - Run binary in mode 1 directly with mpirun. No setup needed.
 
     metadata_heavy:
       - Always run in mode 1 directly. It manages its own files internally.
@@ -554,19 +564,11 @@ def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_
         print(f"  [{label}] Would run workload (MPI+Darshan): {' '.join(workload_cmd)}")
         print(f"  [{label}] Would parse: {' '.join(parse_cmd)}")
         return True, False
-    
-    #cleanup_workload_files(workload_dir, name, dry_run) # Clean up any leftover files from previous runs
 
     # --- Setup phase (no Darshan, no MPI) ---
     if setup_required:
-        
         print(f"  [{label}] Setup (no instrumentation): {' '.join(setup_cmd)}")
-        # Explicitly strip LD_PRELOAD so Darshan cannot attach to setup
-        setup_env = os.environ.copy()
-        setup_env.pop("LD_PRELOAD", None)
-        success, timed_out, returncode = run_with_timeout(
-            setup_cmd, WORKLOAD_TIMEOUT, label, env=setup_env
-        )
+        success, timed_out, returncode = run_with_timeout(setup_cmd, WORKLOAD_TIMEOUT, label)
         if timed_out:
             log_error(f"Setup timed out after {WORKLOAD_TIMEOUT}s", name, storage_type, run_index)
             return False, True
@@ -575,18 +577,9 @@ def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_
             return False, False
 
     # --- Workload phase (MPI + Darshan attached) ---
-    # Record timestamp BEFORE starting workload so we can filter Darshan logs
-    # to only those created by this specific run, not stale logs from previous runs.
-    before_time = time.time()
-
-    # Inject LD_PRELOAD so Darshan attaches to the IOR subprocess
-    workload_env = os.environ.copy()
-    workload_env["LD_PRELOAD"] = DARSHAN_PRELOAD
-    print(f"  [{label}] LD_PRELOAD={DARSHAN_PRELOAD}")
-
-    success, timed_out, returncode = run_with_timeout(
-        workload_cmd, WORKLOAD_TIMEOUT, label, env=workload_env
-    )
+    before_files = set(os.listdir(DARSHAN_LOG_DIR))
+    
+    success, timed_out, returncode = run_with_timeout(workload_cmd, WORKLOAD_TIMEOUT, label)
     if timed_out:
         log_error(f"Workload timed out after {WORKLOAD_TIMEOUT}s", name, storage_type, run_index)
         return False, True
@@ -595,10 +588,9 @@ def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_
         return False, False
 
     # --- Locate and parse the Darshan log ---
-    # Pass before_time so only logs newer than this run are considered
-    log_path = find_latest_darshan_log(before_time)
+    log_path = find_latest_darshan_log(before_files)
     if not log_path:
-        log_error(f"No Darshan log found in {DARSHAN_LOG_DIR} after run started", name, storage_type, run_index)
+        log_error(f"No Darshan log found in {DARSHAN_LOG_DIR}", name, storage_type, run_index)
         return False, False
 
     print(f"  [{label}] Log: {log_path}")
@@ -609,10 +601,11 @@ def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_
         return False, False
 
     # Cleanup: Remove Darshan log after successful parsing to save space
-    try:
-        os.remove(log_path)
-    except OSError as e:
-        print(f"  [{label}] Warning: Failed to remove Darshan log {log_path}: {e}")
+    if not dry_run:
+        try:
+            os.remove(log_path)
+        except OSError as e:
+            print(f"  [{label}] Warning: Failed to remove Darshan log {log_path}: {e}")
 
     return True, False
 
@@ -647,7 +640,7 @@ def main():
     # Initialize error logging
     init_error_log()
 
-    # Check IOR available and nd_strided binary exists
+    # Compile
     if not compile_workload(args.dry_run):
         sys.exit(1)
 
@@ -673,13 +666,21 @@ def main():
     failed = 0
     skipped = 0
     
+    # Track consecutive timeout failures per profile
     profile_timeout_failures = {}
 
+    # NEW EXECUTION ORDER:
+    # For each profile variant:
+    #   - Run 1-5 on HDD
+    #   - Run 1-5 on SSD
+    # Then move to next profile variant
+    
     for name, params in profiles:
         print(f"\n{'='*70}")
         print(f"Profile: {name}  ({args.runs} run(s) × {len(STORAGE_POOLS)} storage pools)")
         print(f"{'='*70}")
         
+        # Check if this profile should be skipped due to previous timeout failures
         profile_key = f"{name}"
         if profile_key in profile_timeout_failures and profile_timeout_failures[profile_key] >= MAX_RETRIES:
             skip_msg = f"Skipping profile '{name}' - exceeded {MAX_RETRIES} consecutive timeout failures"
@@ -689,6 +690,7 @@ def main():
             skipped += skipped_count
             continue
         
+        # Determine which storage types to run
         storage_types = [args.storage_type] if args.storage_type else ["hdd", "ssd"]
         
         for storage_type in storage_types:
@@ -696,6 +698,7 @@ def main():
             output_dir = args.output_dir if args.output_dir else storage_config["output_dir"]
             workload_dir = args.workload_dir if args.workload_dir else storage_config["workload_dir"]
             
+            # Ensure directories exist
             os.makedirs(output_dir, exist_ok=True)
             if not args.dry_run:
                 os.makedirs(workload_dir, exist_ok=True)
@@ -707,6 +710,7 @@ def main():
             print(f"{'*'*70}")
             
             for run_index in range(1, args.runs + 1):
+                # Check if this run is already completed (resume mode)
                 if is_run_completed(checkpoint, name, storage_type, run_index):
                     print(f"\n{'='*50}")
                     print(f"{name}  [{storage_type.upper()}]  (run {run_index}/{args.runs})")
@@ -724,6 +728,7 @@ def main():
                 print(f"\n  Clearing caches before {name} [{storage_type}] run {run_index}...")
                 clear_caches(args.dry_run)
                 
+                # Try up to MAX_RETRIES times
                 attempt = 0
                 success = False
                 timed_out = False
@@ -741,11 +746,14 @@ def main():
                     
                     if success:
                         completed += 1
+                        # Mark as completed in checkpoint
                         mark_run_completed(checkpoint, name, storage_type, run_index)
+                        # Reset timeout failure counter on success
                         if profile_key in profile_timeout_failures:
                             profile_timeout_failures[profile_key] = 0
                         break
                     elif timed_out:
+                        # Track consecutive timeout failures
                         profile_timeout_failures[profile_key] = profile_timeout_failures.get(profile_key, 0) + 1
                         
                         if profile_timeout_failures[profile_key] >= MAX_RETRIES:
@@ -754,16 +762,20 @@ def main():
                             log_error(skip_msg, name)
                             break
                     else:
+                        # Non-timeout failure - don't increment timeout counter
                         if attempt >= MAX_RETRIES:
                             failed += 1
                             log_error(f"Failed after {MAX_RETRIES} attempts", name, storage_type, run_index)
                 
+                # If all retries exhausted
                 if not success:
                     if timed_out and profile_timeout_failures.get(profile_key, 0) >= MAX_RETRIES:
+                        # Profile will be skipped - count as skipped
                         skipped += 1
                     else:
                         failed += 1
             
+            # Cleanup: Remove all workload files for this profile/storage after all runs complete
             print(f"\n  Cleaning up {name} [{storage_type}] workload files...")
             cleanup_workload_files(workload_dir, name, args.dry_run)
 

@@ -58,9 +58,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1024000000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1
         ]
     },
     "small_contiguous_read_heavy_freq": {
@@ -106,9 +104,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1024000000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1
         ]
     },
     "large_contiguous_write_heavy_seldom": {
@@ -186,9 +182,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1024000000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1
         ]
     },
     "large_strided_read_heavy_freq": {
@@ -266,9 +260,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 20480000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1
         ]
     },
     "large_strided_mixed_freq": {

@@ -43,8 +43,8 @@ WORKLOAD_DIR_SSD = BEEGFS_BASE / "ssd" / "workloads" / "tmp"
 
 # Output directories (Darshan CSVs and Analysis results)
 OUTPUT_BASE = BASE_DIR / "output"
-DARSHAN_OUTPUT_HDD = OUTPUT_BASE / "hdd" / "darshan"
-DARSHAN_OUTPUT_SSD = OUTPUT_BASE / "ssd" / "darshan"
+DARSHAN_OUTPUT_HDD = OUTPUT_BASE / "hdd" #/ "darshan"
+DARSHAN_OUTPUT_SSD = OUTPUT_BASE / "ssd" #/ "darshan"
 
 # Analysis output directories
 ANALYSIS_OUTPUT_HDD = OUTPUT_BASE / "hdd" / "analysis"
