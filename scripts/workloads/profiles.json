@@ -88,9 +88,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 838860800,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1,1,10
         ]
     },
     "small_random_mixed_freq": {
@@ -134,9 +132,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1,1,10
         ]
     },
     "small_contiguous_write_heavy_seldom": {
@@ -290,9 +286,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1,1,10
         ]
     }
 }

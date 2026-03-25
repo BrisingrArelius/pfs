@@ -211,7 +211,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Parse a Darshan log and extract I/O counters to CSV."
     )
-    parser.add_argument("--log",        required=True,  help="Path to the .darshan log file")
+    parser.add_argument("--log",        required=False, help="Path to the .darshan log file")
+    parser.add_argument("--logs",       required=False, help="Comma-separated list of .darshan log files to aggregate")
     parser.add_argument("--label",      required=True,  help="Workload label (used in output filename)")
     parser.add_argument("--posix",      action="store_true", help="Extract POSIX counters")
     parser.add_argument("--mpi",        action="store_true", help="Extract MPI-IO counters")
@@ -223,8 +224,17 @@ def parse_args():
     if not any([args.posix, args.mpi, args.stdio]):
         parser.error("At least one of --posix, --mpi, --stdio must be specified.")
 
-    if not os.path.isfile(args.log):
+    if not args.log and not args.logs:
+        parser.error("Either --log or --logs must be specified.")
+
+    if args.log and not os.path.isfile(args.log):
         parser.error(f"Log file not found: {args.log}")
+
+    if args.logs:
+        for p in args.logs.split(','):
+            p = p.strip()
+            if p and not os.path.isfile(p):
+                parser.error(f"Log file not found: {p}")
 
     return args
 
@@ -350,20 +360,52 @@ def main():
     print(f"Modules: {', '.join(requested_modules)}")
     print(f"Output:  {output_dir}\n")
 
-    # Load the Darshan log
-    report = load_report(args.log)
+    # Load the Darshan log(s)
+    if args.logs:
+        log_paths = [p.strip() for p in args.logs.split(',') if p.strip()]
+    else:
+        log_paths = [args.log]
 
-    # Extract and aggregate each requested module directly
+    if not log_paths:
+        print("ERROR: No log paths provided.", file=sys.stderr)
+        sys.exit(1)
+
+    aggregated_rows = []
+    for log_path in log_paths:
+        report = load_report(log_path)
+        row = {}
+        for module in requested_modules:
+            print(f"Extracting {module.upper()} counters from {log_path}...")
+            row.update(extract_module(report, module))
+        aggregated_rows.append(row)
+
+    # Merge multiple log aggregates (sum/max/min/first behavior per counter)
+    merged = {}
+    for module in requested_modules:
+        counter_cfg = MODULE_CONFIG[module]["counters"]
+        for counter, strategy in counter_cfg.items():
+            values = [r.get(counter) for r in aggregated_rows if counter in r and not pd.isna(r.get(counter))]
+            if not values:
+                merged[counter] = float("nan")
+                continue
+
+            if strategy == "sum":
+                merged[counter] = sum(values)
+            elif strategy == "max":
+                merged[counter] = max(values)
+            elif strategy == "min":
+                merged[counter] = min(values)
+            elif strategy == "first":
+                merged[counter] = values[0]
+            else:
+                merged[counter] = float("nan")
+
     aggregated_row = {
         "timestamp":    timestamp,
         "label":        args.label,
         "modules_used": "_".join(sorted(requested_modules)),
     }
-
-    for module in requested_modules:
-        print(f"Extracting {module.upper()} counters...")
-        agg = extract_module(report, module)
-        aggregated_row.update(agg)
+    aggregated_row.update(merged)
 
     # Write to global CSV only (skip per-run CSV for performance)
     write_global_csv(aggregated_row, output_dir)

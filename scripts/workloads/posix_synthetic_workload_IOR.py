@@ -4,7 +4,8 @@ ior_workload_wrapper.py
 
 Drop-in replacement for posix_synthetic_workload.c.
 Translates the same 11 CLI arguments into IOR commands for POSIX workloads.
-nd_strided profiles are delegated to the original compiled C binary.
+nd_strided and strided profiles are delegated to the original compiled C binary
+by run_workloads.py — this wrapper never receives them.
 
 Usage (identical interface to posix_synthetic_workload):
     python3 ior_workload_wrapper.py <profile_name> <read_ratio> <access_pattern>
@@ -14,8 +15,8 @@ Usage (identical interface to posix_synthetic_workload):
 access_pattern integers:
     0 = sequential
     1 = random
-    2 = strided
-    3 = nd_strided  → delegated to posix_synthetic_workload binary
+    2 = strided    → handled by run_workloads.py, delegated to C binary directly
+    3 = nd_strided → handled by run_workloads.py, delegated to C binary directly
 
 mode:
     0 = SETUP    — write files only, no Darshan. Pure-read profiles only.
@@ -26,39 +27,34 @@ IOR flags used:
     -b <bytes>        block size  = op_size * ops_per_file  (total per-file data)
     -t <bytes>        transfer size = op_size               (per-op size)
     -s 1              one segment (all data in one contiguous block per file)
-    -F                file-per-process (each file independent, matches num_files)
     -w / -r           write / read
     -k                keep files after write (setup mode, or when read follows)
-    -C                reorder tasks for read (avoids cache hits — not needed for
-                      single-rank runs but kept for correctness)
     -z                random offsets (access_pattern == random)
     -i 1              one iteration (phases handled by multiple IOR invocations)
     -v                verbose output to stderr (useful for debugging)
-    --posix.odirect   bypass page cache (matches O_DIRECT in the C binary)
+    --posix.odirect   bypass page cache on writes (matches O_DIRECT in the C binary)
     -e                fsync on close (used when fsync_interval > 0)
-    -d <stride>       stride between tasks — used for strided pattern via
-                      offset calculation (see notes below on strided mapping)
 
-Strided pattern mapping:
-    IOR does not have a native strided-offset mode equivalent to the C binary's
-    (cursor * stride_size) % file_size formula. We approximate it by setting
-    the IOR offset increment to stride_size using --posix.stride, which causes
-    each transfer to start stride_size bytes after the previous one. This is
-    equivalent to the C binary's strided pattern when stride_size >= op_size.
-    When stride_size < op_size the pattern collapses to sequential — same
-    behavior as the C binary after op_size alignment rounding.
+Random geometry:
+    IOR randomizes offsets *within* a block, so blocksize must be > transfersize.
+    We use a single block sized to next_power_of_2(total_bytes + op_size) with
+    -s 1. The power-of-2 rounding means the actual file is slightly larger than
+    requested, but is the only way to satisfy IOR's -z constraint cleanly.
 
-nd_strided delegation:
-    IOR has no equivalent for the alternating row/column-major 2D traversal
-    implemented in posix_synthetic_workload.c. These profiles are passed
-    directly to the compiled C binary unchanged. The binary path is resolved
-    relative to this script's directory.
+    O_DIRECT is intentionally skipped on random reads — random offsets are not
+    guaranteed to be 4096-aligned internally in IOR, which causes MPI_Abort.
+    Cache is cleared before each run so cold-storage measurements remain valid.
+
+nd_strided / strided delegation:
+    run_workloads.py detects strided and nd_strided profiles and calls the C
+    binary directly via mpirun, bypassing this wrapper entirely. This avoids
+    the PMI_Init failure that occurs when the C binary is launched as a
+    subprocess of a Python process that is itself an MPI rank.
 """
 
 import os
 import sys
 import subprocess
-import math
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -66,10 +62,6 @@ import math
 
 # IOR binary — must be on PATH or set absolute path here
 IOR_BIN = "ior"
-
-# Fallback C binary for nd_strided profiles — relative to this script
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-POSIX_BIN  = os.path.join(SCRIPT_DIR, "posix_synthetic_workload")
 
 # Access pattern constants (mirrors the C binary)
 PATTERN_SEQUENTIAL = 0
@@ -112,31 +104,6 @@ def parse_args(argv):
 
 
 # ---------------------------------------------------------------------------
-# nd_strided delegation — pass all args straight to the C binary
-# ---------------------------------------------------------------------------
-
-def delegate_to_c_binary(argv):
-    """
-    Pass the original argv unchanged to posix_synthetic_workload.
-    Used for nd_strided profiles which IOR cannot replicate.
-    """
-    if not os.path.isfile(POSIX_BIN):
-        print(
-            f"ERROR: nd_strided profile requires the compiled C binary at:\n"
-            f"  {POSIX_BIN}\n"
-            f"Compile it first with: mpicc -O2 -o {POSIX_BIN} "
-            f"{POSIX_BIN}.c -ldarshan -lpthread -lrt -lz",
-            file=sys.stderr
-        )
-        sys.exit(1)
-
-    cmd = [POSIX_BIN] + argv[1:]
-    print(f"[nd_strided] Delegating to C binary: {' '.join(cmd)}", file=sys.stderr)
-    result = subprocess.run(cmd)
-    sys.exit(result.returncode)
-
-
-# ---------------------------------------------------------------------------
 # IOR command construction
 # ---------------------------------------------------------------------------
 
@@ -149,11 +116,6 @@ def ops_per_file(p):
     base = p["num_ops"] // p["num_files"]
     last = p["num_ops"] - base * (p["num_files"] - 1)
     return base, last
-
-
-def block_size(ops, p):
-    """Total bytes per file = ops * op_size."""
-    return ops * p["op_size"]
 
 
 def file_path(p, file_index):
@@ -182,28 +144,26 @@ def build_ior_base_flags(p, n_ops, is_write, is_read, keep_files):
 
     IOR geometry depends on access pattern:
 
-    Sequential / Strided:
+    Sequential:
       -t = op_size
       -b = op_size   (one transfer per block)
-      -s = n_ops     (number of blocks)
+      -s = n_ops     (number of blocks = number of ops)
 
     Random (-z):
       IOR randomizes offsets *within* a block, so blocksize must be > transfersize.
       We use:
         -t = op_size
-        -b = next_power_of_2(n_ops * op_size)   (whole file as one block, power-of-2)
+        -b = next_power_of_2(n_ops * op_size + op_size)  (whole file as one block)
         -s = 1
-      The power-of-2 rounding means the actual data written is slightly more
-      than requested but is the only way to satisfy IOR's -z constraint cleanly.
     """
     transfer = p["op_size"]
 
     if p["access_pattern"] == PATTERN_RANDOM:
-        # Block must be > transfer and power-of-2 for -z to work
         total = n_ops * p["op_size"]
         block = next_power_of_2(total + p["op_size"])  # +op_size ensures block > transfer
         segs  = 1
     else:
+        # Sequential
         block = p["op_size"]
         segs  = n_ops
 
@@ -213,19 +173,13 @@ def build_ior_base_flags(p, n_ops, is_write, is_read, keep_files):
         "-b", str(block),
         "-t", str(transfer),
         "-s", str(segs),
-        "-i", "1",          # one iteration per IOR call
-        "-v",               # verbose
-        # Note: -F (file-per-process) intentionally omitted. With mpirun -np 1
-        # there is only one rank so -F has no effect on parallelism, but it
-        # causes IOR to append a .00000000 rank suffix to the filepath which
-        # breaks the setup->workload file handoff. Without -F, IOR uses the
-        # exact path provided, matching what setup wrote.
+        "-i", "1",   # one iteration per IOR call — phases handled by caller loop
+        "-v",        # verbose output to stderr
     ]
 
-    # O_DIRECT only on writes — random read offsets from -z are not guaranteed
-    # to be 4096-aligned internally in IOR, causing MPI_Abort on read phases.
-    # Cache is cleared before each run so reads without O_DIRECT are still
-    # valid cold-storage measurements.
+    # O_DIRECT only on writes — random read offsets may not be 4096-aligned
+    # inside IOR, causing MPI_Abort. Caches are cleared before each run so
+    # omitting O_DIRECT on reads still gives valid cold-storage measurements.
     if is_write:
         flags.append("--posix.odirect")
 
@@ -240,27 +194,9 @@ def build_ior_base_flags(p, n_ops, is_write, is_read, keep_files):
     if p["fsync_interval"] > 0:
         flags.append("-e")
 
-    # Random access
+    # Random access — randomize offsets within the single large block
     if p["access_pattern"] == PATTERN_RANDOM:
         flags.append("-z")
-
-    # Strided access
-    if p["access_pattern"] == PATTERN_STRIDED:
-        flags += ["--posix.stride", str(p["stride_size"])]
-
-    return flags
-    if p["fsync_interval"] > 0:
-        flags.append("-e")
-
-    # Random access
-    if p["access_pattern"] == PATTERN_RANDOM:
-        flags.append("-z")
-
-    # Strided access — set offset stride via posix.stride
-    # IOR advances the file offset by posix.stride bytes between transfers.
-    # This approximates (cursor * stride_size) % file_size from the C binary.
-    if p["access_pattern"] == PATTERN_STRIDED:
-        flags += ["--posix.stride", str(p["stride_size"])]
 
     return flags
 
@@ -268,26 +204,19 @@ def build_ior_base_flags(p, n_ops, is_write, is_read, keep_files):
 def run_ior(flags, filepath, label="", use_mpi=True, env=None):
     """
     Execute one IOR invocation. Filepath is passed via -o.
-    IOR appends '.00000000' etc. to the path for file-per-process mode —
-    we strip this by using -o with the exact path and relying on -F with
-    a single rank (mpirun -np 1) so the suffix is always .00000000.
-    The C binary used a deterministic _f{N} suffix; we mirror that by
-    constructing the path ourselves and passing it directly.
 
-    use_mpi=True  -- wrap with mpirun -np 1 (workload mode, Darshan must attach)
-    use_mpi=False -- run IOR directly (setup mode, Darshan must NOT attach)
+    use_mpi=True  -- wrap with mpirun -np 1 (workload mode, Darshan attaches via
+                     MPI_Init/Finalize triggered by mpirun)
+    use_mpi=False -- run IOR directly (setup mode, Darshan must NOT attach;
+                     LD_PRELOAD is stripped by the caller before this call)
     """
     if use_mpi:
-        # Workload mode: wrap with mpirun so Darshan initializes properly via
-        # MPI_Init/Finalize. LD_PRELOAD is inherited from run_workloads.py.
         cmd = ["mpirun", "-np", "1"] + flags + ["-o", filepath]
     else:
-        # Setup mode: run IOR directly without mpirun so Darshan cannot
-        # initialize -- setup I/O must not appear in any Darshan log.
         cmd = flags + ["-o", filepath]
     tag = f"[{label}] " if label else ""
     print(f"{tag}IOR: {' '.join(cmd)}", file=sys.stderr)
-    result = subprocess.run(cmd, env=env)  # env=None means inherit parent env
+    result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
         print(f"{tag}IOR exited with code {result.returncode}", file=sys.stderr)
         sys.exit(result.returncode)
@@ -301,17 +230,17 @@ def plan_phases(p):
     """
     Reproduce the C binary's phase ordering logic:
       - Pure read  (workload mode): all phases are reads
-      - Pure write:                 all phases are writes (odd phases are no-ops)
+      - Pure write:                 all phases are writes
       - Mixed:                      even phases = write, odd phases = read
 
     Returns a list of "W" / "R" strings of length num_phases.
     """
-    phases = []
     if p["mode"] == MODE_WORKLOAD and p["read_ratio"] >= 1.0:
-        phases = ["R"] * p["num_phases"]
-    else:
-        for ph in range(p["num_phases"]):
-            phases.append("W" if ph % 2 == 0 else "R")
+        return ["R"] * p["num_phases"]
+
+    phases = []
+    for ph in range(p["num_phases"]):
+        phases.append("W" if ph % 2 == 0 else "R")
     return phases
 
 
@@ -342,11 +271,11 @@ def run_setup(p):
     """
     Write files to disk without Darshan (caller must not set LD_PRELOAD).
     Pure-read profiles need files pre-populated before the measured run.
-    Mixed/write profiles don't call setup — this is consistent with the
-    C binary's behavior (run_workloads.py only calls setup for read_ratio >= 1.0).
 
     Setup always writes sequentially regardless of access pattern, matching
-    the C binary's setup behavior.
+    the C binary's setup behavior. For random profiles, the file must be
+    written with the same power-of-2 block geometry used during the workload
+    phase, so IOR's -z random reads land within bounds.
     """
     os.makedirs(p["work_dir"], exist_ok=True)
 
@@ -354,25 +283,18 @@ def run_setup(p):
     clean_env = os.environ.copy()
     clean_env.pop("LD_PRELOAD", None)
 
-    base_ops, last_ops = ops_per_file(p)
-
-    # For pure-read, setup writes num_ops worth of data so the file is fully
-    # populated. This matches the C binary's run_setup() logic.
-    setup_write_ops = p["num_ops"]  # always write everything in setup
-
-    ops_per_f   = setup_write_ops // p["num_files"]
-    last_file_ops = setup_write_ops - ops_per_f * (p["num_files"] - 1)
+    setup_write_ops = p["num_ops"]
+    ops_per_f       = setup_write_ops // p["num_files"]
+    last_file_ops   = setup_write_ops - ops_per_f * (p["num_files"] - 1)
 
     for f in range(p["num_files"]):
         n_ops = last_file_ops if f == p["num_files"] - 1 else ops_per_f
         fp    = file_path(p, f)
 
-        # Setup writes only, always sequential (no -z, no --posix.stride),
-        # keeps files (-k) so workload mode can read them.
-        # Setup geometry mirrors build_ior_base_flags:
-        # random needs -b power_of_2 -s 1, others use -b op_size -s n_ops
+        # Match the workload geometry so the file is the right size:
+        # random profiles use a single power-of-2 block; others use n_ops blocks.
         if p["access_pattern"] == PATTERN_RANDOM:
-            total = n_ops * p["op_size"]
+            total       = n_ops * p["op_size"]
             setup_block = next_power_of_2(total + p["op_size"])
             setup_segs  = 1
         else:
@@ -388,21 +310,13 @@ def run_setup(p):
             "--posix.odirect",
             "-i", "1",
             "-w",
-            "-k",
+            "-k",   # keep file for workload mode
         ]
         run_ior(flags, fp, label=f"setup f{f}", use_mpi=False, env=clean_env)
 
-        # Verify file was created at expected path
         if not os.path.exists(fp):
             print(f"[setup f{f}] WARNING: expected file not found at {fp}",
                   file=sys.stderr)
-
-
-def _clean_env():
-    """Return a copy of the environment with LD_PRELOAD removed."""
-    env = os.environ.copy()
-    env.pop("LD_PRELOAD", None)
-    return env
 
 
 # ---------------------------------------------------------------------------
@@ -422,7 +336,7 @@ def run_workload(p):
 
     base_ops, last_ops = ops_per_file(p)
 
-    phases      = plan_phases(p)
+    phases       = plan_phases(p)
     write_phases = phases.count("W")
     read_phases  = phases.count("R")
 
@@ -430,22 +344,22 @@ def run_workload(p):
         n_ops = last_ops if f == p["num_files"] - 1 else base_ops
         fp    = file_path(p, f)
 
-        # Per-file read/write op counts (mirrors C binary integer distribution)
         f_read_ops  = int(n_ops * p["read_ratio"])
         f_write_ops = n_ops - f_read_ops
 
-        write_count = 0
-        read_count  = 0
+        write_count            = 0
+        read_count             = 0
+        cumulative_written_ops = 0
 
-        # For pure-read profiles, verify the setup file exists before proceeding
+        # Pure-read: verify setup file exists, treat all ops as already written
         if p["read_ratio"] >= 1.0:
             if not os.path.exists(fp):
                 print(f"ERROR: setup file not found: {fp} — was setup mode run first?",
                       file=sys.stderr)
                 sys.exit(1)
+            cumulative_written_ops = n_ops
 
         for ph_idx, phase_type in enumerate(phases):
-            is_last_phase = (ph_idx == len(phases) - 1)
 
             if phase_type == "W" and write_phases > 0:
                 ph_ops = ops_for_phase(
@@ -457,14 +371,12 @@ def run_workload(p):
                     write_count += 1
                     continue
 
-                # Keep file if a read phase follows, or if it's a pure-write
-                # profile (no reads will come, but workload cleans up at end)
-                keep = read_phases > 0
-
+                keep  = read_phases > 0
                 flags = build_ior_base_flags(p, ph_ops, is_write=True,
                                              is_read=False, keep_files=keep)
                 run_ior(flags, fp, label=f"{p['profile_name']} f{f} ph{ph_idx}(W)")
-                write_count += 1
+                write_count            += 1
+                cumulative_written_ops += ph_ops
 
             elif phase_type == "R" and read_phases > 0:
                 ph_ops = ops_for_phase(
@@ -476,11 +388,17 @@ def run_workload(p):
                     read_count += 1
                     continue
 
-                # Keep file only if more read phases follow for this file
-                remaining_reads = phases[ph_idx + 1:].count("R")
-                keep = remaining_reads > 0
+                # Cap to what's on disk — IOR aborts if it reads beyond file size
+                safe_read_ops = min(ph_ops, cumulative_written_ops)
+                if safe_read_ops <= 0:
+                    print(f"  WARNING: skipping read phase {ph_idx} — no data written yet",
+                          file=sys.stderr)
+                    read_count += 1
+                    continue
 
-                flags = build_ior_base_flags(p, ph_ops, is_write=False,
+                remaining_reads = phases[ph_idx + 1:].count("R")
+                keep  = remaining_reads > 0
+                flags = build_ior_base_flags(p, safe_read_ops, is_write=False,
                                              is_read=True, keep_files=keep)
                 run_ior(flags, fp, label=f"{p['profile_name']} f{f} ph{ph_idx}(R)")
                 read_count += 1
@@ -506,17 +424,22 @@ def main():
     if p["op_size"] <= 0 or p["num_ops"] <= 0 or p["num_phases"] < 1:
         print("ERROR: op_size and num_ops must be > 0; num_phases >= 1", file=sys.stderr)
         sys.exit(1)
-    if p["access_pattern"] in (PATTERN_STRIDED, PATTERN_ND_STRIDED) and p["stride_size"] <= 0:
-        print("ERROR: stride_size must be > 0 for strided/nd_strided patterns", file=sys.stderr)
-        sys.exit(1)
     if p["mode"] not in (MODE_SETUP, MODE_WORKLOAD):
         print("ERROR: mode must be 0 (setup) or 1 (workload)", file=sys.stderr)
         sys.exit(1)
 
-    # nd_strided: delegate entirely to the C binary
-    if p["access_pattern"] == PATTERN_ND_STRIDED:
-        delegate_to_c_binary(sys.argv)
-        # delegate_to_c_binary calls sys.exit() — never reaches here
+    # Strided and nd_strided should never reach this wrapper —
+    # run_workloads.py calls the C binary directly for these patterns.
+    # Guard here in case the wrapper is called standalone for debugging.
+    if p["access_pattern"] in (PATTERN_STRIDED, PATTERN_ND_STRIDED):
+        print(
+            f"ERROR: strided and nd_strided profiles must be run via the C binary.\n"
+            f"  run_workloads.py handles this automatically. If running manually:\n"
+            f"  mpirun -np 1 {os.path.join(os.path.dirname(os.path.abspath(__file__)), 'posix_synthetic_workload')} "
+            f"{' '.join(sys.argv[1:])}",
+            file=sys.stderr
+        )
+        sys.exit(1)
 
     os.makedirs(p["work_dir"], exist_ok=True)
 
