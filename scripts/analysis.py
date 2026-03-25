@@ -433,25 +433,31 @@ def plot_pca(stats, counter_cols, output_dir):
     reduced = pca.fit_transform(normalized)
     
     # Plot
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(16, 12))  # Bigger figure for better spread
     profiles = df_means.index.tolist()
-    
-    # Use different colors for each profile
-    colors = plt.cm.tab10(np.linspace(0, 1, len(profiles)))
+
+    # Use a better color palette
+    cmap = plt.cm.get_cmap('tab20', len(profiles))
     
     for i, profile in enumerate(profiles):
-        plt.scatter(reduced[i, 0], reduced[i, 1], 
-                   color=colors[i], s=200, alpha=0.7, 
-                   edgecolors='black', linewidth=1.5,
-                   label=profile)
-        plt.annotate(profile, (reduced[i, 0], reduced[i, 1]), 
-                    fontsize=10, ha='center', va='bottom',
-                    xytext=(0, 5), textcoords='offset points')
-    
-    plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=12)
-    plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)', fontsize=12)
-    plt.title('PCA: Workload Clustering Based on I/O Counters', fontsize=16, pad=20)
+        plt.scatter(
+            reduced[i, 0],
+            reduced[i, 1],
+            color=cmap(i),
+            s=250,                 # larger points
+            alpha=0.8,
+            edgecolors='black',
+            linewidth=1.2,
+            label=profile
+        )
+
+    plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=14)
+    plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)', fontsize=14)
+    plt.title('PCA: Workload Clustering Based on I/O Counters', fontsize=18, pad=20)
+
+    # Keep legend (this replaces labels)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+
     plt.grid(alpha=0.3)
     plt.tight_layout()
     
