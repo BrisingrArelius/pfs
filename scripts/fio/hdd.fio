@@ -1,0 +1,66 @@
+; hdd.fio
+; FIO job file — raw hardware benchmark for BeeGFS HDD storage pool
+;
+; Run via run_fio.sh, or directly:
+;   fio hdd.fio --output=results_hdd.json --output-format=json
+;
+; All jobs use O_DIRECT (no page-cache involvement) and fallocate to
+; pre-allocate files so the benchmark measures disk bandwidth, not
+; allocation overhead.  The [global] section sets values shared by
+; every job section below.
+
+[global]
+ioengine=libaio
+direct=1
+fallocate=posix
+group_reporting=1
+time_based=1
+runtime=60
+ramp_time=5
+
+; ── target directory injected by run_fio.sh via --directory=<path> ──
+; If running fio directly, pass:  fio hdd.fio --directory=/mnt/beegfs/hdd
+
+; ── file layout ─────────────────────────────────────────────────────
+; One 8 GiB file per job keeps the working set well above DRAM on
+; most nodes and forces real disk accesses even after warm-up.
+nrfiles=1
+filesize=8g
+
+; ── queue depth / parallelism ───────────────────────────────────────
+iodepth=32
+numjobs=4
+
+; ============================================================
+; Job 1 – Sequential Write  (sustained streaming bandwidth)
+; Large block, contiguous, measures raw write throughput.
+; ============================================================
+[seq_write]
+rw=write
+bs=1m
+stonewall
+
+; ============================================================
+; Job 2 – Sequential Read  (streaming read bandwidth)
+; ============================================================
+[seq_read]
+rw=read
+bs=1m
+stonewall
+
+; ============================================================
+; Job 3 – Random Write 4K  (IOPS-bound small-block writes)
+; Stress-tests seek / rotational latency on spinning disks.
+; ============================================================
+[rand_write_4k]
+rw=randwrite
+bs=4k
+stonewall
+
+; ============================================================
+; Job 4 – Random Read 4K  (IOPS-bound small-block reads)
+; ============================================================
+[rand_read_4k]
+rw=randread
+bs=4k
+stonewall
