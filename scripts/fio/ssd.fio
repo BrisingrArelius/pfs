@@ -21,7 +21,7 @@ ramp_time=5
 
 ; ── file layout ─────────────────────────────────────────────────────
 nrfiles=1
-filesize=8g
+filesize=1g
 
 ; ── queue depth / parallelism ───────────────────────────────────────
 iodepth=32
