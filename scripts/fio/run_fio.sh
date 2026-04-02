@@ -150,12 +150,16 @@ run_benchmark() {
     local out_json="${RESULTS_DIR}/${label}_${TS}.json"
     local out_txt="${RESULTS_DIR}/${label}_${TS}.txt"
 
-    echo "  Running fio... (this takes ~$(awk '/^runtime/{print $1+0}' RS='[ =\n]' "${jobfile}" | tail -1) sec per job + ramp time)"
+    echo "  Running fio... (runtime=60s per job + 5s ramp — ~${#}4 jobs × 65s ≈ 4-5 min total)"
+    echo "  Live status every 30s will appear below."
+    echo "  Full output → ${out_json}"
+    echo ""
 
     fio "${jobfile}" \
         --directory="${fio_work_dir}" \
         --output-format=json+,normal \
         --output="${out_json}" \
+        --status-interval=30 \
         |& tee "${out_txt}"
 
     local bw_read  bw_write  iops_read  iops_write
