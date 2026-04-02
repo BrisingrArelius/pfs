@@ -51,6 +51,22 @@ RUN_HDD=true
 RUN_SSD=true
 DROP_CACHE=true
 
+# Tracks every PFS scratch dir created so the trap can clean them all up
+FIO_SCRATCH_DIRS=()
+
+# ---------------------------------------------------------------------------
+# Trap — guaranteed cleanup of PFS scratch dirs on exit, error, or Ctrl-C
+# ---------------------------------------------------------------------------
+cleanup_scratch() {
+    for d in "${FIO_SCRATCH_DIRS[@]-}"; do
+        if [[ -n "${d}" && -d "${d}" ]]; then
+            echo "  [trap] Removing scratch dir: ${d}" >&2
+            rm -rf "${d}" || true
+        fi
+    done
+}
+trap cleanup_scratch EXIT INT TERM
+
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
@@ -123,9 +139,11 @@ run_benchmark() {
         exit 1
     fi
 
-    # Create a sub-directory so fio files don't collide with user data
-    local fio_work_dir="${dir}/fio_scratch"
+    # Create a user-namespaced scratch dir so parallel users don't collide.
+    # Registered in FIO_SCRATCH_DIRS so the EXIT trap cleans it up even on crash.
+    local fio_work_dir="${dir}/fio_scratch_${USER}"
     mkdir -p "${fio_work_dir}"
+    FIO_SCRATCH_DIRS+=("${fio_work_dir}")
 
     drop_caches
 
@@ -179,9 +197,11 @@ PYEOF
     echo "    JSON : ${out_json}"
     echo "    Text : ${out_txt}"
 
-    # Cleanup fio test files to free PFS space
+    # Normal (non-crash) cleanup of PFS scratch files
     echo "  Cleaning up fio scratch files..."
     rm -rf "${fio_work_dir}"
+    # Remove from the trap list so it doesn't double-delete
+    FIO_SCRATCH_DIRS=("${FIO_SCRATCH_DIRS[@]/"${fio_work_dir}"/}")
 }
 
 # ---------------------------------------------------------------------------

@@ -1,12 +1,12 @@
 ; ssd.fio
 ; FIO job file — raw hardware benchmark for BeeGFS SSD storage pool
 ;
-; Run via run_fio.sh, or directly:
-;   fio ssd.fio --output=results_ssd.json --output-format=json
+; Parameters are intentionally identical to hdd.fio so that results
+; are directly comparable (same iodepth, numjobs, block sizes, runtime).
 ;
-; SSDs tolerate much higher queue depths and random IOPS, so this
-; job file uses deeper queues and an additional mixed-IO job that
-; exercises the device more aggressively than the HDD variant.
+; Run via run_fio.sh, or directly:
+;   fio ssd.fio --directory=/mnt/beegfs/advay/ssd/fio_scratch_$USER \
+;               --output=results_ssd.json --output-format=json+
 
 [global]
 ioengine=libaio
@@ -18,20 +18,17 @@ runtime=60
 ramp_time=5
 
 ; ── target directory injected by run_fio.sh via --directory=<path> ──
-; If running fio directly, pass:  fio ssd.fio --directory=/mnt/beegfs/ssd
 
 ; ── file layout ─────────────────────────────────────────────────────
-; 8 GiB per job — large enough to avoid caching fully in DRAM.
 nrfiles=1
 filesize=8g
 
 ; ── queue depth / parallelism ───────────────────────────────────────
-; Higher queue depth suits NVMe/SSD latency characteristics.
-iodepth=64
+iodepth=32
 numjobs=4
 
 ; ============================================================
-; Job 1 – Sequential Write  (streaming bandwidth)
+; Job 1 – Sequential Write  (sustained streaming bandwidth)
 ; ============================================================
 [seq_write]
 rw=write
@@ -39,7 +36,7 @@ bs=1m
 stonewall
 
 ; ============================================================
-; Job 2 – Sequential Read  (streaming bandwidth)
+; Job 2 – Sequential Read  (streaming read bandwidth)
 ; ============================================================
 [seq_read]
 rw=read
@@ -47,7 +44,7 @@ bs=1m
 stonewall
 
 ; ============================================================
-; Job 3 – Random Write 4K  (IOPS / latency)
+; Job 3 – Random Write 4K  (IOPS-bound small-block writes)
 ; ============================================================
 [rand_write_4k]
 rw=randwrite
@@ -55,20 +52,9 @@ bs=4k
 stonewall
 
 ; ============================================================
-; Job 4 – Random Read 4K  (IOPS / latency)
+; Job 4 – Random Read 4K  (IOPS-bound small-block reads)
 ; ============================================================
 [rand_read_4k]
 rw=randread
-bs=4k
-stonewall
-
-; ============================================================
-; Job 5 – Mixed Random 70/30 Read/Write 4K
-; Simulates a database-like workload; highlights sustained
-; random performance under concurrent reads and writes.
-; ============================================================
-[rand_mixed_4k]
-rw=randrw
-rwmixread=70
 bs=4k
 stonewall
