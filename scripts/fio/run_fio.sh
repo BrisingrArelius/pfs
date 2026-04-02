@@ -139,9 +139,10 @@ run_benchmark() {
         exit 1
     fi
 
-    # Create a user-namespaced scratch dir so parallel users don't collide.
-    # Registered in FIO_SCRATCH_DIRS so the EXIT trap cleans it up even on crash.
-    local fio_work_dir="${dir}/fio_scratch_${USER}"
+    # Use the real user's name even when invoked with sudo, so the scratch
+    # dir is named consistently (fio_scratch_pfs not fio_scratch_root).
+    local real_user="${SUDO_USER:-${USER}}"
+    local fio_work_dir="${dir}/fio_scratch_${real_user}"
     mkdir -p "${fio_work_dir}"
     FIO_SCRATCH_DIRS+=("${fio_work_dir}")
 
@@ -150,55 +151,34 @@ run_benchmark() {
     local out_json="${RESULTS_DIR}/${label}_${TS}.json"
     local out_txt="${RESULTS_DIR}/${label}_${TS}.txt"
 
-    echo "  Running fio... (runtime=60s per job + 5s ramp — ~${#}4 jobs × 65s ≈ 4-5 min total)"
+    echo "  Running fio... (60s per job + 5s ramp — 4 jobs × 65s ≈ 4-5 min total)"
     echo "  Live status every 30s will appear below."
-    echo "  Full output → ${out_json}"
     echo ""
 
+    # --output-format=normal without --output=FILE: all fio output goes to
+    # stdout, which tee forwards to both the terminal and the txt file.
+    # (Using --output=FILE silently swallows everything including status-interval.)
     fio "${jobfile}" \
         --directory="${fio_work_dir}" \
-        --output-format=json+,normal \
-        --output="${out_json}" \
+        --output-format=normal \
         --status-interval=30 \
-        |& tee "${out_txt}"
+        2>&1 | tee "${out_txt}"
 
-    local bw_read  bw_write  iops_read  iops_write
-    # Parse aggregate bw/iops from the JSON for a quick summary line
+    # Append a clean summary extracted from the txt output
     if command -v python3 &>/dev/null; then
-        read -r bw_read bw_write iops_read iops_write < <(python3 - <<'EOF'
-import sys, json, pathlib, os
-f = os.environ.get("_FIO_JSON_PATH", "")
-try:
-    data = json.loads(pathlib.Path(f).read_text())
-    jobs = data.get("jobs", [])
-    br = sum(j["read"]["bw"] for j in jobs)
-    bw_r = sum(j["write"]["bw"] for j in jobs)
-    ir = sum(j["read"]["iops"] for j in jobs)
-    iw = sum(j["write"]["iops"] for j in jobs)
-    print(f"{br} {bw_r} {ir} {iw}")
-except Exception:
-    print("0 0 0 0")
-EOF
-        )
-        _FIO_JSON_PATH="${out_json}" python3 - <<'PYEOF' | tee -a "${out_txt}" || true
-import sys, json, pathlib, os
-f = os.environ.get("_FIO_JSON_PATH","")
-try:
-    data = json.loads(pathlib.Path(f).read_text())
-    print("\n── Aggregate summary ──────────────────────────────")
-    for j in data.get("jobs",[]):
-        r = j["read"];  w = j["write"]
-        print(f"  [{j['jobname']:20s}]  "
-              f"read: {r['bw']/1024:7.1f} MiB/s  {r['iops']:8.0f} IOPS  "
-              f"write: {w['bw']/1024:7.1f} MiB/s  {w['iops']:8.0f} IOPS")
-except Exception as e:
-    print(f"  (summary parse error: {e})")
+        python3 - "${out_txt}" <<'PYEOF' | tee -a "${out_txt}" || true
+import sys, re
+txt = open(sys.argv[1]).read()
+# Extract per-job bw/iops lines printed by fio normal format
+print("\n\u2500\u2500 Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500")
+for line in txt.splitlines():
+    if any(k in line for k in ["READ:", "WRITE:", "read:", "write:", "IOPS", "BW"]):
+        print(" ", line.strip())
 PYEOF
     fi
 
     echo ""
     echo "  Results saved:"
-    echo "    JSON : ${out_json}"
     echo "    Text : ${out_txt}"
 
     # Normal (non-crash) cleanup of PFS scratch files
@@ -214,6 +194,7 @@ PYEOF
 check_dep fio
 
 mkdir -p "${RESULTS_DIR}"
+chmod 777 "${RESULTS_DIR}" 2>/dev/null || true  # writable by both root and user
 
 echo "=== FIO Storage Hardware Benchmark ==="
 echo "  Timestamp : ${TS}"
