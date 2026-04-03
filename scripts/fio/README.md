@@ -5,43 +5,44 @@ These tests bypass the page cache (`O_DIRECT`) and Darshan instrumentation — p
 
 ---
 
-## Files
+## Modes of Operation
 
-| File | Description |
-|------|-------------|
-| `hdd.fio` | fio job file for HDD targets — 4 jobs, iodepth 32 |
-| `ssd.fio` | fio job file for SSD targets — 5 jobs, iodepth 64 |
-| `run_fio.sh` | Orchestration script — drops caches, runs both, saves results |
-| `results/` | Auto-created output directory (JSON + text per run) |
+The benchmark has two operating modes:
 
----
-
-## Quick Start
+### `1. Client Mode (--beegfs)` 
+Run this from a **Client Node**. It writes to the standard BeeGFS mountpoints. It writes output to the `results/` directory.
 
 ```bash
-# Run both HDD and SSD benchmarks (requires sudo for cache drop)
-sudo ./run_fio.sh \
-    --hdd-dir /mnt/beegfs/hdd \
-    --ssd-dir /mnt/beegfs/ssd
+./run_fio.sh --beegfs
 
-# HDD only
-sudo ./run_fio.sh --hdd-only --hdd-dir /mnt/beegfs/hdd
-
-# SSD only
-sudo ./run_fio.sh --ssd-only --ssd-dir /mnt/beegfs/ssd
-
-# Custom results directory
-sudo ./run_fio.sh --results-dir /tmp/fio_results \
-    --hdd-dir /mnt/beegfs/hdd \
-    --ssd-dir /mnt/beegfs/ssd
+# Optional Flags:
+# --hdd-dir /custom/hdd/path
+# --ssd-dir /custom/ssd/path
 ```
 
-Or run fio directly without the wrapper:
+### `2. Storage Mode (--ost)`
+Run this while logged directly into a **Storage Node (OST)**. It writes explicitly to the backend local drives, bypassing BeeGFS network and metadata entirely to gather raw baseline comparisons. It creates and saves files to the `ost_results/` directory.
 
 ```bash
-fio hdd.fio --directory=/mnt/beegfs/hdd/fio_scratch \
-    --output-format=json+ --output=results_hdd.json
+./run_fio.sh --ost
+
+# Optional Flags:
+# --hdd-ost-dir /local/hdd/mount  (Will automatically append 1, 2, 3, 4)
+# --ssd-ost-dir /local/nvme/mount (Will automatically append 1, 2, 3) 
 ```
+
+## Parsing the Results
+After running benchmarks, you can use the `parse_results.py` script to automatically parse, format, and generate side-by-side Speedup / Overhead comparison tables between arrays:
+
+```bash
+# Summarize the client node (BeeGFS) results
+python3 parse_results.py --beegfs
+
+# Summarize the storage node (OST) results (will auto-compare to BeeGFS if available)
+python3 parse_results.py --ost
+```
+
+This will automatically create a new `summary_comparison_YYYYMMDD_HHMMSS.txt` file alongside your raw logs in the targeted output directory.
 
 ---
 

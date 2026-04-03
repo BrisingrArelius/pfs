@@ -17,11 +17,13 @@
 #   ./run_fio.sh [OPTIONS]
 #
 # Options:
-#   --hdd-only          Run HDD benchmark only
-#   --ssd-only          Run SSD benchmark only
+#   --beegfs            Run BeeGFS cluster benchmark (Client mode)
+#   --ost               Run raw storage target benchmark (Storage mode)
 #   --hdd-dir PATH      Override HDD mount point  (default: /mnt/beegfs/advay/hdd)
 #   --ssd-dir PATH      Override SSD mount point  (default: /mnt/beegfs/advay/ssd)
-#   --results-dir PATH  Override results directory (default: ./results)
+#   --hdd-ost-dir PATH  Override HDD OST base mount (default: /mnt/hdd)
+#   --ssd-ost-dir PATH  Override SSD OST base mount (default: /mnt/nvme)
+#   --results-dir PATH  Override results directory (default: ./results or ./ost_results)
 #   --no-drop-cache     Skip dropping the page cache before each run
 #   -h, --help          Show this help
 #
@@ -43,12 +45,14 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 HDD_DIR="/mnt/beegfs/advay/hdd"
 SSD_DIR="/mnt/beegfs/advay/ssd"
+HDD_OST_DIR="/mnt/hdd"
+SSD_OST_DIR="/mnt/nvme"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${SCRIPT_DIR}/results"
 
-RUN_HDD=true
-RUN_SSD=true
+RUN_BEEGFS=false
+RUN_OST=false
 DROP_CACHE=true
 
 # Tracks every PFS scratch dir created so the trap can clean them all up
@@ -72,14 +76,16 @@ trap cleanup_scratch EXIT INT TERM
 # ---------------------------------------------------------------------------
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --hdd-only)      RUN_SSD=false; shift ;;
-        --ssd-only)      RUN_HDD=false; shift ;;
+        --beegfs)        RUN_BEEGFS=true; shift ;;
+        --ost)           RUN_OST=true; shift ;;
         --hdd-dir)       HDD_DIR="$2"; shift 2 ;;
         --ssd-dir)       SSD_DIR="$2"; shift 2 ;;
+        --hdd-ost-dir)   HDD_OST_DIR="$2"; shift 2 ;;
+        --ssd-ost-dir)   SSD_OST_DIR="$2"; shift 2 ;;
         --results-dir)   RESULTS_DIR="$2"; shift 2 ;;
         --no-drop-cache) DROP_CACHE=false; shift ;;
         -h|--help)
-            sed -n '14,36p' "$0" | sed 's/^# \?//'
+            sed -n '14,35p' "$0" | sed 's/^# \?//'
             exit 0
             ;;
         *)
@@ -116,16 +122,18 @@ drop_caches() {
 }
 
 run_benchmark() {
-    local label="$1"     # hdd | ssd
-    local dir="$2"       # mount point
+    local label="$1"       # hdd | ssd (job file to run)
+    local dir="$2"         # mount point
+    local out_prefix="$3"  # override output name (e.g. hdd_ost1)
+
     local jobfile="${SCRIPT_DIR}/${label}.fio"
 
     echo ""
     echo "════════════════════════════════════════════════════════"
-    echo "  Starting ${label^^} benchmark"
-    echo "  Target directory : ${dir}"
-    echo "  Job file         : ${jobfile}"
-    echo "  Results          : ${RESULTS_DIR}/${label}_${TS}.json"
+    echo "  Starting benchmark: ${out_prefix}"
+    echo "  Target directory  : ${dir}"
+    echo "  Job file          : ${jobfile}"
+    echo "  Results           : ${RESULTS_DIR}/${out_prefix}_${TS}.json"
     echo "════════════════════════════════════════════════════════"
 
     if [[ ! -f "${jobfile}" ]]; then
@@ -148,8 +156,8 @@ run_benchmark() {
 
     drop_caches
 
-    local out_json="${RESULTS_DIR}/${label}_${TS}.json"
-    local out_txt="${RESULTS_DIR}/${label}_${TS}.txt"
+    local out_json="${RESULTS_DIR}/${out_prefix}_${TS}.json"
+    local out_txt="${RESULTS_DIR}/${out_prefix}_${TS}.txt"
 
     echo "  Running fio... (60s per job + 5s ramp — 4 jobs × 65s ≈ 4-5 min total)"
     echo "  Live status every 30s will appear below."
@@ -193,15 +201,47 @@ PYEOF
 # ---------------------------------------------------------------------------
 check_dep fio
 
-mkdir -p "${RESULTS_DIR}"
-chmod 777 "${RESULTS_DIR}" 2>/dev/null || true  # writable by both root and user
+if [[ "${RUN_BEEGFS}" == "false" && "${RUN_OST}" == "false" ]]; then
+    echo "ERROR: You must specify --beegfs or --ost mode"
+    exit 1
+fi
 
 echo "=== FIO Storage Hardware Benchmark ==="
 echo "  Timestamp : ${TS}"
-echo "  Results   : ${RESULTS_DIR}"
 
-[[ "${RUN_HDD}" == "true" ]] && run_benchmark "hdd" "${HDD_DIR}"
-[[ "${RUN_SSD}" == "true" ]] && run_benchmark "ssd" "${SSD_DIR}"
+if [[ "${RUN_OST}" == "true" ]]; then
+    # In OST mode, we use ost_results and loop through the local disk paths
+    if [[ "${RESULTS_DIR}" == "${SCRIPT_DIR}/results" ]]; then
+        RESULTS_DIR="${SCRIPT_DIR}/ost_results"
+    fi
+    mkdir -p "${RESULTS_DIR}"
+    chmod 777 "${RESULTS_DIR}" 2>/dev/null || true
+
+    echo "  Mode      : OST (Bare Metal)"
+    echo "  Results   : ${RESULTS_DIR}"
+
+    # Loop all 4 HDDs
+    for i in {1..4}; do
+        run_benchmark "hdd" "${HDD_OST_DIR}${i}" "hdd_ost${i}"
+    done
+
+    # Loop all 3 NVMe SSDs
+    for i in {1..3}; do
+        run_benchmark "ssd" "${SSD_OST_DIR}${i}" "ssd_ost${i}"
+    done
+fi
+
+if [[ "${RUN_BEEGFS}" == "true" ]]; then
+    # In BeeGFS mode, we use the standard results dir
+    mkdir -p "${RESULTS_DIR}"
+    chmod 777 "${RESULTS_DIR}" 2>/dev/null || true
+
+    echo "  Mode      : BeeGFS (Client)"
+    echo "  Results   : ${RESULTS_DIR}"
+
+    run_benchmark "hdd" "${HDD_DIR}" "hdd"
+    run_benchmark "ssd" "${SSD_DIR}" "ssd"
+fi
 
 echo ""
 echo "=== All benchmarks complete ==="
