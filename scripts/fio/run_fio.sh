@@ -19,8 +19,12 @@
 # Options:
 #   --hdd-only          Run HDD benchmark only
 #   --ssd-only          Run SSD benchmark only
+#   --hdd-ost-only      Run HDD OST benchmark only
+#   --ssd-ost-only      Run SSD OST benchmark only
 #   --hdd-dir PATH      Override HDD mount point  (default: /mnt/beegfs/advay/hdd)
 #   --ssd-dir PATH      Override SSD mount point  (default: /mnt/beegfs/advay/ssd)
+#   --hdd-ost-dir PATH  Override HDD OST mount point (default: /mnt/ost/hdd)
+#   --ssd-ost-dir PATH  Override SSD OST mount point (default: /mnt/ost/ssd)
 #   --results-dir PATH  Override results directory (default: ./results)
 #   --no-drop-cache     Skip dropping the page cache before each run
 #   -h, --help          Show this help
@@ -43,12 +47,16 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 HDD_DIR="/mnt/beegfs/advay/hdd"
 SSD_DIR="/mnt/beegfs/advay/ssd"
+HDD_OST_DIR="/mnt/ost/hdd"
+SSD_OST_DIR="/mnt/ost/ssd"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${SCRIPT_DIR}/results"
 
 RUN_HDD=true
 RUN_SSD=true
+RUN_HDD_OST=false
+RUN_SSD_OST=false
 DROP_CACHE=true
 
 # Tracks every PFS scratch dir created so the trap can clean them all up
@@ -72,14 +80,18 @@ trap cleanup_scratch EXIT INT TERM
 # ---------------------------------------------------------------------------
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --hdd-only)      RUN_SSD=false; shift ;;
-        --ssd-only)      RUN_HDD=false; shift ;;
+        --hdd-only)      RUN_SSD=false; RUN_HDD_OST=false; RUN_SSD_OST=false; shift ;;
+        --ssd-only)      RUN_HDD=false; RUN_HDD_OST=false; RUN_SSD_OST=false; shift ;;
+        --hdd-ost-only)  RUN_HDD=false; RUN_SSD=false; RUN_HDD_OST=true; RUN_SSD_OST=false; shift ;;
+        --ssd-ost-only)  RUN_HDD=false; RUN_SSD=false; RUN_HDD_OST=false; RUN_SSD_OST=true; shift ;;
         --hdd-dir)       HDD_DIR="$2"; shift 2 ;;
         --ssd-dir)       SSD_DIR="$2"; shift 2 ;;
+        --hdd-ost-dir)   HDD_OST_DIR="$2"; shift 2 ;;
+        --ssd-ost-dir)   SSD_OST_DIR="$2"; shift 2 ;;
         --results-dir)   RESULTS_DIR="$2"; shift 2 ;;
         --no-drop-cache) DROP_CACHE=false; shift ;;
         -h|--help)
-            sed -n '14,36p' "$0" | sed 's/^# \?//'
+            sed -n '14,39p' "$0" | sed 's/^# \?//'
             exit 0
             ;;
         *)
@@ -202,6 +214,8 @@ echo "  Results   : ${RESULTS_DIR}"
 
 [[ "${RUN_HDD}" == "true" ]] && run_benchmark "hdd" "${HDD_DIR}"
 [[ "${RUN_SSD}" == "true" ]] && run_benchmark "ssd" "${SSD_DIR}"
+[[ "${RUN_HDD_OST}" == "true" ]] && run_benchmark "hdd" "${HDD_OST_DIR}"
+[[ "${RUN_SSD_OST}" == "true" ]] && run_benchmark "ssd" "${SSD_OST_DIR}"
 
 echo ""
 echo "=== All benchmarks complete ==="

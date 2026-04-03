@@ -25,8 +25,6 @@
  *                 For pure-write/mixed profiles: writes and reads normally.
  */
 
-#define _GNU_SOURCE   /* required for O_DIRECT */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,8 +41,7 @@
 #define MODE_WORKLOAD 1
 
 /* Access pattern constants */
-#define PATTERN_SEQUENTIAL 0#include errors detected. Please update your includePath. Squiggles are disabled for this translation unit (/home/pfs/advay/pfs/scripts/workloads/posix_synthetic_workload.c).C/C++(1696)
-cannot open source file "mpi.h"C/C++(1696)
+#define PATTERN_SEQUENTIAL 0
 #define PATTERN_RANDOM 1
 #define PATTERN_STRIDED 2
 #define PATTERN_ND_STRIDED 3
