@@ -10,9 +10,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 1048576000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            1
         ]
     },
     "large_contiguous_read_heavy_freq": {
@@ -42,9 +40,7 @@
         "fsync_interval": 0,
         "total_io_bytes": 204800000,
         "file_size_gb": [
-            0.1,
-            1,
-            10
+            0.1,1,10
         ]
     },
     "small_random_read_heavy_freq": {

@@ -371,7 +371,7 @@ def run_workload(p):
                     write_count += 1
                     continue
 
-                keep  = read_phases > 0
+                keep  = True #changed to true from read_phases > 0
                 flags = build_ior_base_flags(p, ph_ops, is_write=True,
                                              is_read=False, keep_files=keep)
                 run_ior(flags, fp, label=f"{p['profile_name']} f{f} ph{ph_idx}(W)")
@@ -397,20 +397,22 @@ def run_workload(p):
                     continue
 
                 remaining_reads = phases[ph_idx + 1:].count("R")
-                keep  = remaining_reads > 0
+                keep  = True #remaining_reads > 0
                 flags = build_ior_base_flags(p, safe_read_ops, is_write=False,
                                              is_read=True, keep_files=keep)
                 run_ior(flags, fp, label=f"{p['profile_name']} f{f} ph{ph_idx}(R)")
                 read_count += 1
 
     # Cleanup — remove all workload files after the measured run
-    for f in range(p["num_files"]):
+    '''for f in range(p["num_files"]):
         fp = file_path(p, f)
         if os.path.exists(fp):
             try:
                 os.remove(fp)
             except OSError as e:
-                print(f"Warning: cleanup failed for {fp}: {e}", file=sys.stderr)
+                print(f"Warning: cleanup failed for {fp}: {e}", file=sys.stderr)'''
+    # Cleanup handled by run_workloads.py via cleanup_workload_files()
+    # after OST layout has been logged.
 
 
 # ---------------------------------------------------------------------------

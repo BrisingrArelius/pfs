@@ -403,28 +403,29 @@ def build_workload_cmd(name, params, mode, workload_dir):
 
 def cleanup_workload_files(workload_dir, profile_name, dry_run=False):
     """
-    Remove all workload files in the workload_dir to free up cluster space.
+    Remove all workload files for a given profile to free up cluster space.
+    Matches pattern: workload_{profile_name}_f*
     """
     if dry_run:
-        print(f"  [cleanup] Would remove all files in: {workload_dir}")
+        print(f"  [cleanup] Would remove files matching: {workload_dir}/workload_{profile_name}_f*")
         return
-
-    files = glob.glob(os.path.join(workload_dir, "*"))
-
+    
+    pattern = os.path.join(workload_dir, f"workload_{profile_name}_f*")
+    files = glob.glob(pattern)
+    
     if not files:
         return
-
+    
     removed_count = 0
     for filepath in files:
-        if os.path.isfile(filepath):
-            try:
-                os.remove(filepath)
-                removed_count += 1
-            except OSError as e:
-                print(f"  [cleanup] Warning: Failed to remove {filepath}: {e}")
-
+        try:
+            os.remove(filepath)
+            removed_count += 1
+        except OSError as e:
+            print(f"  [cleanup] Warning: Failed to remove {filepath}: {e}")
+    
     if removed_count > 0:
-        print(f"  [cleanup] Removed {removed_count} workload file(s) from {workload_dir}")
+        print(f"  [cleanup] Removed {removed_count} workload file(s) for {profile_name}")
 
 
 def run_with_timeout(cmd, timeout_seconds, label, env=None):
@@ -604,7 +605,7 @@ def clear_caches(dry_run):
         print("  [cache] WARNING: Failed to drop caches (may need sudo privileges)")
     
     print("  [cache] Waiting 120 seconds for system to stabilize...")
-    #time.sleep(120)  # Uncomment for real data collection runs
+    time.sleep(120)  # Uncomment for real data collection runs
     print("  [cache] Cache clearing complete.\n")
 
 
@@ -870,10 +871,9 @@ def main():
                         skipped += 1
                     else:
                         failed += 1
-                print(f"\n  Cleaning up {name} [{storage_type}] workload files...")
-                cleanup_workload_files(workload_dir, name, args.dry_run)
             
-            
+            print(f"\n  Cleaning up {name} [{storage_type}] workload files...")
+            cleanup_workload_files(workload_dir, name, args.dry_run)
 
     print(f"\n{'='*70}")
     print(f"ALL RUNS COMPLETE")
