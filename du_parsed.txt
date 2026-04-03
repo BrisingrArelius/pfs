@@ -1,0 +1,30 @@
+
+--- Disk Usage Summary ---
+Reading from: du.txt
+
+🔴 MASSIVE DIRECTORIES (> 1 GiB)  [7 found]
+--------------------------------------------------
+    163G  /mnt/beegfs/dlio_runs
+    141G  /mnt/beegfs/S3DIO
+     64G  /mnt/beegfs/HACCIO_default_stripe_size
+     41G  /mnt/beegfs/s3d_runs
+     25G  /mnt/beegfs/dlio_test
+    2.5G  /mnt/beegfs/HACCIO_update_stripe_size_2
+    1.3G  /mnt/beegfs/iouring_test
+
+🟡 LARGE DIRECTORIES (> 1 MiB)    [9 found]
+--------------------------------------------------
+    799M  /mnt/beegfs/ior_results_extreme_nocache_backup
+    790M  /mnt/beegfs/ior_results_extreme_nocache
+    523M  /mnt/beegfs/mpich-install
+     41M  /mnt/beegfs/ior_test_batch16
+     22M  /mnt/beegfs/examples_qmc
+     16M  /mnt/beegfs/bigfileset
+    7.9M  /mnt/beegfs/llmfs
+    3.3M  /mnt/beegfs/ior_results_extreme
+    3.0M  /mnt/beegfs/ior_results_async
+
+🟢 SMALL DIRECTORIES (< 1 MiB)    [38 found]
+--------------------------------------------------
+ (Hiding smaller objects. See raw file for full list)
+

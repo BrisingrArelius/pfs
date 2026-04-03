@@ -1,0 +1,77 @@
+
+==============================================================
+  HDD_OST1  (hdd_ost1_20260403_224116)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE    172.0 MiB/s       170           —
+  seq_read            READ     170.0 MiB/s       167           —
+  rand_write_4k       WRITE     10.3 MiB/s      2.6k           —
+  rand_read_4k        WRITE    163.0 MiB/s       164           —
+  rand_read_4k        READ       1.9 MiB/s       489           —
+
+==============================================================
+  HDD_OST2  (hdd_ost2_20260403_224116)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE    136.0 MiB/s       133           —
+  seq_read            READ     142.0 MiB/s       139           —
+  rand_write_4k       WRITE     15.1 MiB/s      3.9k           —
+  rand_read_4k        WRITE    138.0 MiB/s       150           —
+  rand_read_4k        READ       1.8 MiB/s       456           —
+
+==============================================================
+  HDD_OST3  (hdd_ost3_20260403_224116)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE    148.0 MiB/s       145           —
+  seq_read            READ     175.0 MiB/s       172           —
+  rand_write_4k       WRITE      9.2 MiB/s      2.3k           —
+  rand_read_4k        WRITE    150.0 MiB/s       156           —
+  rand_read_4k        READ       1.9 MiB/s       481           —
+
+==============================================================
+  HDD_OST4  (hdd_ost4_20260403_224116)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE    128.0 MiB/s       125           —
+  seq_read            READ     158.0 MiB/s       156           —
+  rand_write_4k       WRITE      9.1 MiB/s      2.3k           —
+  rand_read_4k        WRITE    139.0 MiB/s       140           —
+  rand_read_4k        READ       1.8 MiB/s       455           —
+
+==============================================================
+  SSD_OST1  (ssd_ost1_20260403_224116)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE     4.62 GiB/s      4.7k           —
+  seq_read            READ      5.71 GiB/s      5.8k           —
+  rand_write_4k       WRITE     3.20 GiB/s    838.0k           —
+  rand_read_4k        WRITE     4.62 GiB/s      4.7k           —
+  rand_read_4k        READ      3.17 GiB/s    830.0k           —
+
+==============================================================
+  SSD_OST2  (ssd_ost2_20260403_224116)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE     4.62 GiB/s      4.7k           —
+  seq_read            READ      5.70 GiB/s      5.8k           —
+  rand_write_4k       WRITE     3.19 GiB/s    837.0k           —
+  rand_read_4k        WRITE     4.62 GiB/s      4.7k           —
+  rand_read_4k        READ      3.29 GiB/s    862.0k           —
+
+==============================================================
+  SSD_OST3  (ssd_ost3_20260403_224116)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE     4.65 GiB/s      4.8k           —
+  seq_read            READ      5.83 GiB/s      6.0k           —
+  rand_write_4k       WRITE     3.21 GiB/s    842.0k           —
+  rand_read_4k        WRITE     4.65 GiB/s      4.8k           —
+  rand_read_4k        READ      3.29 GiB/s    864.0k           —

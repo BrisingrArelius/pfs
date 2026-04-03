@@ -250,12 +250,20 @@ def main():
     out_file = target_dir / f"summary_comparison_{ts}.txt"
     target_dir.mkdir(exist_ok=True)
     
+    def pool_sort_key(p):
+        cat = 0 if p.startswith("HDD") else (1 if p.startswith("SSD") else 2)
+        m = re.search(r'\d+$', p)
+        return (cat, int(m.group()) if m else 0, p)
+        
+    sorted_pools = sorted(parsed.keys(), key=pool_sort_key)
+
     with open(out_file, "w") as fout:
-        for pool, (label, jobs) in parsed.items():
+        for pool in sorted_pools:
+            label, jobs = parsed[pool]
             print_summary(f"{pool}  ({label})", jobs, file=fout)
             print_summary(f"{pool}  ({label})", jobs, file=sys.stdout)
 
-        for p in parsed.keys():
+        for p in sorted_pools:
             if p.startswith("HDD_OST") and "HDD" in parsed:
                 _, ost = parsed[p]
                 _, hdd = parsed["HDD"]
