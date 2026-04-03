@@ -3,9 +3,9 @@
 parse_results.py — summarise fio result files from scripts/fio/results/
 
 Usage:
-    python3 parse_results.py                         # latest hdd + ssd txt files
+    python3 parse_results.py --beegfs                # latest hdd + ssd txt files in results/
+    python3 parse_results.py --ost                   # latest hdd + ssd txt files in ost_results/
     python3 parse_results.py results/hdd_*.txt       # specific file(s)
-    python3 parse_results.py --compare results/hdd_X.txt results/ssd_X.txt
 """
 
 import re
@@ -184,6 +184,15 @@ def latest_file(pattern: str) -> Path | None:
 
 def main():
     args = sys.argv[1:]
+    
+    target_dir = RESULTS_DIR
+    if "--ost" in args:
+        target_dir = RESULTS_DIR.parent / "ost_results"
+        args.remove("--ost")
+    elif "--beegfs" in args:
+        target_dir = RESULTS_DIR
+        args.remove("--beegfs")
+
     compare_mode = "--compare" in args
     if compare_mode:
         args.remove("--compare")
@@ -191,41 +200,73 @@ def main():
     if args:
         files = [Path(a) for a in args]
     else:
-        # Auto-detect latest hdd and ssd txt files
+        # Auto-detect latest hdd and ssd txt files from standard and ost dirs
         files = []
-        for prefix in ("hdd", "ssd", "hdd_ost", "ssd_ost"):
-            f = latest_file(f"{prefix}_*.txt")
-            if f:
-                files.append(f)
+        d = target_dir
+        if d.exists():
+            txt_files = list(d.glob("*.txt"))
+            txt_files.sort(key=lambda x: x.stat().st_mtime)
+            if txt_files:
+                newest = txt_files[-1]
+                try:
+                    ts = newest.stem.split("_")[-2:]
+                    if len(ts) == 2 and ts[0].isdigit() and ts[1].isdigit():
+                        ts_str = f"_{ts[0]}_{ts[1]}"
+                        files.extend(list(d.glob(f"*{ts_str}.txt")))
+                except Exception:
+                    pass
+                
+        # Always try to match up with beegfs baseline if we are in ost
+        # or grab everything from both just in case
+        if d != RESULTS_DIR and RESULTS_DIR.exists():
+            txt_files = list(RESULTS_DIR.glob("*.txt"))
+            txt_files.sort(key=lambda x: x.stat().st_mtime)
+            if txt_files:
+                newest = txt_files[-1]
+                try:
+                    ts = newest.stem.split("_")[-2:]
+                    if len(ts) == 2 and ts[0].isdigit() and ts[1].isdigit():
+                        ts_str = f"_{ts[0]}_{ts[1]}"
+                        files.extend(list(RESULTS_DIR.glob(f"*{ts_str}.txt")))
+                except Exception:
+                    pass
 
     if not files:
-        print(f"No result files found in {RESULTS_DIR}")
+        print(f"No result files found in {target_dir}")
         sys.exit(1)
 
     parsed = {}
     for f in files:
-        label = f.stem          # e.g. hdd_20260402_191721
+        if "summary_comparison" in f.name:
+            continue
+            
+        label = f.stem          # e.g. hdd_ost1_20260402_191721
         pool = label.split("_20")[0].upper()
         print(f"Parsing: {f}")
         parsed[pool] = (label, parse_txt(f))
 
-    out_file = RESULTS_DIR / "summary_comparison.txt"
+    import datetime
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_file = target_dir / f"summary_comparison_{ts}.txt"
+    target_dir.mkdir(exist_ok=True)
+    
     with open(out_file, "w") as fout:
         for pool, (label, jobs) in parsed.items():
             print_summary(f"{pool}  ({label})", jobs, file=fout)
             print_summary(f"{pool}  ({label})", jobs, file=sys.stdout)
 
-        if "HDD" in parsed and "HDD_OST" in parsed:
-            _, hdd = parsed["HDD"]
-            _, hdd_ost = parsed["HDD_OST"]
-            print_comparison("HDD vs HDD OST Comparison", hdd, hdd_ost, "HDD", "HDD_OST", file=fout)
-            print_comparison("HDD vs HDD OST Comparison", hdd, hdd_ost, "HDD", "HDD_OST", file=sys.stdout)
-
-        if "SSD" in parsed and "SSD_OST" in parsed:
-            _, ssd = parsed["SSD"]
-            _, ssd_ost = parsed["SSD_OST"]
-            print_comparison("SSD vs SSD OST Comparison", ssd, ssd_ost, "SSD", "SSD_OST", file=fout)
-            print_comparison("SSD vs SSD OST Comparison", ssd, ssd_ost, "SSD", "SSD_OST", file=sys.stdout)
+        for p in parsed.keys():
+            if p.startswith("HDD_OST") and "HDD" in parsed:
+                _, ost = parsed[p]
+                _, hdd = parsed["HDD"]
+                print_comparison(f"HDD vs {p} Comparison", hdd, ost, "HDD", p, file=fout)
+                print_comparison(f"HDD vs {p} Comparison", hdd, ost, "HDD", p, file=sys.stdout)
+                
+            if p.startswith("SSD_OST") and "SSD" in parsed:
+                _, ost = parsed[p]
+                _, ssd = parsed["SSD"]
+                print_comparison(f"SSD vs {p} Comparison", ssd, ost, "SSD", p, file=fout)
+                print_comparison(f"SSD vs {p} Comparison", ssd, ost, "SSD", p, file=sys.stdout)
 
     print(f"\nSaved summary and comparisons to {out_file}")
 
