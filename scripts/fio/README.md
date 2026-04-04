@@ -1,107 +1,66 @@
-# FIO Hardware Benchmarks
+# FIO Benchmark Matrix Suite
 
-Raw storage hardware benchmarks for BeeGFS HDD and SSD storage pools using [fio](https://fio.readthedocs.io/).  
-These tests bypass the page cache (`O_DIRECT`) and Darshan instrumentation — pure disk performance only.
+A comprehensive framework for benchmarking multiple workloads across different BeeGFS storage pools and raw physical targets (OSTs). 
+
+This suite replaces the old static `.fio` jobs with an automated matrix runner (`matrix_benchmark.py`). It dynamically constructs configurations based on `fio_config.json`, running multiple repetitions (for measuring variance), across multiple dataset sizes, generating an aggregated JSON dump, and tracking the explicit BeeGFS chunk targets (OST hits).
 
 ---
 
-## Modes of Operation
+## 1. Configure the Matrix
 
-The benchmark has two operating modes:
+The file `fio_config.json` controls exactly what workloads run during the benchmark. Instead of writing custom `.fio` files, simply toggle options here:
 
-### `1. Client Mode (--beegfs)` 
-Run this from a **Client Node**. It writes to the standard BeeGFS mountpoints. It writes output to the `results/` directory.
+```json
+{
+    "runs_per_test": 5,
+    "file_sizes": ["1g", "10g"],
+    "modes": {
+        "seq_read": true,
+        "seq_write": true,
+        "rand_read": true,
+        "rand_write": true,
+        "seq_rw": true,
+        "rand_rw": true
+    },
+    "block_size_seq": "1m",
+    "block_size_rand": "4k",
+    "io_depth": 32,
+    "num_jobs": 4
+}
+```
+
+## 2. Execute the Suite
+
+Use `matrix_benchmark.py` to trigger the tests. It supports benchmarking the BeeGFS client mounts (`--beegfs`) or the raw local block devices (`--ost`).
+
+### BeeGFS Mode (Client)
+Benchmarking standard mount points. It also attempts to log which OST chunks were hit using `beegfs-ctl`.
 
 ```bash
-./run_fio.sh --beegfs
+# Run against ALL default pools (HDD, SSD)
+python3 matrix_benchmark.py --beegfs
 
-# Optional Flags:
-# --hdd-dir /custom/hdd/path
-# --ssd-dir /custom/ssd/path
+# Run only against the HDD pool
+python3 matrix_benchmark.py --beegfs --pool hdd
+
+# Run against a specific custom named pool
+python3 matrix_benchmark.py --beegfs --pool nvme-fast --custom-dir /mnt/beegfs/advay/nvme-fast
 ```
 
-### `2. Storage Mode (--ost)`
-Run this while logged directly into a **Storage Node (OST)**. It writes explicitly to the backend local drives, bypassing BeeGFS network and metadata entirely to gather raw baseline comparisons. It creates and saves files to the `ost_results/` directory.
+### Storage Mode (OST Backend)
+Run this when logged directly into a Storage Node. It explicitly bypasses BeeGFS network overhead to ascertain backend baseline speed.
 
 ```bash
-./run_fio.sh --ost
-
-# Optional Flags:
-# --hdd-ost-dir /local/hdd/mount  (Will automatically append 1, 2, 3, 4)
-# --ssd-ost-dir /local/nvme/mount (Will automatically append 1, 2, 3) 
+python3 matrix_benchmark.py --ost --pool hdd
 ```
 
-## Parsing the Results
-After running benchmarks, you can use the `parse_results.py` script to automatically parse, format, and generate side-by-side Speedup / Overhead comparison tables between arrays:
+## 3. Analyze the Results
+
+Because `matrix_benchmark.py` generates large `.json` collections detailing all repetitions of every workload combination, we use **`analyze_matrix.py`** to distill this into clean averages.
+
+By default, running the analyzer without arguments automatically groups and analyzes the most recent benchmark run:
 
 ```bash
-# Summarize the client node (BeeGFS) results
-python3 parse_results.py --beegfs
-
-# Summarize the storage node (OST) results (will auto-compare to BeeGFS if available)
-python3 parse_results.py --ost
+python3 analyze_matrix.py
 ```
-
-This will automatically create a new `summary_comparison_YYYYMMDD_HHMMSS.txt` file alongside your raw logs in the targeted output directory.
-
----
-
-## Benchmark Jobs
-
-### HDD (`hdd.fio`) — 4 jobs, iodepth 32, 4 workers each
-
-| Job | Pattern | Block Size | Measures |
-|-----|---------|-----------|---------|
-| `seq_write` | Sequential write | 1 MiB | Streaming write bandwidth |
-| `seq_read` | Sequential read | 1 MiB | Streaming read bandwidth |
-| `rand_write_4k` | Random write | 4 KiB | Write IOPS / seek latency |
-| `rand_read_4k` | Random read | 4 KiB | Read IOPS / seek latency |
-
-### SSD (`ssd.fio`) — 5 jobs, iodepth 64, 4 workers each
-
-All HDD jobs plus:
-
-| Job | Pattern | Block Size | Measures |
-|-----|---------|-----------|---------|
-| `rand_mixed_4k` | 70/30 R/W random | 4 KiB | Sustained mixed-IO IOPS |
-
----
-
-## Parameters
-
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| `direct=1` | O_DIRECT | Bypass page cache — true hardware measurement |
-| `runtime=60s` | 60 s per job | Stable average; increase to 120+ for production runs |
-| `ramp_time=5s` | 5 s | Discard transient warm-up measurements |
-| `filesize=8g` | 8 GiB | Exceeds typical DRAM on a node; forces real disk I/O |
-| `numjobs=4` | 4 | Matches typical core count for I/O threads |
-| `stonewall` | sequential jobs | One job runs at a time; no cross-job interference |
-
-> **Disk space:** 8 GiB × 4 jobs = **32 GiB** per pool.  
-> Adjust `filesize=` in the job files if your PFS has less free space.  
-> Scratch files are deleted automatically after each run.
-
----
-
-## Output
-
-Each run produces two files in `results/`:
-
-```
-results/
-├── hdd_20260402_153000.json   ← full fio JSON (all metrics)
-├── hdd_20260402_153000.txt    ← human-readable output + aggregate summary
-├── ssd_20260402_153000.json
-└── ssd_20260402_153000.txt
-```
-
-The JSON is suitable for further analysis (pandas, plotting, etc.) and follows the same output convention as the rest of the `pfs/` project.
-
----
-
-## Notes
-
-- **Storage pool setup** must be done first: `../pooling_scripts/configure_pools.sh`
-- The BeeGFS pools assign specific disk targets (HDD: `x01–x04`, SSD: `x05–x07` per node) to separate mount points — make sure you pass the correct `--directory` that maps to each pool.
-- `sudo` is needed only for `echo 3 > /proc/sys/vm/drop_caches`. Use `--no-drop-cache` to skip it (results may reflect cached data from prior runs).
+*(Or point to a specific file: `python3 analyze_matrix.py results/matrix_results_20260404_153000.json`)*
