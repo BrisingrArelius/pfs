@@ -1,0 +1,93 @@
+[
+  {
+    "pool": "HDD_OST1",
+    "mode": "seq_read",
+    "fsize": "1g",
+    "run": 1,
+    "read_bw_mib": 157.67035961151123,
+    "write_bw_mib": 0.0,
+    "read_iops": 155.547077,
+    "write_iops": 0.0,
+    "read_lat_ms": 791.0309200203139,
+    "write_lat_ms": 0.0,
+    "ost_hits": []
+  },
+  {
+    "pool": "HDD_OST1",
+    "mode": "seq_write",
+    "fsize": "1g",
+    "run": 1,
+    "read_bw_mib": 0.0,
+    "write_bw_mib": 140.24856185913086,
+    "read_iops": 0.0,
+    "write_iops": 138.620277,
+    "read_lat_ms": 0.0,
+    "write_lat_ms": 871.1633864959721,
+    "ost_hits": []
+  },
+  {
+    "pool": "HDD_OST1",
+    "mode": "rand_read",
+    "fsize": "1g",
+    "run": 1,
+    "read_bw_mib": 1.8489179611206055,
+    "write_bw_mib": 0.0,
+    "read_iops": 471.196185,
+    "write_iops": 0.0,
+    "read_lat_ms": 262.717517579138,
+    "write_lat_ms": 0.0,
+    "ost_hits": []
+  },
+  {
+    "pool": "HDD_OST1",
+    "mode": "rand_write",
+    "fsize": "1g",
+    "run": 1,
+    "read_bw_mib": 0.0,
+    "write_bw_mib": 17.120739936828613,
+    "read_iops": 0.0,
+    "write_iops": 4380.843691,
+    "read_lat_ms": 0.0,
+    "write_lat_ms": 29.157051833357,
+    "ost_hits": []
+  },
+  {
+    "pool": "HDD_OST1",
+    "mode": "seq_rw",
+    "fsize": "1g",
+    "run": 1,
+    "read_bw_mib": 71.35735130310059,
+    "write_bw_mib": 74.43166637420654,
+    "read_iops": 70.443366,
+    "write_iops": 73.218559,
+    "read_lat_ms": 893.9132450596741,
+    "write_lat_ms": 817.564584245368,
+    "ost_hits": []
+  },
+  {
+    "pool": "HDD_OST1",
+    "mode": "rand_rw",
+    "fsize": "1g",
+    "run": 1,
+    "read_bw_mib": 0.9421072006225586,
+    "write_bw_mib": 0.9681024551391602,
+    "read_iops": 240.067709,
+    "write_iops": 246.821999,
+    "read_lat_ms": 290.376843858785,
+    "write_lat_ms": 218.983283815229,
+    "ost_hits": []
+  },
+  {
+    "pool": "HDD_OST2",
+    "mode": "seq_read",
+    "fsize": "1g",
+    "run": 1,
+    "read_bw_mib": 108.85874652862549,
+    "write_bw_mib": 0.0,
+    "read_iops": 106.738875,
+    "write_iops": 0.0,
+    "read_lat_ms": 1149.226727142335,
+    "write_lat_ms": 0.0,
+    "ost_hits": []
+  }
+]
