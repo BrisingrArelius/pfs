@@ -14,7 +14,7 @@ def load_config(config_file):
     with open(config_file) as f:
         return json.load(f)
 
-def run_fio(job_name, run_idx, fsize, mode_rw, block_size, io_depth, num_jobs, bdir, beegfs_trace=False):
+def run_fio(job_name, run_idx, num_files, fsize, mode_rw, block_size, io_depth, num_jobs, bdir, beegfs_trace=False):
     fio_text = f"""
 [global]
 ioengine=libaio
@@ -24,8 +24,8 @@ group_reporting=1
 time_based=1
 runtime=60
 ramp_time=5
-nrfiles=1
-filesize={fsize}
+nrfiles={num_files}
+size={fsize}
 iodepth={io_depth}
 numjobs={num_jobs}
 directory={bdir}
@@ -74,6 +74,7 @@ stonewall
 
     return {
         "job": job_name,
+        "num_files": num_files,
         "fsize": fsize,
         "run": run_idx,
         "fio_data": data["jobs"][0],
@@ -147,38 +148,41 @@ def main():
         work_dir = os.path.join(target_dir, f"fio_matrix_bench")
         os.makedirs(work_dir, exist_ok=True)
 
-        for fsize in config["file_sizes"]:
-            for mode, enabled in config["modes"].items():
-                if not enabled: continue
+        for num_files in config.get("num_files", [1]):
+            for fsize in config["file_sizes"]:
+                for mode, enabled in config["modes"].items():
+                    if not enabled: continue
 
-                fio_rw, fio_bs = modes_map[mode]
+                    fio_rw, fio_bs = modes_map[mode]
 
-                for run_idx in range(1, config["runs_per_test"] + 1):
-                    print(f"  [{pool}] {mode} ({fsize}) - Run {run_idx}/{config['runs_per_test']}...")
-                    
-                    if not args.no_drop_cache:
-                        subprocess.run("sync", shell=True)
-                        subprocess.run("sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'", shell=True, stderr=subprocess.DEVNULL)
-                        time.sleep(1)
+                    for run_idx in range(1, config["runs_per_test"] + 1):
+                        print(f"  [{pool}] {mode} ({num_files} files, {fsize}) - Run {run_idx}/{config['runs_per_test']}...")
+                        
+                        if not args.no_drop_cache:
+                            subprocess.run("sync", shell=True)
+                            subprocess.run("sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'", shell=True, stderr=subprocess.DEVNULL)
+                            time.sleep(1)
 
-                    res = run_fio(
-                        job_name=f"{pool}_{mode}_{fsize}",
-                        run_idx=run_idx,
-                        fsize=fsize,
-                        mode_rw=fio_rw,
-                        block_size=fio_bs,
-                        io_depth=config["io_depth"],
-                        num_jobs=config["num_jobs"],
-                        bdir=work_dir,
-                        beegfs_trace=is_beegfs
-                    )
-                    
-                    if res:
-                        all_results.append({
-                            "pool": pool,
-                            "mode": mode,
-                            "fsize": fsize,
-                            "run": run_idx,
+                        res = run_fio(
+                            job_name=f"{pool}_{mode}_{num_files}f_{fsize}",
+                            run_idx=run_idx,
+                            num_files=num_files,
+                            fsize=fsize,
+                            mode_rw=fio_rw,
+                            block_size=fio_bs,
+                            io_depth=config["io_depth"],
+                            num_jobs=config["num_jobs"],
+                            bdir=work_dir,
+                            beegfs_trace=is_beegfs
+                        )
+                        
+                        if res:
+                            all_results.append({
+                                "pool": pool,
+                                "mode": mode,
+                                "num_files": num_files,
+                                "fsize": fsize,
+                                "run": run_idx,
                             "read_bw_mib": res["fio_data"]["read"]["bw_bytes"] / 1048576,
                             "write_bw_mib": res["fio_data"]["write"]["bw_bytes"] / 1048576,
                             "read_iops": res["fio_data"]["read"]["iops"],

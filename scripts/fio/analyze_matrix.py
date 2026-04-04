@@ -27,16 +27,16 @@ def analyze_json(json_path):
     with open(json_path) as f:
         data = json.load(f)
 
-    # Group by (pool, fsize, mode)
+    # Group by (pool, num_files, fsize, mode)
     # Each group will hold a list of results from the N runs
     grouped = defaultdict(list)
     for row in data:
-        key = (row["pool"], row["fsize"], row["mode"])
+        key = (row["pool"], row.get("num_files", 1), row["fsize"], row["mode"])
         grouped[key].append(row)
 
-    # We want to print tables per (pool, fsize)
+    # We want to print tables per (pool, num_files, fsize)
     tables = defaultdict(dict)
-    for (pool, fsize, mode), runs in grouped.items():
+    for (pool, num_files, fsize, mode), runs in grouped.items():
         # Calculate averages safely
         avg_read_bw = statistics.mean([r.get("read_bw_mib", 0) for r in runs])
         avg_write_bw = statistics.mean([r.get("write_bw_mib", 0) for r in runs])
@@ -51,7 +51,7 @@ def analyze_json(json_path):
             all_hits.extend(r.get("ost_hits", []))
         unique_hits = len(set(all_hits))
 
-        tables[(pool, fsize)][mode] = {
+        tables[(pool, num_files, fsize)][mode] = {
             "runs": len(runs),
             "read_bw": avg_read_bw,
             "write_bw": avg_write_bw,
@@ -63,9 +63,9 @@ def analyze_json(json_path):
         }
 
     # Print results
-    for (pool, fsize), modes_dict in sorted(tables.items()):
+    for (pool, num_files, fsize), modes_dict in sorted(tables.items()):
         print(f"\n==================================================================================")
-        print(f" Target: {pool} | File Size: {fsize}")
+        print(f" Target: {pool} | Files: {num_files} | Total Size: {fsize}")
         print(f"==================================================================================")
         print(f" {'Mode':<12} | {'Read BW':<12} | {'Write BW':<12} | {'Read IOPS':<10} | {'Write IOPS':<10} | {'Read Lat':<10} | {'Write Lat':<10} | {'Runs':<4}")
         print("-" * 110)

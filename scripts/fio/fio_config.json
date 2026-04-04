@@ -1,7 +1,12 @@
 {
-    "runs_per_test": 1,
+    "runs_per_test": 5,
+    "num_files": [
+        1,
+        10
+    ],
     "file_sizes": [
-        "1g"
+        "1g",
+        "10g"
     ],
     "modes": {
         "seq_read": true,
