@@ -1,0 +1,23 @@
+{
+    "runs_per_test": 5,
+    "num_files": [
+        1,
+        10
+    ],
+    "file_sizes": [
+        "1g",
+        "10g"
+    ],
+    "modes": {
+        "seq_read": true,
+        "seq_write": true,
+        "rand_read": true,
+        "rand_write": true,
+        "seq_rw": true,
+        "rand_rw": true
+    },
+    "block_size_seq": "1m",
+    "block_size_rand": "4k",
+    "io_depth": 32,
+    "num_jobs": 4
+}
