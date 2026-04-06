@@ -1,173 +1,98 @@
-# workloads/
+# Workloads
 
-This directory contains everything needed to simulate POSIX I/O workloads for Darshan instrumentation.
-Workloads are driven by a single C program (`posix_synthetic_workload.c`) and a JSON profile file (`profiles.json`).
-The runner script `run_workloads.py` (in the project root) compiles the binary, iterates over profiles, and invokes the Darshan parser automatically.
+This directory contains the workload definitions, the IOR wrapper, and the original C workload implementation used by `scripts/run_workloads.py`.
 
-> **Note:** `posix_synthetic_workload.c` uses raw POSIX syscalls (`open`/`read`/`write`/`lseek`/`fsync`) with `O_DIRECT` to bypass the page cache and measure true storage throughput.
-> It only generates **POSIX module** data in Darshan logs. MPI-IO and STDIO workloads are not yet implemented.
+## What this directory contains
 
----
+- `profiles.json` — workload profile definitions
+- `posix_synthetic_workload_IOR.py` — Python wrapper that turns profiles into IOR commands
+- `posix_synthetic_workload.c` — original C workload implementation used for some stride patterns
+- `tmp/` — scratch area for temporary workload files
 
-## Contents
+## Profile execution model
 
-| File | Purpose |
-|---|---|
-| `posix_synthetic_workload.c` | C program that executes any POSIX workload profile |
-| `profiles.json` | Defines all workload classes and their parameters |
-| `tmp/` | Scratch directory — workload files written and deleted here at runtime |
+`run_workloads.py` reads `profiles.json` and expands profiles that define `file_size_gb` into size variants.
+Each generated variant is named like `profile_100mb`, `profile_1gb`, or `profile_10gb`.
 
----
+The script recalculates `num_ops` from `file_size_gb` and `op_size`, so the `num_ops` value in `profiles.json` is overwritten at runtime.
 
-## posix_synthetic_workload.c
+### Deterministic file naming
 
-A single C program that simulates any POSIX I/O workload given a set of parameters passed as CLI args.
-It is compiled once by `run_workloads.py` before any profiles are run.
-
-### How it works
-
-All behavior is determined by the parameters passed in. The same binary executes every profile — the only variable is the parameter values. This eliminates implementation variance between workload classes.
-
-The binary has two run modes, controlled by the final CLI argument:
-
-### Run Modes
-
-| Mode | Value | Darshan attached | Purpose |
-|---|---|---|---|
-| Setup | `0` | No | Writes files to disk and exits. No reads, no cleanup. Run by `run_workloads.py` **without** `LD_PRELOAD`. |
-| Workload | `1` | Yes | The measured run. For read profiles: opens pre-existing files and reads only. For write/mixed: writes and reads normally. Cleans up files on exit. |
-
-Only profiles with `read_ratio == 1.0` (pure-read) require a setup pass before the measured run. This is handled automatically by `run_workloads.py` — setup runs without `LD_PRELOAD` so Darshan cannot attach, keeping the Darshan log clean. Mixed profiles (`read_ratio > 0` and `< 1.0`) create their own files during the workload run.
-
-`metadata_heavy` is an exception — it always runs in mode `1` directly, creating and deleting its own files as part of the workload.
-
-### File Naming — How Workload Mode Finds Its Files
-
-Both setup and workload mode use the same deterministic path:
+Workload files are written to the configured `workload_dir` using a deterministic pattern:
 
 ```
 {work_dir}/workload_{profile_name}_f{file_index}
 ```
 
-For example, `read_heavy` with `num_files=1`:
-```
-./workloads/tmp/workload_read_heavy_f0
-```
+This allows setup and workload phases to access the same files without extra coordination.
 
-Setup writes this file. Workload mode opens it by the same name. No coordination needed — the path is fully determined by the parameters, which are identical in both invocations.
+## Setup vs workload phases
 
-Running the same profile multiple times (`--runs N`) overwrites the setup file each run, which is intentional — it ensures the data being read is consistent and reproducible across runs.
+- **Setup mode (`mode=0`)**
+  - Writes files only
+  - Runs without Darshan instrumentation
+  - Used for pure-read profiles to prepare input files
+- **Workload mode (`mode=1`)**
+  - Runs under `mpirun -np 1`
+  - Darshan is attached via `LD_PRELOAD`
+  - Generates the measured `.darshan` log
 
-### Access Patterns
+Pure-read profiles require a setup pass, while pure-write and mixed profiles run directly in workload mode.
 
-| Value | Pattern | Behavior |
-|---|---|---|
-| `0` | `sequential` / `contiguous` | Offset advances linearly by `op_size` each operation |
-| `1` | `random` | Offset is a uniformly random `op_size`-aligned block within `[0, file_size − op_size]` — guarantees no out-of-bounds access |
-| `2` | `strided` | Offset = `(global_op_index × stride_size) % file_size`, rounded down to the nearest `op_size` boundary to maintain block alignment |
-| `3` | `nd_strided` | Multi-dimensional strided access simulating 2D array traversal. Alternates between row-major and column-major access patterns to create complex cache behavior. Uses `stride_size` as row stride. |
+The `metadata_heavy` profile uses a special path that creates and unlinks many small files, and it does not require a separate setup phase.
 
-The setup write (mode `0`) is always sequential regardless of the profile's access pattern — only the measured workload run uses the configured pattern.
+## Access patterns
 
-For strided and nd_strided workloads, the stride cursor is global across phases — each phase continues from where the previous one left off, so the stride sequence is never reset.
+The available access patterns are:
 
-### Phases
+- `sequential` / `contiguous`
+- `random`
+- `strided`
+- `nd_strided`
 
-`num_phases` controls how many alternating write/read blocks the workload is divided into.
-Phase 1 is always a write phase for mixed profiles.
+`posix_synthetic_workload_IOR.py` handles sequential and random profiles.
+`strided` and `nd_strided` profiles are delegated to the C implementation in `posix_synthetic_workload.c` when available.
 
-| `num_phases` | Behavior | `RW_SWITCHES` in Darshan |
-|---|---|---|
-| `1` | Single write pass | 0 |
-| `2` | Write half, read half | 1 |
-| `4` | W → R → W → R | 3 |
+## Profile fields
 
-For pure read profiles (`read_ratio = 1.0`) in workload mode, all phases are read phases — writes are handled entirely by the separate setup pass.
+| Field | Description |
+|---|---|
+| `read_ratio` | Fraction of operations that are reads |
+| `access_pattern` | I/O access pattern |
+| `stride_size` | Distance between offsets for strided access |
+| `op_size` | Size of each I/O operation (bytes) |
+| `num_ops` | Total number of operations (recomputed from `file_size_gb`) |
+| `num_files` | Number of files involved in the workload |
+| `num_phases` | Number of alternating read/write phases |
+| `fsync_interval` | Call `fsync()` every N writes |
+| `file_size_gb` | Target workload sizes used to auto-generate variants |
 
-### Metadata Workload
+## Output
 
-Profiles named `metadata_heavy` trigger a special code path:
-- Creates `num_files` individual files in the scratch directory
-- Writes `op_size` bytes to each
-- `stat()`s each file
-- `unlink()`s each file
+Parsed Darshan summary output is written by `run_workloads.py` into the configured `output_dir`, typically:
 
-This produces high `POSIX_OPENS`, `POSIX_STATS`, and `POSIX_FSYNCS` with minimal `POSIX_BYTES_WRITTEN`.
+- `output/hdd/global.csv`
+- `output/ssd/global.csv`
 
-### Parameters
+The workload runner also logs OST space and file layout information to `scripts/ost_space_and_usage.log`.
 
-| Parameter | Type | Description |
-|---|---|---|
-| `read_ratio` | float 0.0–1.0 | Fraction of total ops that are reads |
-| `access_pattern` | `sequential` \| `contiguous` \| `random` \| `strided` \| `nd_strided` | Access pattern (see above) |
-| `stride_size` | bytes | Distance between operation offsets (strided/nd_strided only) |
-| `op_size` | bytes | Size of each individual read or write. Must be a multiple of 4096 (required by `O_DIRECT`). |
-| `num_ops` | integer | Total number of I/O operations (overwritten when `file_size_gb` is used) |
-| `num_files` | integer | Spread ops across this many files |
-| `num_phases` | integer ≥ 1 | Number of alternating write/read phases |
-| `fsync_interval` | integer | Call `fsync()` every N writes (0 = never) |
-| `file_size_gb` | list of floats | Auto-generate size variants (e.g. `[0.1, 1, 10]` → 100MB, 1GB, 10GB) |
+## Recommended commands
 
-Total data volume = `num_ops × op_size`.
+Run the full project pipeline:
 
----
-
-## profiles.json
-
-Defines all workload classes. Each entry is a named profile with the parameters above.
-`run_workloads.py` reads this file and passes each profile's values directly to the binary as CLI args.
-
-### Size Variants
-
-**All profiles use `file_size_gb` to automatically generate multiple size variants.**
-
-Profiles include a `file_size_gb` field to automatically generate multiple size variants:
-
-```json
-"my_profile": {
-    "read_ratio": 1.0,
-    "access_pattern": "contiguous",
-    "op_size": 4096,
-    "num_ops": 50000,              // IGNORED - overwritten by calculation
-    "file_size_gb": [0.1, 1, 10]
-}
+```bash
+python3 run_pipeline.py --runs 5
 ```
 
-This will generate three variants:
-- `my_profile_100mb` — `num_ops` calculated to produce ~100 MB total I/O
-- `my_profile_1gb` — `num_ops` calculated to produce ~1 GB total I/O
-- `my_profile_10gb` — `num_ops` calculated to produce ~10 GB total I/O
+Run a specific profile:
 
-**The `num_ops` field in the JSON is ignored and overwritten.** It's only kept for backward compatibility.
-
-**Calculation:** `num_ops = (target_size_bytes) / op_size`
-
-For example:
-- **Large ops** (4 MB): 100 MB → 25 ops, 1 GB → 256 ops, 10 GB → 2,560 ops
-- **Small ops** (4 KB): 100 MB → 25,600 ops, 1 GB → 262,144 ops, 10 GB → 2,621,440 ops
-
-**Execution Order:** For each profile variant, all HDD runs complete first, then SSD:
-```
-profile1_100mb: HDD run1-5, then SSD run1-5
-profile1_1gb:   HDD run1-5, then SSD run1-5
-...
-profile2_100mb: HDD run1-5, then SSD run1-5
-...
+```bash
+python3 scripts/run_workloads.py --only read_heavy --runs 5 --storage-type hdd
 ```
 
-HDD runs append to `./output/hdd/darshan/global.csv`, SSD runs append to `./output/ssd/darshan/global.csv`.
+## Adding a new profile
 
-### Defined Profiles
-
-**Base profiles: 19**
-**Size variants per profile: 3** (100MB, 1GB, 10GB)
-**Total profile variants: 57**
-
-Current profiles include various I/O patterns (sequential, random, strided, nd_strided) with different read/write ratios, operation sizes, and phase configurations. See `profiles.json` for the complete list.
-
-### Adding a New Profile
-
-Add an entry to `profiles.json`:
+Add an entry to `profiles.json` with the desired parameter values. Example:
 
 ```json
 "my_workload": {
@@ -183,10 +108,8 @@ Add an entry to `profiles.json`:
 }
 ```
 
-No code changes needed. Run with:
+Then run:
 
 ```bash
 python3 run_pipeline.py --runs 5
-# or target just this profile:
-python3 scripts/run_workloads.py --only my_workload --runs 5
 ```

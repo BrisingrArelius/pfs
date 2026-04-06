@@ -1,38 +1,13 @@
 # BeeGFS Storage Pool Analysis
 
-A comprehensive toolkit for analyzing I/O workload behavior on BeeGFS storage pools using Darshan instrumentation. Compare HDD vs SSD performance, identify discriminative I/O counters, and inform storage tiering decisions.
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Quick Start](#quick-start)
-- [Directory Structure](#directory-structure)
-- [Dependencies](#dependencies)
-- [Detailed Documentation](#detailed-documentation)
-- [Workflow](#workflow)
-- [Analysis](#analysis)
-- [Disclaimer](#disclaimer)
-
----
-
-## Overview
-
-This project:
-1. **Runs synthetic workloads** on BeeGFS HDD and SSD storage pools
-2. **Instruments with Darshan** to capture I/O counters
-3. **Parses binary logs** to CSV format
-4. **Analyzes and visualizes** counter data to identify patterns
-
-**Use case:** Determine which I/O characteristics (sequential access, operation size, seek rate, etc.) predict whether a workload should be placed on HDD or SSD storage.
+A toolkit for running synthetic BeeGFS workloads, collecting Darshan I/O counters, and comparing HDD vs SSD storage behavior.
 
 ---
 
 ## Quick Start
 
 ```bash
-# Run workloads on both HDD and SSD storage pools (recommended)
+# Run the full pipeline on HDD and SSD pools
 python3 run_pipeline.py --runs 5
 
 # Resume if interrupted
@@ -42,81 +17,149 @@ python3 run_pipeline.py --runs 5 --resume
 python3 run_pipeline.py --analyze-only
 ```
 
-**Results:**
-- Darshan data: `output/hdd/darshan/global.csv` and `output/ssd/darshan/global.csv`
-- Analysis output: `output/hdd/analysis/` and `output/ssd/analysis/`
+**Key outputs:**
+- `output/hdd/global.csv`
+- `output/ssd/global.csv`
+- `output/hdd/analysis/`
+- `output/ssd/analysis/`
 
 ---
 
-## Directory Structure
+## What this repository contains
+
+- `run_pipeline.py` — orchestrates pool setup, workload execution, Darshan parsing, and analysis
+- `scripts/run_workloads.py` — workload runner for profile execution and Darshan parsing
+- `scripts/parse_darshan.py` — extracts Darshan counters into structured CSV output
+- `scripts/analysis/analysis.py` — computes statistics and generates visualizations
+- `scripts/workloads/` — workload profile definitions and implementation helpers
+- `scripts/fio/` — FIO benchmark matrix suite
+- `scripts/pooling_scripts/` — BeeGFS pool management helpers
+- `scripts/parse_ost_logs.py` — OST usage heatmap generation
+- `scripts/parse_du.py` — disk usage summary utility
+
+---
+
+## Documentation
+
+- `scripts/workloads/README.md` — workload profile and execution details
+- `scripts/fio/README.md` — FIO benchmark matrix documentation
+- `scripts/parse_darshan_README.md` — Darshan parser documentation
+- `scripts/analysis/analysis_README.md` — analysis methodology and interpretation
+- `scripts/pooling_scripts/README.md` — BeeGFS pooling helper docs
+- `scripts/parse_ost_logs_README.md` — OST log heatmap documentation
+- `scripts/parse_du_README.md` — `du` output summary helper
+
+---
+
+## Directory structure
 
 ```
 pfs/
 ├── README.md
-├── run_pipeline.py              # Main entry point — runs full pipeline
-├── output/                      # All results (created by scripts)
+├── run_pipeline.py
+├── output/
 │   ├── hdd/
-│   │   ├── darshan/
-│   │   │   └── global.csv      # HDD workload runs (one row per run)
-│   │   └── analysis/           # HDD analysis outputs
+│   │   ├── global.csv
+│   │   └── analysis/
 │   └── ssd/
-│       ├── darshan/
-│       │   └── global.csv      # SSD workload runs (one row per run)
-│       └── analysis/           # SSD analysis outputs
-└── scripts/
-    ├── run_workloads.py         # Compile, run, and parse workloads
-    ├── parse_darshan.py         # Extract counters from Darshan logs
-    ├── analysis.py              # Statistical analysis & visualization
-    ├── checkpoint.json          # Resume state (auto-created)
-    ├── parse_darshan_README.md  # Parser documentation
-    ├── analysis_README.md       # Analysis documentation
-    ├── workloads/
-    │   ├── posix_synthetic_workload.c  # C workload simulator
-    │   ├── profiles.json               # 19 workload profiles (57 variants)
-    │   └── README.md                   # Workload documentation
-    └── pooling_scripts/         # BeeGFS pool management
-        ├── configure_pools.sh   # Create HDD/SSD pools
-        └── reset_pools.sh       # Reset to default pool
+│       ├── global.csv
+│       └── analysis/
+├── scripts/
+│   ├── run_workloads.py
+│   ├── parse_darshan.py
+│   ├── analysis/
+│   │   └── analysis.py
+│   ├── workloads/
+│   │   ├── profiles.json
+│   │   ├── posix_synthetic_workload.c
+│   │   ├── posix_synthetic_workload_IOR.py
+│   │   └── README.md
+│   ├── fio/
+│   │   ├── matrix_benchmark.py
+│   │   ├── analyze_matrix.py
+│   │   ├── fio_config.json
+│   │   └── README.md
+│   ├── pooling_scripts/
+│   │   ├── configure_pools.sh
+│   │   ├── reset_pools.sh
+│   │   └── README.md
+│   ├── parse_ost_logs.py
+│   ├── parse_darshan_README.md
+│   ├── analysis_README.md
+│   └── parse_du.py
 ```
 
 ---
 
 ## Dependencies
 
-**Required:**
-- Python 3.8+
-- [pydarshan](https://github.com/darshan-hpc/darshan) — Darshan log parser
-- [pandas](https://pandas.pydata.org/) — Data manipulation
-- [NumPy](https://numpy.org/) — Numerical computing
-- [Matplotlib](https://matplotlib.org/) — Plotting
-- [Seaborn](https://seaborn.pydata.org/) — Statistical visualization
-- [scikit-learn](https://scikit-learn.org/) — Machine learning (PCA)
-- Darshan runtime library (MPI-enabled)
-- MPI compiler (`mpicc`, `mpirun`)
+Install the Python requirements:
 
 ```bash
 pip install darshan pandas numpy matplotlib seaborn scikit-learn
 ```
 
----
-
-## Detailed Documentation
-
-- **`scripts/workloads/README.md`** — Workload definitions and parameters
-- **`scripts/parse_darshan_README.md`** — Parser usage and counter details
-- **`scripts/analysis_README.md`** — Analysis methodology and interpretation
+System dependencies:
+- `mpicc`, `mpirun`
+- Darshan runtime and parser support
+- `beegfs-ctl` access on BeeGFS client nodes
+- `fio` for the FIO benchmark suite
 
 ---
 
-## Workflow
+## Recommended workflow
 
-### Recommended Workflow
+1. Configure BeeGFS pools:
 
-**1. Configure BeeGFS pools** (one-time setup):
 ```bash
 cd scripts/pooling_scripts
 sudo ./configure_pools.sh
 ```
+
+2. Run the workload pipeline:
+
+```bash
+python3 run_pipeline.py --runs 5
+```
+
+3. Inspect results:
+- `output/hdd/global.csv`
+- `output/ssd/global.csv`
+- `output/hdd/analysis/`
+- `output/ssd/analysis/`
+
+4. Analyze existing data only:
+
+```bash
+python3 run_pipeline.py --analyze-only
+```
+
+---
+
+## Manual control
+
+Run workloads directly:
+
+```bash
+python3 scripts/run_workloads.py --runs 5 --storage-type hdd
+python3 scripts/run_workloads.py --runs 5 --storage-type ssd
+python3 scripts/run_workloads.py --runs 5 --only read_heavy
+```
+
+Analyze data directly:
+
+```bash
+python3 scripts/analysis/analysis.py --input output/ssd/global.csv --output-dir output/ssd/analysis
+python3 scripts/analysis/analysis.py --hdd output/hdd/global.csv --ssd output/ssd/global.csv --output-dir output/comparison
+```
+
+---
+
+## Notes
+
+- `run_workloads.py` uses `/mnt/beegfs/advay` and `/mnt/nfs_shared/darshan-logs` by default.
+- `run_workloads.py` attaches Darshan with `LD_PRELOAD` for measured runs and removes temporary workload files after completion.
+- `scripts/parse_ost_logs.py` consumes `scripts/ost_space_and_usage.log` and can generate OST heatmaps.
 
 **2. Run workloads on both storage pools:**
 ```bash

@@ -1,99 +1,57 @@
 # parse_darshan.py
 
-Parses a `.darshan` binary log file and extracts a configurable set of I/O counters into CSV files.
+Extracts Darshan counters from one or more `.darshan` logs and writes structured CSV output.
 
----
+## Usage
+
+```bash
+python3 scripts/parse_darshan.py --log <path.darshan> --label <name> --posix [--mpi] [--stdio] [--output-dir <path>]
+```
+
+At least one of `--posix`, `--mpi`, or `--stdio` is required.
 
 ## Arguments
 
-| Argument | Required | Description |
-|---|---|---|
-| `--log <path>` | Yes | Path to the `.darshan` log file to parse |
-| `--label <name>` | Yes | Workload label — used in the output filename and as a column value |
-| `--posix` | At least one | Extract POSIX module counters |
-| `--mpi` | At least one | Extract MPI-IO module counters |
-| `--stdio` | At least one | Extract STDIO module counters |
-| `--output-dir <path>` | No | Override the default output directory (`./darshan_output`) |
+- `--log <path>`: path to a single `.darshan` log file
+- `--logs <path1,path2,...>`: comma-separated list of `.darshan` logs
+- `--label <name>`: workload label used in output
+- `--posix`: extract POSIX counters
+- `--mpi`: extract MPI-IO counters
+- `--stdio`: extract STDIO counters
+- `--output-dir <path>`: output directory (default: `./darshan_output_ssd`)
 
-Multiple module flags can be combined:
-```bash
-python parse_darshan.py --log run.darshan --label checkpoint --posix --mpi
-```
+## Output files
 
----
+- `{label}_{modules}.csv`
+  - One row per accessed file
+  - Contains only the requested module counters
+- `global.csv`
+  - Appends one row per parser invocation
+  - Contains all counters from POSIX, MPI, and STDIO modules
+  - Missing counters for modules not requested are filled with `NaN`
 
-## Counter Modules
+## Notes
 
-| Flag | Darshan Module | Covers |
-|---|---|---|
-| `--posix` | `POSIX` | Low-level POSIX I/O: `read()`, `write()`, `open()`, `seek()`, etc. |
-| `--mpi` | `MPI-IO` | MPI-IO calls: independent, collective, split, non-blocking operations |
-| `--stdio` | `STDIO` | Buffered C stdio: `fopen()`, `fread()`, `fwrite()`, `fflush()` |
+- This parser is used by `scripts/run_workloads.py` to generate run-level Darshan counter summaries.
+- The synthetic workload suite primarily generates POSIX counters.
+- If you pass `--logs`, all listed logs are aggregated into the same global CSV output.
+- By default, `global.csv` is appended, so repeated runs accumulate additional rows.
 
-> **Note:** Your workload determines which modules will have data. The synthetic workload (`posix_synthetic_workload.c`) uses raw POSIX syscalls and only produces POSIX module records. A program using `fopen`/`fprintf` would produce STDIO records instead.
+## Counter aggregation
 
----
+Counters are aggregated using the strategies defined in the script:
 
-## Output
+- `sum` for totals and histogram buckets
+- `max` for peak values and end timestamps
+- `min` for start timestamps
+- `first` for alignment and metadata fields
 
-**Per-run CSV** — `{label}_{modules}.csv`
+This makes `global.csv` suitable for analysis across runs without preserving per-file detail.
 
-One row per file accessed during the run. Columns are the counters for the requested modules only. If a file with the same name already exists, a numeric suffix is appended (`_1`, `_2`, etc.) — existing files are never overwritten.
-
-```
-timestamp, label, file_id, STDIO_OPENS, STDIO_READS, STDIO_WRITES, ...
-```
-
-**Global CSV** — `global.csv`
-
-One row per parser invocation, appended on every run. All counters from all modules are always present as columns. Counters for modules not requested in a given run are filled with `NaN`.
-
-```
-timestamp, label, modules_used, POSIX_OPENS, ..., MPIIO_INDEP_OPENS, ..., STDIO_OPENS, ...
-```
-
----
-
-## Counter Configuration
-
-The counters tracked are defined as dicts at the top of the script:
-
-```python
-POSIX_COUNTERS = {
-    "POSIX_READS": "sum",
-    "POSIX_BYTES_READ": "sum",
-    "POSIX_F_READ_TIME": "sum",
-    "POSIX_F_MAX_READ_TIME": "max",
-    ...
-}
-```
-
-Each counter maps to an aggregation strategy used when collapsing per-file rows into a single run-level value in `global.csv`:
-
-| Strategy | Used for |
-|---|---|
-| `sum` | Counts, bytes, histogram buckets, access pattern counters |
-| `max` | Peak times, maximum operation sizes, end timestamps |
-| `min` | Start timestamps (earliest across all files) |
-| `first` | Alignment values (a property of the system, same for all files) |
-
-To add or remove counters, edit the relevant dict at the top of the script. Counter names must match exactly what `darshan-parser` reports — verify against a real log with:
+## Example calls
 
 ```bash
-darshan-parser --all <logfile.darshan> | grep -E "^POSIX|^MPI|^STDIO"
-```
-
----
-
-## Examples
-
-```bash
-# STDIO-only workload
-python parse_darshan.py --log ./logs/run1.darshan --label sequential_write --stdio
-
-# POSIX + MPI workload with custom output directory
-python parse_darshan.py --log ./logs/run2.darshan --label checkpoint --posix --mpi --output-dir /scratch/results
-
-# All three modules
-python parse_darshan.py --log ./logs/run3.darshan --label random_read --posix --mpi --stdio
+python3 scripts/parse_darshan.py --log logs/run1.darshan --label read_heavy --posix
+python3 scripts/parse_darshan.py --log logs/run2.darshan --label mixed_rw --posix --mpi --stdio --output-dir /tmp/darshan_out
+python3 scripts/parse_darshan.py --logs logs/run1.darshan,logs/run2.darshan --label batch_parse --posix
 ```
