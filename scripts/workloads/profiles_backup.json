@@ -1,0 +1,288 @@
+{
+    "large_contiguous_write_heavy_freq": {
+        "read_ratio": 0.0,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4194304,
+        "num_ops": 250,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 1048576000,
+        "file_size_gb": [
+            0.1,1,10
+        ]
+    },
+    "large_contiguous_read_heavy_freq": {
+        "read_ratio": 1.0,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4194304,
+        "num_ops": 250,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 1048576000,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "small_contiguous_write_heavy_freq": {
+        "read_ratio": 0.0,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 50000,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 204800000,
+        "file_size_gb": [
+            0.1,1,10
+        ]
+    },
+    "small_random_read_heavy_freq": {
+        "read_ratio": 1.0,
+        "access_pattern": "random",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 250000,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 1024000000,
+        "file_size_gb": [
+            0.1
+        ]
+    },
+    "small_contiguous_read_heavy_freq": {
+        "read_ratio": 1.0,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 50000,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 204800000,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "large_contiguous_mixed_freq": {
+        "read_ratio": 0.5,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4194304,
+        "num_ops": 200,
+        "num_files": 1,
+        "num_phases": 3,
+        "fsync_interval": 0,
+        "total_io_bytes": 838860800,
+        "file_size_gb": [
+            0.1,1,10
+        ]
+    },
+    "small_random_mixed_freq": {
+        "read_ratio": 0.5,
+        "access_pattern": "random",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 250000,
+        "num_files": 1,
+        "num_phases": 2,
+        "fsync_interval": 0,
+        "total_io_bytes": 1024000000,
+        "file_size_gb": [
+            0.1
+        ]
+    },
+    "large_contiguous_write_heavy_seldom": {
+        "read_ratio": 0.0,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4194304,
+        "num_ops": 100,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 419430400,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "small_strided_read_heavy_freq": {
+        "read_ratio": 1.0,
+        "access_pattern": "strided",
+        "stride_size": 65536,
+        "op_size": 4096,
+        "num_ops": 50000,
+        "num_files": 1,
+        "num_phases": 2,
+        "fsync_interval": 0,
+        "total_io_bytes": 204800000,
+        "file_size_gb": [
+            0.1,1,10
+        ]
+    },
+    "small_contiguous_write_heavy_seldom": {
+        "read_ratio": 0.0,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 1000,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 4096000,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "large_random_read_heavy_freq": {
+        "read_ratio": 1.0,
+        "access_pattern": "random",
+        "stride_size": 0,
+        "op_size": 4194304,
+        "num_ops": 250,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 1048576000,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "small_random_write_heavy_freq": {
+        "read_ratio": 0.0,
+        "access_pattern": "random",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 250000,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 1024000000,
+        "file_size_gb": [
+            0.1
+        ]
+    },
+    "large_strided_read_heavy_freq": {
+        "read_ratio": 1.0,
+        "access_pattern": "strided",
+        "stride_size": 1048576,
+        "op_size": 4194304,
+        "num_ops": 250,
+        "num_files": 1,
+        "num_phases": 2,
+        "fsync_interval": 0,
+        "total_io_bytes": 1048576000,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "large_contiguous_read_heavy_seldom": {
+        "read_ratio": 1.0,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4194304,
+        "num_ops": 100,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 419430400,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "small_strided_write_heavy_freq": {
+        "read_ratio": 0.0,
+        "access_pattern": "strided",
+        "stride_size": 65536,
+        "op_size": 4096,
+        "num_ops": 50000,
+        "num_files": 1,
+        "num_phases": 2,
+        "fsync_interval": 0,
+        "total_io_bytes": 204800000,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "small_contiguous_mixed_freq": {
+        "read_ratio": 0.5,
+        "access_pattern": "contiguous",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 50000,
+        "num_files": 1,
+        "num_phases": 2,
+        "fsync_interval": 0,
+        "total_io_bytes": 204800000,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "small_random_read_heavy_seldom": {
+        "read_ratio": 1.0,
+        "access_pattern": "random",
+        "stride_size": 0,
+        "op_size": 4096,
+        "num_ops": 5000,
+        "num_files": 1,
+        "num_phases": 1,
+        "fsync_interval": 0,
+        "total_io_bytes": 20480000,
+        "file_size_gb": [
+            0.1
+        ]
+    },
+    "large_strided_mixed_freq": {
+        "read_ratio": 0.5,
+        "access_pattern": "strided",
+        "stride_size": 1048576,
+        "op_size": 4194304,
+        "num_ops": 200,
+        "num_files": 1,
+        "num_phases": 3,
+        "fsync_interval": 0,
+        "total_io_bytes": 838860800,
+        "file_size_gb": [
+            0.1,
+            1,
+            10
+        ]
+    },
+    "small_nd_strided_read_heavy_freq": {
+        "read_ratio": 1.0,
+        "access_pattern": "nd_strided",
+        "stride_size": 262144,
+        "op_size": 4096,
+        "num_ops": 50000,
+        "num_files": 1,
+        "num_phases": 4,
+        "fsync_interval": 0,
+        "total_io_bytes": 204800000,
+        "file_size_gb": [
+            0.1,1,10
+        ]
+    }
+}

@@ -870,9 +870,10 @@ def main():
                         skipped += 1
                     else:
                         failed += 1
+
                 print(f"\n  Cleaning up {name} [{storage_type}] workload files...")
                 cleanup_workload_files(workload_dir, name, args.dry_run)
-            
+        
             
 
     print(f"\n{'='*70}")
