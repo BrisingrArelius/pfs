@@ -1,0 +1,17 @@
+(base) pfs@colva2:~$ sudo ethtool enp7s0 | grep -i speed
+        Speed: 2500Mb/s
+
+
+(base) pfs@colva2:~$ sudo lldpcli show neighbors
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    enp7s0, via: LLDP, RID: 1, Time: 0 day, 00:00:30
+  Chassis:     
+    ChassisID:    mac bc:22:28:21:73:b0
+  Port:        
+    PortID:       mac bc:22:28:21:73:b0
+    TTL:          180
+-------------------------------------------------------------------------------
+
+292.5 MB/s is the bandwidth btw anjuna2 and colva2

@@ -1,0 +1,36 @@
+pfs@colva3:~$ sudo ethtool enp7s0 | grep -i speed
+        Speed: 2500Mb/s
+
+
+sudo lldpcli show neighbors
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    enp7s0, via: LLDP, RID: 1, Time: 0 day, 00:01:33
+  Chassis:     
+    ChassisID:    mac bc:22:28:21:73:b0
+  Port:        
+    PortID:       mac bc:22:28:21:73:b0
+    TTL:          180
+-------------------------------------------------------------------------------
+
+295 MB/s is the bandwidth btw anjuna2 and colva3
+
+===========================================
+===========================================
+
+even ANJUNA 3 similar details:
+
+pfs@anjuna3:~$ sudo lldpcli show neighbors
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    enp4s0, via: LLDP, RID: 1, Time: 0 day, 00:00:22
+  Chassis:     
+    ChassisID:    mac bc:22:28:21:73:b0
+  Port:        
+    PortID:       mac bc:22:28:21:73:b0
+    TTL:          180
+-------------------------------------------------------------------------------
+
+2.35 Gbits/sec 
