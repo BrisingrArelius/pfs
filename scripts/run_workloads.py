@@ -42,6 +42,7 @@ from pathlib import Path
 # =============================================================================
 
 SCRIPT_DIR       = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT     = os.path.dirname(SCRIPT_DIR)
 WORKLOADS_DIR    = os.path.join(SCRIPT_DIR, "workloads")
 PROFILES_JSON    = os.path.join(WORKLOADS_DIR, "profiles.json")
 WORKLOAD_SRC     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload.c")
@@ -53,19 +54,20 @@ WORKLOAD_TIMEOUT = 600  # 10 minutes in seconds
 MAX_RETRIES = 2  # Total attempts per profile (original + 1 retry)
 
 # Error logging and checkpoint tracking
-ERROR_LOG_FILE = os.path.join(SCRIPT_DIR, "errors.log")
-CHECKPOINT_FILE = os.path.join(SCRIPT_DIR, "checkpoint.json")
-OST_LOG_FILE    = os.path.join(SCRIPT_DIR, "ost_space_and_usage.log")
+LOGS_DIR        = os.path.join(PROJECT_ROOT, "logs_and_checkpoints")
+ERROR_LOG_FILE  = os.path.join(LOGS_DIR, "errors.log")
+CHECKPOINT_FILE = os.path.join(LOGS_DIR, "checkpoint.json")
+OST_LOG_FILE    = os.path.join(LOGS_DIR, "ost_space_and_usage_test.log")
 
 # Storage pool configurations
 STORAGE_POOLS = {
     "hdd": {
         "workload_dir": "/mnt/beegfs/advay/hdd/workloads/tmp",
-        "output_dir": "./output/hdd"
+        "output_dir": os.path.join(PROJECT_ROOT, "output", "hdd")
     },
     "ssd": {
         "workload_dir": "/mnt/beegfs/advay/ssd/workloads/tmp",
-        "output_dir": "./output/ssd"
+        "output_dir": os.path.join(PROJECT_ROOT, "output", "ssd")
     }
 }
 

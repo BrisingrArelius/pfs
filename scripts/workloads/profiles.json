@@ -39,10 +39,8 @@
         "num_phases": 1,
         "fsync_interval": 0,
         "total_io_bytes": 4096000,
-        "file_size_gb": [
-            0.1,
-            1,
-            10
+        "file_size_gb": [            
+            1
         ]
     },
     "small_random_write_heavy_freq": {

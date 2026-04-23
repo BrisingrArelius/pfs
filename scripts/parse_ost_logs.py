@@ -53,14 +53,13 @@ import seaborn as sns
 # Configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_LOG    = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              "ost_space_and_usage.log")
+DEFAULT_LOG    = "/home/pfs/advay/pfs/logs_and_checkpoints/ost_space_and_usage_test.log"
 DEFAULT_OUTPUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              "output", "ost_heatmap.png")
+                              "output","23rd april", "ost_heatmap.png")
 
 # Only show storage OSTs (node 2 and 3 in your setup) — skip offline nodes
 # Set to None to include all OSTs found in the log
-ACTIVE_NODE_IDS = {2, 3}
+ACTIVE_NODE_IDS = {1, 2, 3}
 
 # ---------------------------------------------------------------------------
 # Argument parsing
@@ -89,6 +88,11 @@ def parse_args():
         "--all-nodes",
         action="store_true",
         help="Include all nodes (including offline colva1/colva4). By default only nodes 2 and 3 are shown."
+    )
+    parser.add_argument(
+        "--per-run",
+        action="store_true",
+        help="One row per run (profile [STORAGE] runN) instead of aggregating across runs."
     )
     return parser.parse_args()
 
@@ -212,23 +216,31 @@ def compute_deltas(records):
 # Aggregation
 # ---------------------------------------------------------------------------
 
-def aggregate(rows):
+def aggregate(rows, per_run=False):
     """
-    Aggregate delta_gib across all runs of each (profile, storage_type).
-    Returns a pivot DataFrame:
-        index   = "profile [STORAGE]"
-        columns = OST IDs (sorted)
-        values  = mean delta_gib across runs
+    Build a pivot of delta_gib per (label, OST).
+
+    per_run=False (default):
+        One row per (profile, storage_type), summed across runs.
+        Label: "profile [STORAGE]"
+
+    per_run=True:
+        One row per (profile, storage_type, run_index) — no aggregation across runs.
+        Label: "profile [STORAGE] runN"
     """
     df = pd.DataFrame(rows)
     if df.empty:
         print("ERROR: No valid BEFORE/AFTER pairs found in log.")
         sys.exit(1)
 
-    # Create combined label for y-axis
-    df["label"] = df["profile"] + " [" + df["storage_type"] + "]"
+    if per_run:
+        df["label"] = (
+            df["profile"] + " [" + df["storage_type"] + "] run"
+            + df["run_index"].astype(str)
+        )
+    else:
+        df["label"] = df["profile"] + " [" + df["storage_type"] + "]"
 
-    # Mean across runs
     agg = (
         df.groupby(["label", "ost_id"])["delta_gib"]
         .sum()
@@ -239,6 +251,15 @@ def aggregate(rows):
     pivot.columns = [f"OST{c}" for c in sorted(pivot.columns)]
     pivot = pivot.reindex(sorted(pivot.columns), axis=1)
 
+    if per_run:
+        # Sort rows by (profile, storage, run_index) so runs of the same profile group together
+        def sort_key(label):
+            m = re.match(r"^(.*) \[(HDD|SSD)\] run(\d+)$", label)
+            if m:
+                return (m.group(1), m.group(2), int(m.group(3)))
+            return (label, "", 0)
+        pivot = pivot.reindex(sorted(pivot.index, key=sort_key))
+
     return pivot
 
 
@@ -246,7 +267,7 @@ def aggregate(rows):
 # Heatmap generation
 # ---------------------------------------------------------------------------
 
-def generate_heatmap(pivot, output_path, active_only):
+def generate_heatmap(pivot, output_path, active_only, per_run=False):
     """Render and save the OST heatmap."""
 
     if active_only:
@@ -290,8 +311,10 @@ def generate_heatmap(pivot, output_path, active_only):
     cbar.outline.set_edgecolor("#444")
 
     # Titles and labels
+    subtitle = ("GiB written per OST per run" if per_run
+                else "GiB written per OST per workload — aggregated across runs")
     ax.set_title(
-        "OST Write Distribution Heatmap\n(Mean GiB written per OST per workload — aggregated across runs)",
+        f"OST Write Distribution Heatmap\n({subtitle})",
         color="white",
         fontsize=13,
         fontweight="bold",
@@ -331,13 +354,17 @@ def main():
     rows = compute_deltas(records)
     print(f"  {len(rows)} (profile, storage, run, OST) data points")
 
-    print("Aggregating across runs...")
-    pivot = aggregate(rows)
-    print(f"  Pivot: {len(pivot)} profiles × {len(pivot.columns)} OSTs")
+    if args.per_run:
+        print("Building per-run pivot (one row per run)...")
+    else:
+        print("Aggregating across runs...")
+    pivot = aggregate(rows, per_run=args.per_run)
+    row_label = "rows" if args.per_run else "profiles"
+    print(f"  Pivot: {len(pivot)} {row_label} × {len(pivot.columns)} OSTs")
     print(pivot.to_string())
 
     print("Generating heatmap...")
-    generate_heatmap(pivot, args.output, args.active_only)
+    generate_heatmap(pivot, args.output, args.active_only, per_run=args.per_run)
 
     print("\nDone.")
 
