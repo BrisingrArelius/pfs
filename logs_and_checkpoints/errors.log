@@ -1176,3 +1176,87 @@ Workload Execution Log - Started at 2026-04-23 22:52:56
 ================================================================================
 Workload Execution Log - Started at 2026-04-23 23:04:09
 ================================================================================
+
+================================================================================
+Workload Execution Log - Started at 2026-06-28 17:50:21
+================================================================================
+2026-06-28 17:51:07 [small_contiguous_read_heavy_freq_1gb/HDD/run1] Setup failed with code 255
+2026-06-28 17:51:07 [small_contiguous_read_heavy_freq_1gb/HDD/run1] Retry attempt 2/2
+2026-06-28 17:51:07 [small_contiguous_read_heavy_freq_1gb/HDD/run1] Setup failed with code 255
+2026-06-28 17:51:07 [small_contiguous_read_heavy_freq_1gb/HDD/run1] Failed after 2 attempts
+2026-06-28 17:51:50 [small_contiguous_read_heavy_freq_1gb/HDD/run2] Setup failed with code 255
+2026-06-28 17:51:50 [small_contiguous_read_heavy_freq_1gb/HDD/run2] Retry attempt 2/2
+2026-06-28 17:51:50 [small_contiguous_read_heavy_freq_1gb/HDD/run2] Setup failed with code 255
+2026-06-28 17:51:50 [small_contiguous_read_heavy_freq_1gb/HDD/run2] Failed after 2 attempts
+2026-06-28 17:52:33 [small_contiguous_read_heavy_freq_1gb/HDD/run3] Setup failed with code 255
+2026-06-28 17:52:33 [small_contiguous_read_heavy_freq_1gb/HDD/run3] Retry attempt 2/2
+2026-06-28 17:52:33 [small_contiguous_read_heavy_freq_1gb/HDD/run3] Setup failed with code 255
+2026-06-28 17:52:33 [small_contiguous_read_heavy_freq_1gb/HDD/run3] Failed after 2 attempts
+2026-06-28 17:53:16 [small_contiguous_read_heavy_freq_1gb/HDD/run4] Setup failed with code 255
+2026-06-28 17:53:16 [small_contiguous_read_heavy_freq_1gb/HDD/run4] Retry attempt 2/2
+2026-06-28 17:53:16 [small_contiguous_read_heavy_freq_1gb/HDD/run4] Setup failed with code 255
+2026-06-28 17:53:16 [small_contiguous_read_heavy_freq_1gb/HDD/run4] Failed after 2 attempts
+2026-06-28 17:53:59 [small_contiguous_read_heavy_freq_1gb/HDD/run5] Setup failed with code 255
+2026-06-28 17:53:59 [small_contiguous_read_heavy_freq_1gb/HDD/run5] Retry attempt 2/2
+2026-06-28 17:53:59 [small_contiguous_read_heavy_freq_1gb/HDD/run5] Setup failed with code 255
+2026-06-28 17:53:59 [small_contiguous_read_heavy_freq_1gb/HDD/run5] Failed after 2 attempts
+
+================================================================================
+Workload Execution Log - Started at 2026-06-28 18:36:48
+================================================================================
+
+================================================================================
+Workload Execution Log - Started at 2026-06-28 18:38:27
+================================================================================
+2026-06-28 18:39:10 [small_contiguous_read_heavy_freq_1_1gb/HDD/run1] Setup failed with code 255
+2026-06-28 18:39:10 [small_contiguous_read_heavy_freq_1_1gb/HDD/run1] Retry attempt 2/2
+2026-06-28 18:39:10 [small_contiguous_read_heavy_freq_1_1gb/HDD/run1] Setup failed with code 255
+2026-06-28 18:39:10 [small_contiguous_read_heavy_freq_1_1gb/HDD/run1] Failed after 2 attempts
+
+================================================================================
+Workload Execution Log - Started at 2026-06-28 19:08:31
+================================================================================
+2026-06-28 19:12:31 [small_contiguous_read_heavy_freq_1_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:12:31 [small_contiguous_read_heavy_freq_1_1gb/SSD/run1] Retry attempt 2/2
+
+================================================================================
+Workload Execution Log - Started at 2026-06-28 19:21:22
+================================================================================
+2026-06-28 19:25:21 [small_contiguous_read_heavy_freq_1_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:25:21 [small_contiguous_read_heavy_freq_1_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 19:37:48 [small_contiguous_read_heavy_freq_3_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:37:48 [small_contiguous_read_heavy_freq_3_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 19:50:36 [small_contiguous_read_heavy_freq_5_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:50:36 [small_contiguous_read_heavy_freq_5_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 19:50:37 [small_contiguous_read_heavy_freq_5_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:50:37 [small_contiguous_read_heavy_freq_5_1gb/SSD/run1] Failed after 2 attempts
+2026-06-28 19:54:25 [small_contiguous_read_heavy_freq_6_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:54:25 [small_contiguous_read_heavy_freq_6_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 19:54:26 [small_contiguous_read_heavy_freq_6_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:54:26 [small_contiguous_read_heavy_freq_6_1gb/SSD/run1] Failed after 2 attempts
+2026-06-28 19:58:15 [small_contiguous_read_heavy_freq_7_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:58:15 [small_contiguous_read_heavy_freq_7_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 19:58:15 [small_contiguous_read_heavy_freq_7_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 19:58:15 [small_contiguous_read_heavy_freq_7_1gb/SSD/run1] Failed after 2 attempts
+2026-06-28 20:07:55 [small_contiguous_read_heavy_freq_9_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 20:07:55 [small_contiguous_read_heavy_freq_9_1gb/SSD/run1] Retry attempt 2/2
+
+================================================================================
+Workload Execution Log - Started at 2026-06-28 20:47:05
+================================================================================
+2026-06-28 20:57:00 [small_contiguous_read_heavy_freq_2_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 20:57:00 [small_contiguous_read_heavy_freq_2_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 20:57:01 [small_contiguous_read_heavy_freq_2_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 20:57:01 [small_contiguous_read_heavy_freq_2_1gb/SSD/run1] Failed after 2 attempts
+2026-06-28 21:07:07 [small_contiguous_read_heavy_freq_4_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 21:07:07 [small_contiguous_read_heavy_freq_4_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 21:07:08 [small_contiguous_read_heavy_freq_4_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 21:07:08 [small_contiguous_read_heavy_freq_4_1gb/SSD/run1] Failed after 2 attempts
+2026-06-28 21:11:11 [small_contiguous_read_heavy_freq_5_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 21:11:11 [small_contiguous_read_heavy_freq_5_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 21:29:54 [small_contiguous_read_heavy_freq_8_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 21:29:54 [small_contiguous_read_heavy_freq_8_1gb/SSD/run1] Retry attempt 2/2
+2026-06-28 21:29:54 [small_contiguous_read_heavy_freq_8_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 21:29:54 [small_contiguous_read_heavy_freq_8_1gb/SSD/run1] Failed after 2 attempts
+2026-06-28 21:39:17 [small_contiguous_read_heavy_freq_10_1gb/SSD/run1] Setup failed with code 250
+2026-06-28 21:39:17 [small_contiguous_read_heavy_freq_10_1gb/SSD/run1] Retry attempt 2/2

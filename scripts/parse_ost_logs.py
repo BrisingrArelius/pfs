@@ -53,7 +53,7 @@ import seaborn as sns
 # Configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_LOG    = "/home/pfs/advay/pfs/logs_and_checkpoints/ost_space_and_usage_test.log"
+DEFAULT_LOG    = "/home/pfs/advay/pfs/logs_and_checkpoints/ost_space_and_usage_jun_28.log"
 DEFAULT_OUTPUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                               "output","23rd april", "ost_heatmap.png")
 

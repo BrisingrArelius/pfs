@@ -1,0 +1,1930 @@
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_1_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:47:06
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_1_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:47:48
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_1_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:49:29
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_1_1gb_f0
+    Entry type: file
+    EntryID: 0-6A413ADE-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 103 @ colva1 [ID: 1]
+      + 203 @ colva2 [ID: 2]
+      + 204 @ colva2 [ID: 2]
+      + 303 @ colva3 [ID: 3]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A413ADE-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_1_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:49:29
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1445.9GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.3GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.5GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1662.8GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_1_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:50:11
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_1_1gb [SSD] run1
+### Timestamp: 2026-06-28 20:50:12
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_1_1gb [SSD] run1
+### Timestamp: 2026-06-28 20:50:54
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_1_1gb [SSD] run1
+### Timestamp: 2026-06-28 20:52:36
+  FILE: /mnt/beegfs/advay/ssd/workloads/tmp/workload_small_contiguous_read_heavy_freq_1_1gb_f0
+    Entry type: file
+    EntryID: 0-6A413BD4-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 305 @ colva3 [ID: 3]
+      + 307 @ colva3 [ID: 3]
+      + 104 @ colva1 [ID: 1]
+      + 206 @ colva2 [ID: 2]
+    Chunk path: u3E9/6998/D/1-6998D1FE-1/0-6A413BD4-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 9/59/1-6998D1FE-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_1_1gb [SSD] run1
+### Timestamp: 2026-06-28 20:52:36
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.0GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     901.8GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.0GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.6GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_1_1gb [SSD] run1
+### Timestamp: 2026-06-28 20:53:18
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_2_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:53:18
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_2_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:54:01
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_2_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:55:34
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_2_1gb_f0
+    Entry type: file
+    EntryID: 0-6A413C52-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 302 @ colva3 [ID: 3]
+      + 303 @ colva3 [ID: 3]
+      + 102 @ colva1 [ID: 1]
+      + 203 @ colva2 [ID: 2]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A413C52-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_2_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:55:34
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.1GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.3GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1664.8GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1662.8GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_2_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:56:16
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_2_1gb [SSD] run1
+### Timestamp: 2026-06-28 20:56:16
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_2_1gb [SSD] run1
+### Timestamp: 2026-06-28 20:56:59
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_3_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:57:01
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_3_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:57:42
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_3_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:59:24
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_3_1gb_f0
+    Entry type: file
+    EntryID: 0-6A413D4B-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 204 @ colva2 [ID: 2]
+      + 301 @ colva3 [ID: 3]
+      + 304 @ colva3 [ID: 3]
+      + 101 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A413D4B-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_3_1gb [HDD] run1
+### Timestamp: 2026-06-28 20:59:24
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.1GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.5GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.5GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.6GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_3_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:00:06
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_3_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:00:06
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_3_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:00:49
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_3_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:02:28
+  FILE: /mnt/beegfs/advay/ssd/workloads/tmp/workload_small_contiguous_read_heavy_freq_3_1gb_f0
+    Entry type: file
+    EntryID: 0-6A413E08-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 306 @ colva3 [ID: 3]
+      + 307 @ colva3 [ID: 3]
+      + 105 @ colva1 [ID: 1]
+      + 206 @ colva2 [ID: 2]
+    Chunk path: u3E9/6998/D/1-6998D1FE-1/0-6A413E08-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 9/59/1-6998D1FE-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_3_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:02:28
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.5GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     901.8GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.3GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.6GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_3_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:03:09
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_4_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:03:09
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_4_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:03:52
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_4_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:05:43
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_4_1gb_f0
+    Entry type: file
+    EntryID: 0-6A413EC2-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 201 @ colva2 [ID: 2]
+      + 204 @ colva2 [ID: 2]
+      + 301 @ colva3 [ID: 3]
+      + 102 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A413EC2-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_4_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:05:43
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.1GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.0GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.5GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.5GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_4_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:06:24
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_4_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:06:24
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_4_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:07:07
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_5_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:07:08
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_5_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:07:50
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_5_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:09:46
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_5_1gb_f0
+    Entry type: file
+    EntryID: 0-6A413FBB-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 101 @ colva1 [ID: 1]
+      + 103 @ colva1 [ID: 1]
+      + 201 @ colva2 [ID: 2]
+      + 301 @ colva3 [ID: 3]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A413FBB-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_5_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:09:46
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.1GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1445.9GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.0GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.5GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_5_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:10:28
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_5_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:10:28
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_5_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:11:11
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_5_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:12:57
+  FILE: /mnt/beegfs/advay/ssd/workloads/tmp/workload_small_contiguous_read_heavy_freq_5_1gb_f0
+    Entry type: file
+    EntryID: 1-6A414075-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 205 @ colva2 [ID: 2]
+      + 206 @ colva2 [ID: 2]
+      + 305 @ colva3 [ID: 3]
+      + 104 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/D/1-6998D1FE-1/1-6A414075-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 9/59/1-6998D1FE-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_5_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:12:57
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.0GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.7GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     901.8GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.0GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_5_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:13:37
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_6_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:13:37
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_6_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:14:20
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_6_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:15:53
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_6_1gb_f0
+    Entry type: file
+    EntryID: 0-6A41412F-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 304 @ colva3 [ID: 3]
+      + 103 @ colva1 [ID: 1]
+      + 202 @ colva2 [ID: 2]
+      + 302 @ colva3 [ID: 3]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A41412F-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_6_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:15:53
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1445.9GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.0GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1664.8GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.6GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_6_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:16:36
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_6_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:16:37
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_6_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:17:19
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_6_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:19:05
+  FILE: /mnt/beegfs/advay/ssd/workloads/tmp/workload_small_contiguous_read_heavy_freq_6_1gb_f0
+    Entry type: file
+    EntryID: 0-6A4141E9-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 107 @ colva1 [ID: 1]
+      + 206 @ colva2 [ID: 2]
+      + 305 @ colva3 [ID: 3]
+      + 105 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/D/1-6998D1FE-1/0-6A4141E9-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 9/59/1-6998D1FE-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_6_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:19:05
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.5GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.0GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     901.8GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.0GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_6_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:19:46
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_7_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:19:46
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_7_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:20:29
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_7_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:22:02
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_7_1gb_f0
+    Entry type: file
+    EntryID: 0-6A4142A3-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 202 @ colva2 [ID: 2]
+      + 204 @ colva2 [ID: 2]
+      + 302 @ colva3 [ID: 3]
+      + 304 @ colva3 [ID: 3]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A4142A3-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_7_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:22:02
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.0GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.5GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1664.8GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.6GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_7_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:22:44
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_7_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:22:45
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_7_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:23:27
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_7_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:25:14
+  FILE: /mnt/beegfs/advay/ssd/workloads/tmp/workload_small_contiguous_read_heavy_freq_7_1gb_f0
+    Entry type: file
+    EntryID: 0-6A41435A-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 107 @ colva1 [ID: 1]
+      + 206 @ colva2 [ID: 2]
+      + 306 @ colva3 [ID: 3]
+      + 104 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/D/1-6998D1FE-1/0-6A41435A-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 9/59/1-6998D1FE-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_7_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:25:14
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.0GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.0GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     901.8GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.3GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_7_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:25:56
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_8_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:25:56
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_8_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:26:39
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_8_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:28:28
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_8_1gb_f0
+    Entry type: file
+    EntryID: 0-6A414411-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 201 @ colva2 [ID: 2]
+      + 202 @ colva2 [ID: 2]
+      + 204 @ colva2 [ID: 2]
+      + 102 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A414411-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_8_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:28:28
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.1GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.0GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.0GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.5GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_8_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:29:10
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_8_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:29:11
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_8_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:29:54
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_9_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:29:55
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_9_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:30:37
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_9_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:31:59
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_9_1gb_f0
+    Entry type: file
+    EntryID: 0-6A41450D-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 202 @ colva2 [ID: 2]
+      + 301 @ colva3 [ID: 3]
+      + 303 @ colva3 [ID: 3]
+      + 304 @ colva3 [ID: 3]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A41450D-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_9_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:31:59
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.0GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.5GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1662.8GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.6GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_9_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:32:41
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_9_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:32:41
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_9_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:33:24
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_9_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:35:01
+  FILE: /mnt/beegfs/advay/ssd/workloads/tmp/workload_small_contiguous_read_heavy_freq_9_1gb_f0
+    Entry type: file
+    EntryID: 0-6A4145C7-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 206 @ colva2 [ID: 2]
+      + 305 @ colva3 [ID: 3]
+      + 307 @ colva3 [ID: 3]
+      + 105 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/D/1-6998D1FE-1/0-6A4145C7-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 9/59/1-6998D1FE-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_9_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:35:01
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.5GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     901.8GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.0GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.6GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_9_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:35:44
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_10_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:35:44
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_10_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:36:27
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_10_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:37:53
+  FILE: /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_10_1gb_f0
+    Entry type: file
+    EntryID: 0-6A414645-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 203 @ colva2 [ID: 2]
+      + 301 @ colva3 [ID: 3]
+      + 302 @ colva3 [ID: 3]
+      + 304 @ colva3 [ID: 3]
+    Chunk path: u3E9/6998/7/0-6998774B-1/0-6A414645-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 67/66/0-6998774B-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_10_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:37:53
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.3GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.5GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1664.8GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.6GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_10_1gb [HDD] run1
+### Timestamp: 2026-06-28 21:38:33
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### OST SPACE (STORAGE) BEFORE small_contiguous_read_heavy_freq_10_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:38:34
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.3GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     902.0GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.3GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.9GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) BEFORE small_contiguous_read_heavy_freq_10_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:39:16
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
+
+### FILE OST LAYOUT AFTER small_contiguous_read_heavy_freq_10_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:40:56
+  FILE: /mnt/beegfs/advay/ssd/workloads/tmp/workload_small_contiguous_read_heavy_freq_10_1gb_f0
+    Entry type: file
+    EntryID: 1-6A414702-1
+    Stripe pattern details:
+    + Type: RAID0
+    + Chunksize: 1M
+    + Number of storage targets: desired: 4; actual: 4
+    + Storage targets:
+      + 206 @ colva2 [ID: 2]
+      + 305 @ colva3 [ID: 3]
+      + 307 @ colva3 [ID: 3]
+      + 104 @ colva1 [ID: 1]
+    Chunk path: u3E9/6998/D/1-6998D1FE-1/1-6A414702-1
+    Inlined inode: yes
+    Dentry info:
+     + Path: 9/59/1-6998D1FE-1/
+     + Metadata node: anjuna3 [ID: 1]
+
+### OST SPACE (STORAGE) AFTER small_contiguous_read_heavy_freq_10_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:40:56
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+     101    1862.1GiB    1456.3GiB  78%      195.4M      195.2M 100%        1
+     102    1862.1GiB    1453.3GiB  78%      195.4M      195.2M 100%        1
+     103    1862.1GiB    1446.2GiB  78%      195.4M      195.2M 100%        1
+     104     931.1GiB     901.0GiB  97%      488.4M      488.4M 100%        1
+     105     931.1GiB     912.7GiB  98%      488.4M      488.4M 100%        1
+     106     931.1GiB     911.6GiB  98%      488.4M      488.4M 100%        1
+     107     931.1GiB     911.3GiB  98%      488.4M      488.4M 100%        1
+     201    1862.1GiB    1779.2GiB  96%      195.4M      195.3M 100%        2
+     202    1862.1GiB    1774.3GiB  95%      195.4M      195.3M 100%        2
+     203    1862.1GiB    1777.6GiB  95%      195.4M      195.3M 100%        2
+     204    1862.1GiB    1776.8GiB  95%      195.4M      195.3M 100%        2
+     205     931.1GiB     901.9GiB  97%      488.4M      488.4M 100%        2
+     206     931.1GiB     901.8GiB  97%      488.4M      488.4M 100%        2
+     207     931.1GiB     904.2GiB  97%      488.4M      488.4M 100%        2
+     301    1862.1GiB    1667.7GiB  90%      195.4M      195.3M 100%        3
+     302    1862.1GiB    1665.0GiB  89%      195.4M      195.3M 100%        3
+     303    1862.1GiB    1663.1GiB  89%      195.4M      195.3M 100%        3
+     304    1862.1GiB    1661.9GiB  89%      195.4M      195.3M 100%        3
+     305     931.1GiB     903.0GiB  97%      488.4M      488.4M 100%        3
+     306     931.1GiB     872.5GiB  94%      488.4M      488.2M 100%        3
+     307     931.1GiB     548.6GiB  59%      488.4M      488.4M 100%        3
+     401       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     402       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     403       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     404       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     405       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     406       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+     407       0.0GiB       0.0GiB   0%        0.0M        0.0M   0%        4
+# WARNINGS (offline nodes, not in active pools): [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERROR from beegfs-storage colva4 [ID: 4]: Communication error]
+ [ERRO
+
+### MDS SPACE (METADATA) AFTER small_contiguous_read_heavy_freq_10_1gb [SSD] run1
+### Timestamp: 2026-06-28 21:41:37
+TargetID        Total         Free    %      ITotal       IFree    %   NodeID
+========        =====         ====    =      ======       =====    =   ======
+       1     667.2GiB      28.5GiB   4%       44.5M       37.0M  83%        1
