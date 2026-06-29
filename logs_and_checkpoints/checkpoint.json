@@ -1,20 +1,5 @@
 {
-  "small_contiguous_read_heavy_freq_1_1gb_hdd_run1": true,
-  "last_updated": "2026-06-28 21:41:37",
-  "small_contiguous_read_heavy_freq_1_1gb_ssd_run1": true,
-  "small_contiguous_read_heavy_freq_2_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_3_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_3_1gb_ssd_run1": true,
-  "small_contiguous_read_heavy_freq_4_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_5_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_5_1gb_ssd_run1": true,
-  "small_contiguous_read_heavy_freq_6_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_6_1gb_ssd_run1": true,
-  "small_contiguous_read_heavy_freq_7_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_7_1gb_ssd_run1": true,
-  "small_contiguous_read_heavy_freq_8_1gb_hdd_run1": true,
   "small_contiguous_read_heavy_freq_9_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_9_1gb_ssd_run1": true,
-  "small_contiguous_read_heavy_freq_10_1gb_hdd_run1": true,
-  "small_contiguous_read_heavy_freq_10_1gb_ssd_run1": true
+  "last_updated": "2026-06-29 11:54:31",
+  "small_contiguous_read_heavy_freq_9_1gb_ssd_run1": true
 }
