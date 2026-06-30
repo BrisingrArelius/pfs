@@ -79,11 +79,11 @@ MODE_WORKLOAD = 1
 # ---------------------------------------------------------------------------
 
 def parse_args(argv):
-    if len(argv) < 12:
+    if len(argv) < 13:
         print(
             f"Usage: {argv[0]} <profile_name> <read_ratio> <access_pattern (0|1|2|3)>\n"
             f"           <stride_size> <op_size> <num_ops> <num_files>\n"
-            f"           <num_phases> <fsync_interval> <work_dir> <mode (0|1)>",
+            f"           <num_phases> <fsync_interval> <work_dir> <mode (0|1)> <run_index>",
             file=sys.stderr
         )
         sys.exit(1)
@@ -100,6 +100,7 @@ def parse_args(argv):
         "fsync_interval": int(argv[9]),
         "work_dir":       argv[10],
         "mode":           int(argv[11]),
+        "run_index":      int(argv[12]),
     }
 
 
@@ -120,13 +121,13 @@ def ops_per_file(p):
 
 def file_path(p, file_index):
     """
-    Deterministic file path — identical scheme to the C binary so setup and
-    workload mode find the same files:
-        {work_dir}/workload_{profile_name}_f{file_index}
+    Deterministic file path per run so setup and workload mode agree for the
+    same run while subsequent runs use a different namespace:
+        {work_dir}/workload_{profile_name}_run{run_index}_f{file_index}
     """
     return os.path.join(
         p["work_dir"],
-        f"workload_{p['profile_name']}_f{file_index}"
+        f"workload_{p['profile_name']}_run{p['run_index']}_f{file_index}"
     )
 
 

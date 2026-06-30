@@ -1,5 +1,5 @@
 {
-  "small_contiguous_read_heavy_freq_9_1gb_hdd_run1": true,
-  "last_updated": "2026-06-29 11:54:31",
-  "small_contiguous_read_heavy_freq_9_1gb_ssd_run1": true
+  "small_contiguous_read_heavy_freq_1_1gb_ssd_run1": true,
+  "last_updated": "2026-06-30 12:17:23",
+  "small_contiguous_read_heavy_freq_2_1gb_ssd_run1": true
 }

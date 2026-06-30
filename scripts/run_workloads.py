@@ -369,7 +369,7 @@ def needs_setup(params):
     return params["read_ratio"] >= 1.0
 
 
-def build_workload_cmd(name, params, mode, workload_dir):
+def build_workload_cmd(name, params, mode, workload_dir, run_index):
     """Build the CLI arg list for the IOR wrapper.
     
     For mode=0 (setup): run directly without MPI (no Darshan needed)
@@ -389,6 +389,7 @@ def build_workload_cmd(name, params, mode, workload_dir):
         str(params["fsync_interval"]),
         workload_dir,
         str(mode),   # 0 = setup, 1 = workload
+        str(run_index),
     ]
     
     # Workload mode (mode=1): wrap with mpirun for Darshan
@@ -553,7 +554,7 @@ def log_file_ost_layout(workload_dir, profile_name, label, dry_run):
     ]
     _write_ost_log(header)
 
-    pattern = os.path.join(workload_dir, f"workload_{profile_name}_f*")
+    pattern = os.path.join(workload_dir, f"workload_{profile_name}_run*_f*")
     files   = glob.glob(pattern)
 
     if not files:
@@ -636,8 +637,8 @@ def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_
     label = f"{name}_run{run_index}"
     setup_required = needs_setup(params) and name != "metadata_heavy"
 
-    setup_cmd    = build_workload_cmd(name, params, mode=0, workload_dir=workload_dir)
-    workload_cmd = build_workload_cmd(name, params, mode=1, workload_dir=workload_dir)
+    setup_cmd    = build_workload_cmd(name, params, mode=0, workload_dir=workload_dir, run_index=run_index)
+    workload_cmd = build_workload_cmd(name, params, mode=1, workload_dir=workload_dir, run_index=run_index)
 
     module_flags = [f"--{m}" for m in modules]
     parse_cmd = [
