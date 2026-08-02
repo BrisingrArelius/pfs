@@ -11,8 +11,19 @@
  *   ./posix_synthetic_workload <profile_name> <read_ratio> <access_pattern>
  *                              <stride_size> <op_size> <num_ops> <num_files>
  *                              <num_phases> <fsync_interval> <work_dir> <mode>
+ *                              [block_size] [nd_dims]
  *
- * access_pattern: 0 = sequential, 1 = random, 2 = strided
+ * access_pattern: 0 = sequential, 1 = random, 2 = strided, 3 = nd_strided
+ *
+ * block_size / nd_dims are optional and only apply to nd_strided (pattern 3):
+ *   block_size — contiguous bytes touched per innermost run. MUST be smaller
+ *                than stride_size, otherwise there is no gap between rows and
+ *                the pattern degenerates into plain sequential I/O (see the
+ *                nd_strided geometry notes below). Defaults to stride_size/2.
+ *   nd_dims    — number of dimensions in the strided selection (2..5).
+ *                Defaults to 2. Each dimension contributes one additional
+ *                distinct offset-delta, so keep this <= 4 if the pattern must
+ *                stay visible in Darshan's four POSIX_STRIDE*_STRIDE slots.
  *
  * mode:
  *   0 = SETUP   — write files to disk without Darshan attached.
@@ -46,6 +57,10 @@
 #define PATTERN_STRIDED 2
 #define PATTERN_ND_STRIDED 3
 
+/* Max dimensions for nd_strided. Matches the ceiling Darshan itself tracks in
+ * its HDF5/PnetCDF modules (H5D_MAX_NDIMS / PNETCDF_VAR_MAX_NDIMS == 5). */
+#define ND_MAX_DIMS 5
+
 /* -------------------------------------------------------------------------
  * Profile — populated from CLI args
  * ---------------------------------------------------------------------- */
@@ -61,8 +76,41 @@ typedef struct
     int num_phases;
     int fsync_interval;
     char work_dir[1024];
-    int mode; /* MODE_SETUP or MODE_WORKLOAD */
+    int mode;        /* MODE_SETUP or MODE_WORKLOAD */
+    long block_size; /* nd_strided: contiguous bytes per innermost run */
+    int nd_dims;     /* nd_strided: dimensions in the selection (2..ND_MAX_DIMS) */
 } Profile;
+
+/* -------------------------------------------------------------------------
+ * nd_strided geometry — precomputed once per file.
+ *
+ * Models an N-dimensional sub-block selection over the file, the same shape
+ * an HDF5 hyperslab or PnetCDF start/count/stride selection produces:
+ *
+ *   dim 0 (innermost) — a contiguous run of block_size bytes, walked in
+ *                       op_size steps.
+ *   dim 1             — jump to the next row by stride_size, leaving a real
+ *                       (stride_size - block_size) byte hole behind.
+ *   dim k >= 2        — jump past the entire span of the dims below, scaled
+ *                       by the same sparsity ratio so a hole remains at every
+ *                       level.
+ *
+ * This is the part the previous implementation got wrong: it derived the row
+ * width from the row pitch (cols = stride_size / op_size), which forces
+ * block_size == stride_size and closes the hole entirely. The offsets then
+ * collapse algebraically to `idx * op_size` — literally sequential I/O, not
+ * merely something that resembles it — so the pattern was indistinguishable
+ * from a contiguous profile no matter which tool observed it. Keeping the
+ * width (block_size) independent of the pitch (stride_size) is what makes the
+ * access genuinely strided at any file size.
+ * ---------------------------------------------------------------------- */
+typedef struct
+{
+    int ndims;
+    long extent[ND_MAX_DIMS]; /* positions per dimension, index 0 = innermost */
+    long pitch[ND_MAX_DIMS];  /* byte stride per dimension */
+    long total;               /* product of all extents (odometer wrap point) */
+} NdGeometry;
 
 /* -------------------------------------------------------------------------
  * Utility: allocate and fill an O_DIRECT-compatible buffer.
@@ -152,11 +200,131 @@ static inline long random_offset(long file_size, long op_size, unsigned int *see
 }
 
 /* -------------------------------------------------------------------------
+ * Utility: integer nth root — largest r with r^n <= v. Used to spread the
+ * available file extent evenly across nd_strided's outer dimensions.
+ * Avoids pow()/-lm so the existing plain `gcc -O3` compile line still works.
+ * ---------------------------------------------------------------------- */
+static long int_nth_root(long v, int n)
+{
+    if (n <= 1)
+        return v;
+    if (v < 1)
+        return 1;
+
+    long r = 1;
+    while (1)
+    {
+        long next = r + 1;
+        long pw = 1;
+        int over = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (pw > v / next) /* pw * next would exceed v */
+            {
+                over = 1;
+                break;
+            }
+            pw *= next;
+        }
+        if (over || pw > v)
+            break;
+        r = next;
+    }
+    return r;
+}
+
+/* -------------------------------------------------------------------------
+ * Build the nd_strided geometry for a file of the given size.
+ *
+ * The selection is sized to span as much of the file as the dimension count
+ * allows, with every dimension keeping a real gap between consecutive
+ * positions. Yields exactly `ndims` distinct offset-deltas, which is what
+ * makes the pattern separable from contiguous I/O in the POSIX stride
+ * counters at any file size.
+ * ---------------------------------------------------------------------- */
+static void nd_geometry_init(NdGeometry *g, const Profile *p, long file_size)
+{
+    int nd = p->nd_dims;
+    if (nd < 2)
+        nd = 2;
+    if (nd > ND_MAX_DIMS)
+        nd = ND_MAX_DIMS;
+
+    long block = p->block_size;
+    if (block < p->op_size)
+        block = p->op_size;
+    if (block > p->stride_size)
+        block = p->stride_size; /* validated away in main(), clamped defensively */
+
+    /* Innermost: contiguous run of `block` bytes in op_size steps. */
+    g->pitch[0] = p->op_size;
+    g->extent[0] = block / p->op_size;
+    if (g->extent[0] < 1)
+        g->extent[0] = 1;
+
+    /* Sparsity ratio between levels — how much bigger a pitch is than the
+     * span it jumps over. Derived from the caller's own block/stride choice
+     * so the hole size stays consistent at every level. */
+    long ratio = p->stride_size / block;
+    if (ratio < 2)
+        ratio = 2;
+
+    /* Target positions per outer dimension: spread the file's expansion
+     * factor (file_size / block) evenly across the nd-1 outer dims. */
+    long expansion = file_size / (block > 0 ? block : 1);
+    if (expansion < 1)
+        expansion = 1;
+    long target = int_nth_root(expansion, nd - 1);
+    if (target < 2)
+        target = 2;
+
+    long reach = g->extent[0] * g->pitch[0]; /* bytes spanned by dims 0..k */
+
+    for (int k = 1; k < nd; k++)
+    {
+        g->pitch[k] = (k == 1) ? p->stride_size : reach * ratio;
+
+        long max_pos = (g->pitch[k] > 0) ? file_size / g->pitch[k] : 1;
+        if (max_pos < 1)
+            max_pos = 1;
+
+        g->extent[k] = (target < max_pos) ? target : max_pos;
+        reach = g->extent[k] * g->pitch[k];
+    }
+
+    g->ndims = nd;
+    g->total = 1;
+    for (int k = 0; k < nd; k++)
+        g->total *= g->extent[k];
+    if (g->total < 1)
+        g->total = 1;
+}
+
+/* -------------------------------------------------------------------------
+ * Map a monotonically increasing op index onto an nd_strided file offset by
+ * treating the index as an odometer over the selection's dimensions
+ * (innermost dimension turning fastest). Wraps at g->total so num_ops may
+ * exceed the size of the selection.
+ * ---------------------------------------------------------------------- */
+static inline long nd_offset(const NdGeometry *g, long idx)
+{
+    long rem = idx % g->total;
+    long off = 0;
+
+    for (int k = 0; k < g->ndims; k++)
+    {
+        off += (rem % g->extent[k]) * g->pitch[k];
+        rem /= g->extent[k];
+    }
+    return off;
+}
+
+/* -------------------------------------------------------------------------
  * Utility: calculate next offset based on access pattern (inlined for speed)
  * ---------------------------------------------------------------------- */
 static inline long calculate_offset(const Profile *p, long file_size,
                                     long *sequential_offset, long *stride_cursor,
-                                    unsigned int *seed)
+                                    const NdGeometry *nd, unsigned int *seed)
 {
     long offset;
 
@@ -180,34 +348,7 @@ static inline long calculate_offset(const Profile *p, long file_size,
     }
     else /* PATTERN_ND_STRIDED */
     {
-        long row_stride = p->stride_size;
-        long col_stride = p->op_size;
-
-        long total_blocks = file_size / p->op_size;
-        long cols = row_stride / p->op_size;
-        if (cols < 1)
-            cols = 1;
-        long rows = total_blocks / cols;
-        if (rows < 1)
-            rows = 1;
-
-        long idx = *stride_cursor;
-        long row, col;
-
-        if ((idx / (rows * cols)) % 2 == 0)
-        {
-            /* Row-major */
-            row = (idx / cols) % rows;
-            col = idx % cols;
-        }
-        else
-        {
-            /* Column-major */
-            col = (idx / rows) % cols;
-            row = idx % rows;
-        }
-
-        long raw = (row * row_stride + col * col_stride) % file_size;
+        long raw = nd_offset(nd, *stride_cursor) % (file_size > 0 ? file_size : p->op_size);
         offset = (raw / p->op_size) * p->op_size;
         (*stride_cursor)++;
     }
@@ -227,6 +368,7 @@ static inline long calculate_offset(const Profile *p, long file_size,
  *   stride_cursor  — global op index for strided writes (in/out)
  *   global_op      — global op count for fsync_interval (in/out)
  *   buf            — pre-allocated write buffer of p->op_size bytes
+ *   nd             — precomputed nd_strided geometry (unused by other patterns)
  *   seed           — PRNG state (in/out)
  * Returns 0 on success, -1 if a fatal I/O error occurred (file should be
  * abandoned — Darshan counters for it will be incomplete).
@@ -234,11 +376,11 @@ static inline long calculate_offset(const Profile *p, long file_size,
 static int do_write_phase(int fd, const Profile *p, long ops_in_phase,
                           long file_size, long *write_offset,
                           long *stride_cursor, long *global_op,
-                          char *buf, unsigned int *seed)
+                          char *buf, const NdGeometry *nd, unsigned int *seed)
 {
     for (long i = 0; i < ops_in_phase; i++)
     {
-        long offset = calculate_offset(p, file_size, write_offset, stride_cursor, seed);
+        long offset = calculate_offset(p, file_size, write_offset, stride_cursor, nd, seed);
 
         if (lseek(fd, offset, SEEK_SET) < 0)
         {
@@ -270,17 +412,18 @@ static int do_write_phase(int fd, const Profile *p, long ops_in_phase,
  *   stride_cursor  — global op index for strided reads (in/out)
  *   global_op      — global op count for fsync_interval (in/out)
  *   buf            — pre-allocated read buffer of p->op_size bytes
+ *   nd             — precomputed nd_strided geometry (unused by other patterns)
  *   seed           — PRNG state (in/out)
  * Returns 0 on success, -1 if a fatal I/O error occurred.
  * ---------------------------------------------------------------------- */
 static int do_read_phase(int fd, const Profile *p, long ops_in_phase,
                          long file_size, long *read_offset,
                          long *stride_cursor, long *global_op,
-                         char *buf, unsigned int *seed)
+                         char *buf, const NdGeometry *nd, unsigned int *seed)
 {
     for (long i = 0; i < ops_in_phase; i++)
     {
-        long offset = calculate_offset(p, file_size, read_offset, stride_cursor, seed);
+        long offset = calculate_offset(p, file_size, read_offset, stride_cursor, nd, seed);
 
         if (lseek(fd, offset, SEEK_SET) < 0)
         {
@@ -392,6 +535,11 @@ static void run_file_workload(const Profile *p, const char *filepath,
     /* Allocate buffer once for all phases */
     char *buf = make_buffer(p->op_size);
 
+    /* nd_strided selection geometry — depends on file_size, so computed here
+     * once per file rather than per op. */
+    NdGeometry nd;
+    nd_geometry_init(&nd, p, file_size);
+
     /* Count write vs read phases.
      * Phase ordering: W, R, W, R, ... (phase 0 = write).
      * Exception: pure-read workload mode → all phases are reads. */
@@ -437,7 +585,7 @@ static void run_file_workload(const Profile *p, const char *filepath,
                            ? (total_write_ops - write_ops_per_write_phase * (write_phases - 1))
                            : write_ops_per_write_phase;
             if (do_write_phase(fd, p, ops, file_size, &write_offset,
-                               &write_stride_cursor, &global_op, buf, &seed) < 0)
+                               &write_stride_cursor, &global_op, buf, &nd, &seed) < 0)
             {
                 fprintf(stderr, "[%s] write phase %ld failed — abandoning file\n",
                         p->profile_name, write_phase_count);
@@ -451,7 +599,7 @@ static void run_file_workload(const Profile *p, const char *filepath,
                            ? (total_read_ops - read_ops_per_read_phase * (read_phases - 1))
                            : read_ops_per_read_phase;
             if (do_read_phase(fd, p, ops, file_size, &read_offset,
-                              &read_stride_cursor, &global_op, buf, &seed) < 0)
+                              &read_stride_cursor, &global_op, buf, &nd, &seed) < 0)
             {
                 fprintf(stderr, "[%s] read phase %ld failed — abandoning file\n",
                         p->profile_name, read_phase_count);
@@ -521,12 +669,16 @@ int main(int argc, char *argv[])
         if (rank == 0)
         {
             fprintf(stderr,
-                    "Usage: %s <profile_name> <read_ratio> <access_pattern (0|1|2)>\n"
+                    "Usage: %s <profile_name> <read_ratio> <access_pattern (0|1|2|3)>\n"
                     "          <stride_size> <op_size> <num_ops> <num_files>\n"
                     "          <num_phases> <fsync_interval> <work_dir> <mode (0|1)>\n"
+                    "          [block_size] [nd_dims]\n"
                     "  mode 0 = setup (write files only, no Darshan — pure-read profiles only)\n"
-                    "  mode 1 = workload (measured run, Darshan attached)\n",
-                    argv[0]);
+                    "  mode 1 = workload (measured run, Darshan attached)\n"
+                    "  block_size — nd_strided only: contiguous bytes per innermost run;\n"
+                    "               must be < stride_size. Default stride_size/2.\n"
+                    "  nd_dims    — nd_strided only: dimensions (2..%d). Default 2.\n",
+                    argv[0], ND_MAX_DIMS);
         }
         MPI_Finalize();
         return 1;
@@ -545,6 +697,10 @@ int main(int argc, char *argv[])
     strncpy(p.work_dir, argv[10], sizeof(p.work_dir) - 1);
     p.mode = atoi(argv[11]);
 
+    /* Optional nd_strided knobs — absent/0 means "use the default". */
+    p.block_size = (argc > 12) ? atol(argv[12]) : 0;
+    p.nd_dims = (argc > 13) ? atoi(argv[13]) : 2;
+
     /* Validate */
     if (p.op_size <= 0 || p.num_ops <= 0 || p.num_phases < 1)
     {
@@ -559,6 +715,44 @@ int main(int argc, char *argv[])
             fprintf(stderr, "stride_size must be >0 for strided or nd_strided access pattern\n");
         MPI_Finalize();
         return 1;
+    }
+    if (p.access_pattern == PATTERN_ND_STRIDED)
+    {
+        if (p.nd_dims < 2 || p.nd_dims > ND_MAX_DIMS)
+        {
+            if (rank == 0)
+                fprintf(stderr, "nd_dims must be between 2 and %d for nd_strided\n", ND_MAX_DIMS);
+            MPI_Finalize();
+            return 1;
+        }
+        /* Need room for a contiguous run strictly inside the pitch, otherwise
+         * there is no hole and the pattern degenerates to sequential I/O. */
+        if (p.stride_size <= p.op_size)
+        {
+            if (rank == 0)
+                fprintf(stderr,
+                        "nd_strided requires stride_size (%ld) > op_size (%ld) so a gap "
+                        "can exist between rows\n",
+                        p.stride_size, p.op_size);
+            MPI_Finalize();
+            return 1;
+        }
+        if (p.block_size <= 0)
+            p.block_size = p.stride_size / 2; /* default: half-open rows */
+        /* Align down to a whole number of ops. */
+        p.block_size = (p.block_size / p.op_size) * p.op_size;
+        if (p.block_size < p.op_size)
+            p.block_size = p.op_size;
+        if (p.block_size >= p.stride_size)
+        {
+            if (rank == 0)
+                fprintf(stderr,
+                        "nd_strided requires block_size (%ld) < stride_size (%ld); otherwise "
+                        "rows abut and the access collapses into plain sequential I/O\n",
+                        p.block_size, p.stride_size);
+            MPI_Finalize();
+            return 1;
+        }
     }
     if (p.mode != MODE_SETUP && p.mode != MODE_WORKLOAD)
     {

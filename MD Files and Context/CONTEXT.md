@@ -705,3 +705,146 @@ sudo beegfs-ctl --getentryinfo --verbose /mnt/beegfs/advay/hdd/workloads/tmp/wor
 sudo beegfs-ctl --getentryinfo --verbose /mnt/beegfs/advay/hdd/workloads/tmp/workload_small_contiguous_read_heavy_freq_1_1gb_run3_f0
 ```
 Expect each run to show a different, sequentially-advancing OST set (consistent with the earlier confirmed roundrobin rotation: 101-103 → 201-204 → 301-304 → wrap).
+
+---
+
+## Darshan's Dimensional Visibility for `nd_strided` Is Narrower Than "HDF5 or PnetCDF"
+
+Follow-up to [`LitReview_task1.md`](LitReview_task1.md) Part C's "genuine gap"
+finding (Darshan's POSIX stride counters are flat, not dimensional). The HDF5
+and PnetCDF Darshan modules turn out to carry real per-dimension data —
+`H5D_ACCESS{1-4}_STRIDE_D{1-5}`/`_LENGTH_D{1-5}`, `H5D_DATASPACE_NDIMS`,
+`H5D_REGULAR_HYPERSLAB_SELECTS`, and the PnetCDF equivalents
+(`PNETCDF_VAR_ACCESS{1-4}_STRIDE_D{1-5}`, `PNETCDF_VAR_NDIMS`) — verified
+directly against `darshan-hdf5-log-format.h` / `darshan-pnetcdf-log-format.h`
+on this machine. That's a partial fix for the gap, not a full one: it only
+covers two of the paths real nd_strided access actually arises from.
+
+**What's actually there.** `H5D_COUNTERS` (per-dataset, HDF5 module) and the
+parallel `PNETCDF_VAR_COUNTERS` (per-variable, PnetCDF module) both track, for
+the **top 4 most frequent accesses**, per-dimension detail across **up to 5
+dimensions** (`H5D_MAX_NDIMS = 5`, `PNETCDF_VAR_MAX_NDIMS = 5`):
+
+- `H5D_ACCESS{1-4}_STRIDE_D{1-5}` / `H5D_ACCESS{1-4}_LENGTH_D{1-5}` — stride
+  and length (count×block) per dimension, D1 = fastest-varying (last) dim
+- `H5D_DATASPACE_NDIMS` — actual number of dimensions in the dataset
+- `H5D_REGULAR_HYPERSLAB_SELECTS` / `H5D_IRREGULAR_HYPERSLAB_SELECTS` /
+  `H5D_POINT_SELECTS` — how many ops used hyperslab vs. point selection
+- `H5D_CHUNK_SIZE_D{1-5}` — the dataset's on-disk chunk layout
+- PnetCDF mirrors this exactly: `PNETCDF_VAR_ACCESS{1-4}_STRIDE_D{1-5}`,
+  `_LENGTH_D{1-5}`, `PNETCDF_VAR_NDIMS`
+
+**Concrete classification heuristic this enables:**
+
+```
+is_multidim    = H5D_DATASPACE_NDIMS >= 2
+uses_hyperslab = H5D_REGULAR_HYPERSLAB_SELECTS > 0
+strided_dims   = count of Di in 1..NDIMS where STRIDE_Di > LENGTH_Di   (gap between blocks in that dim)
+
+nd_strided  ⇐  is_multidim AND uses_hyperslab AND strided_dims >= 2
+strided     ⇐  strided_dims == 1   (only one dimension has real gaps — effectively 1D-strided embedded in an N-d array)
+contiguous  ⇐  strided_dims == 0   (STRIDE_Di == LENGTH_Di in every dim — no gaps anywhere)
+```
+
+**The important caveat:** this only works for files whose I/O went through
+Darshan's HDF5 or PnetCDF instrumentation — which is exactly the boundary the
+table below draws.
+
+Checked directly against `darshan-mpiio-log-format.h` (zero stride/ndim
+fields — grep came back empty) and the full `/home/advay/darshan/include/`
+listing (no ADIOS module present at all), dimensional visibility is exactly
+these two modules and nothing else:
+
+| Path | How nd_strided arises | Darshan dimensional visibility |
+|---|---|---|
+| **HDF5** | `H5Sselect_hyperslab` | Yes — `H5D_ACCESS*_STRIDE_D{1-5}` etc. |
+| **PnetCDF** | `start[]/count[]/stride[]` vars API | Yes — `PNETCDF_VAR_ACCESS*_STRIDE_D{1-5}` etc. |
+| **Raw MPI-IO** | Derived datatypes (`MPI_Type_create_subarray`, `vector`, `indexed`) + `MPI_File_set_view` — literally what Thakur & Gropp's ROMIO paper (Part C, #2) describes | **No** — the MPI-IO module has no stride/ndim counters at all. Darshan sees only flat op counts, sizes, collective-vs-independent; the multidimensional structure is completely invisible. |
+| **Raw POSIX** | App computes its own multidimensional offsets and calls `lseek`/`read`/`write` directly | **No** — only the flat top-4 `POSIX_STRIDE*_STRIDE` proxy |
+
+The raw-MPI-IO case is significant in practice, not a corner case — plenty of
+production HPC codes build their own subarray/derived-datatype access
+directly on MPI-IO without going through HDF5 or PnetCDF at all (it's the
+lower-level primitive those libraries are themselves built on). `posix_synthetic_workload.c`
+is a live example of the fourth row: it produces genuinely nd_strided access
+without touching HDF5, PnetCDF, or even MPI-IO's collective machinery — just
+raw POSIX — which is exactly why it needed the [nd_strided fix above](#open-decisions--nd_strided-workload-generator-as-of-2026-08-03)
+rather than getting real dimensional counters "for free."
+
+**Reframing:** HDF5/PnetCDF are the two paths where Darshan *happens* to
+expose real per-dimension data — a property of which two libraries Darshan
+chose to instrument deeply, not a statement about how nd_strided access
+arises in the field generally. A meaningful fraction of real ALCF/production
+nd_strided I/O — anything routed through raw MPI-IO derived datatypes or raw
+POSIX — remains in the "no dimensional proxy" bucket the lit review already
+flagged.
+
+---
+
+## Open Decisions — `nd_strided` Workload Generator (as of 2026-08-03)
+
+The `nd_strided` offset generator in `posix_synthetic_workload.c` was fixed on
+2026-08-03 (see [`CHANGELOG.md`](CHANGELOG.md)) — it had been emitting
+*literally sequential* I/O at the 1 GB and 10 GB file sizes, because the row
+width was derived from the row pitch (`cols = row_stride / op_size`), leaving
+no gap between rows. Two decisions were deliberately left open rather than
+resolved unilaterally, because both change what the profile *means*
+scientifically.
+
+### 1. How non-contiguous should `nd_strided` actually be?
+
+The fix introduced a `block_size` parameter (contiguous bytes per innermost
+run, must be `< stride_size`). It controls the fraction of ops that are
+consecutive:
+
+```
+ops_per_row      = block_size / op_size
+consecutive_pct  = (ops_per_row - 1) / ops_per_row
+```
+
+| `block_size` | ops/row | Consecutive | Classified by a ≥95% contiguity-first rule as |
+|---|---|---|---|
+| 131072 *(current default, `stride_size/2`)* | 32 | 96.9% | **`contiguous`** ← still misclassified |
+| 65536 | 16 | 93.8% | `nd_strided` |
+| 16384 | 4 | 75.0% | `nd_strided` |
+| 8192 | 2 | 50.0% | `nd_strided` |
+
+The stride signal itself is now present and file-size-stable at every setting
+(a second delta of `stride_size - block_size + op_size` shows up in
+`POSIX_STRIDE2_STRIDE`). The issue is purely one of **classification order**:
+if files are classified contiguous-first using the ≥95% threshold derived in
+[`LitReview_task1.md`](LitReview_task1.md) Part D, the default `block_size`
+lands on the wrong side of that line.
+
+Two coherent ways out — this is the decision:
+
+- **(a) Lower `block_size`** in the profile definitions so `nd_strided` is
+  unambiguously non-contiguous by any rule (e.g. `16384` → 75%).
+- **(b) Keep the default and classify stride-first** — check for a significant
+  secondary stride *before* applying the contiguity test, treating a high
+  contiguous ratio as compatible with `nd_strided`. This is arguably more
+  faithful to real HDF5 hyperslab access, which genuinely *is* mostly
+  contiguous within each row.
+
+Option (b) is closer to physical reality; option (a) is easier to defend in the
+paper. Not yet chosen.
+
+### 2. Plumbing the new parameters through `run_workloads.py`
+
+`build_workload_cmd()` does not yet pass `block_size` (argv[12]) or `nd_dims`
+(argv[13]), so the C binary currently falls back to its defaults regardless of
+what the profile JSON says. Until this is plumbed, decision (1) cannot actually
+be applied from the JSON. Note that `run_workloads.py` primarily drives the IOR
+Python wrapper — the C binary is only invoked for `nd_strided` profiles, so
+this plumbing is `nd_strided`-specific.
+
+### Related: dimensionality is now configurable but unused
+
+`nd_dims` (2–5, default 2) was added at the same time. Per the HPC literature
+survey, real nd_strided data is overwhelmingly **2D–4D** (3D volumetric
+simulation, 4D time-resolved climate/weather like E3SM), with 5D the practical
+ceiling — which also happens to match Darshan's own `H5D_MAX_NDIMS` /
+`PNETCDF_VAR_MAX_NDIMS` limit of 5. No profile currently sets it above the
+2D default. Worth deciding whether the top-20 profile set should include
+distinct 3D/4D variants at all, since each added dimension consumes one more of
+Darshan's four `POSIX_STRIDE*_STRIDE` slots.

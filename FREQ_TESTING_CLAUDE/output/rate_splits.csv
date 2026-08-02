@@ -1,0 +1,7 @@
+metric,split_method,n_total,cut_points_ops_per_sec,band__frequent (>p50),band__frequent (>p67),band__frequent (>p75),band__moderate (p33-p67),band__seldom (<=p25),band__seldom (<=p33),band__seldom (<=p50),band__unclassified (p25-p75)
+rate_active,median,162722,25257.4959,81361,,,,,,81361,
+rate_active,tercile,162722,4694.8357;33573.1415,,54199,,54068,,54455,,
+rate_active,quartile,162722,3937.0079;35350.4357,,,40678,,40871,,,81173
+rate_wallclock,median,20843,60.6538,10421,,,,,,10422,
+rate_wallclock,tercile,20843,37.1595;319.1829,,6945,,6950,,6948,,
+rate_wallclock,quartile,20843,26.1993;536.2588,,,5210,,5211,,,10422
