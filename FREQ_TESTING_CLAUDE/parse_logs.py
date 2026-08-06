@@ -183,10 +183,13 @@ def main():
     start = time.monotonic()
     last_report_t = start
     last_report_i = 0
+    last_flush_t = start
 
     with open(out_path, "w", newline="") as f, mp.Pool(args.jobs) as pool:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
+        f.flush()  # header should be visible to external readers immediately, not
+                   # held in the buffer until the first periodic flush below
 
         for i, (rows, err) in enumerate(
             pool.imap_unordered(parse_one_log, tasks, chunksize=args.chunksize), 1
@@ -209,7 +212,16 @@ def main():
                       f"{elapsed:.0f}s elapsed]")
                 last_report_t = now
                 last_report_i = i
-                f.flush()  # make partial progress visible/durable, not just buffered
+
+            # Flush on a short time-based cadence (independent of the 1000-log print
+            # interval above) so the CSV is genuinely tail-able / externally readable
+            # while a large run is still in progress, instead of only becoming visible
+            # once every 1000 logs -- important on slow/large runs where 1000 logs can
+            # take a long time.
+            now = time.monotonic()
+            if now - last_flush_t > 5:
+                f.flush()
+                last_flush_t = now
 
     print(f"\nWrote {n_rows} file records to {out_path}")
     print(f"  rate_active undefined (zero active I/O time): {n_active_undefined}")
