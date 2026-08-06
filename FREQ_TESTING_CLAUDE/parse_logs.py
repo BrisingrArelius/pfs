@@ -13,12 +13,32 @@ modify anything in CONTIG_TESTING_CLAUDE/.
 
 Usage:
     python3 parse_logs.py <log_root_dir> <out_csv> [--parser /path/to/darshan-parser] [--jobs N]
+        [--chunksize N] [--timeout SECONDS]
+
+Notes on scaling to large corpora (500K+ logs):
+  - Rows are written to <out_csv> incrementally as each log finishes, not buffered
+    in memory until the end -- keeps memory flat and means a kill/crash partway
+    through still leaves a usable partial CSV.
+  - --chunksize controls how many logs each worker pulls off the queue at once
+    before reporting back. The default (32, inherited from CONTIG_TESTING_CLAUDE)
+    is fine for small/uniform corpora, but on large corpora with a few unusually
+    slow/huge logs it causes a "straggler" effect: one worker can get stuck
+    serially churning through a chunk containing several slow logs (each up to
+    --timeout seconds) while the rest of the pool sits idle, waiting -- this shows
+    up as the progress counter appearing to freeze near the end of a run even
+    though nothing has actually hung. Lower --chunksize (e.g. 1-4) spreads slow
+    logs across workers instead of concentrating them, at the cost of slightly
+    more IPC overhead -- worth it once the corpus is large enough that a handful
+    of pathological logs is likely.
+  - Progress lines now include elapsed time and a rolling logs/sec rate, so a
+    genuine stall (rate dropping toward 0) is distinguishable from "just slow".
 """
 import argparse
 import csv
 import multiprocessing as mp
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 # counter_name -> (python_type, aggregation_strategy)
@@ -41,11 +61,11 @@ NEEDED_COUNTERS = set(COUNTER_SPEC)
 
 
 def parse_one_log(args):
-    log_path, darshan_parser = args
+    log_path, darshan_parser, timeout = args
     try:
         proc = subprocess.run(
             [darshan_parser, str(log_path)],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=timeout,
         )
     except Exception as e:
         return [], f"{log_path}: subprocess failed ({e})"
@@ -132,6 +152,12 @@ def main():
     ap.add_argument("out_csv", help="output CSV path (one row per file record)")
     ap.add_argument("--parser", default="/home/advay/darshan/bin/darshan-parser")
     ap.add_argument("--jobs", type=int, default=mp.cpu_count())
+    ap.add_argument("--chunksize", type=int, default=4,
+                     help="logs per worker batch (default 4; lower spreads slow/large "
+                          "logs across workers instead of stalling one worker on a "
+                          "batch full of them -- see module docstring)")
+    ap.add_argument("--timeout", type=float, default=60,
+                     help="per-log darshan-parser timeout in seconds (default 60)")
     args = ap.parse_args()
 
     log_root = Path(args.log_root)
@@ -141,17 +167,11 @@ def main():
         sys.exit(1)
     print(f"Found {len(logs)} .darshan logs under {log_root}")
 
-    tasks = [(p, args.parser) for p in logs]
-    all_rows = []
+    tasks = [(p, args.parser, args.timeout) for p in logs]
     errors = []
-
-    with mp.Pool(args.jobs) as pool:
-        for i, (rows, err) in enumerate(pool.imap_unordered(parse_one_log, tasks, chunksize=32), 1):
-            if err:
-                errors.append(err)
-            all_rows.extend(rows)
-            if i % 1000 == 0 or i == len(logs):
-                print(f"  processed {i}/{len(logs)} logs, {len(all_rows)} file records so far")
+    n_rows = 0
+    n_active_undefined = 0
+    n_wallclock_undefined = 0
 
     out_path = Path(args.out_csv)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -159,20 +179,48 @@ def main():
                   "posix_reads", "posix_writes", "total_ops",
                   "f_read_time", "f_write_time", "open_start_ts", "close_end_ts",
                   "rate_active", "rate_wallclock"]
-    with open(out_path, "w", newline="") as f:
+
+    start = time.monotonic()
+    last_report_t = start
+    last_report_i = 0
+
+    with open(out_path, "w", newline="") as f, mp.Pool(args.jobs) as pool:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(all_rows)
 
-    n_active_undefined = sum(1 for r in all_rows if r["rate_active"] == "")
-    n_wallclock_undefined = sum(1 for r in all_rows if r["rate_wallclock"] == "")
+        for i, (rows, err) in enumerate(
+            pool.imap_unordered(parse_one_log, tasks, chunksize=args.chunksize), 1
+        ):
+            if err:
+                errors.append(err)
+            if rows:
+                writer.writerows(rows)
+                n_rows += len(rows)
+                n_active_undefined += sum(1 for r in rows if r["rate_active"] == "")
+                n_wallclock_undefined += sum(1 for r in rows if r["rate_wallclock"] == "")
 
-    print(f"\nWrote {len(all_rows)} file records to {out_path}")
+            if i % 1000 == 0 or i == len(logs):
+                now = time.monotonic()
+                elapsed = now - start
+                interval_rate = (i - last_report_i) / max(now - last_report_t, 1e-9)
+                overall_rate = i / max(elapsed, 1e-9)
+                print(f"  processed {i}/{len(logs)} logs, {n_rows} file records so far  "
+                      f"[{interval_rate:.1f} logs/sec last batch, {overall_rate:.1f} logs/sec overall, "
+                      f"{elapsed:.0f}s elapsed]")
+                last_report_t = now
+                last_report_i = i
+                f.flush()  # make partial progress visible/durable, not just buffered
+
+    print(f"\nWrote {n_rows} file records to {out_path}")
     print(f"  rate_active undefined (zero active I/O time): {n_active_undefined}")
     print(f"  rate_wallclock undefined (zero/negative wallclock span): {n_wallclock_undefined}")
     print(f"Logs with errors: {len(errors)}")
     for e in errors[:10]:
         print(f"  {e}")
+    if len(errors) > 10:
+        errors_path = out_path.with_suffix(".errors.txt")
+        errors_path.write_text("\n".join(errors))
+        print(f"  ... ({len(errors) - 10} more; full list written to {errors_path})")
 
 
 if __name__ == "__main__":

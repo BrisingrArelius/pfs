@@ -23,8 +23,24 @@ python3 parse_logs.py /home/advay/darshan_logs_analysis/2024-20260128T084726Z-3-
 ```
 
 Optional flags: `--parser /path/to/darshan-parser` (custom binary path), `--jobs N`
-(worker count, default = all cores). Progress is printed every 1,000 logs; on the
-14,900-log corpus this took a few minutes and produced 162,722 rows.
+(worker count, default = all cores), `--chunksize N` (logs per worker batch, default
+4), `--timeout SECONDS` (per-log `darshan-parser` timeout, default 60). Progress is
+printed every 1,000 logs with a logs/sec rate (both a rolling last-batch rate and an
+overall rate), and rows are written to the output CSV incrementally as each log
+finishes rather than buffered until the end — memory stays flat and a partial CSV is
+still usable if the run is killed partway through. On the 14,900-log corpus this took
+a few minutes and produced 162,722 rows.
+
+**At large scale (hundreds of thousands of logs):** if progress looks frozen for a
+long stretch, it's very likely a "straggler" effect, not a real hang — a worker can
+get stuck serially processing a batch (`--chunksize`) that happens to contain several
+slow/large logs, each taking up to `--timeout` seconds, while other workers sit idle
+waiting on the pool to redistribute work. Lower `--chunksize` (e.g. `--chunksize 1`)
+spreads slow logs across workers instead of concentrating them in one batch, at the
+cost of slightly more IPC overhead — worth it once a corpus is large enough that a
+handful of pathological logs is likely. The per-batch logs/sec figure in the progress
+output makes a genuine stall (rate dropping toward 0) visible and distinguishable
+from "just slow."
 
 **Step 2 — bin the rates and compute the seldom/frequent splits.** Run twice: once
 unfiltered, once with the `total_ops ≥ 20` floor (same stability floor Part D

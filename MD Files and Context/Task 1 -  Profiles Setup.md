@@ -35,7 +35,9 @@ All thresholds must be groundable in **Darshan POSIX/MPI-IO counters**, since th
 - **Frequency:** total `POSIX_READS`/`POSIX_WRITES` op counts.
 - **Access pattern:** `POSIX_SEQ_*`, `POSIX_CONSEC_*`, `POSIX_STRIDE1_STRIDE4`+ counters.
 - **Type (read/write/mixed):** `POSIX_BYTES_READ` vs. `POSIX_BYTES_WRITTEN` ratio.
-- **Sharing pattern (SSF/FPP)**, if added: rank-level access counts (MPI-IO module).
+- **Sharing pattern (SSF/FPP)**, if added: the per-record `rank` field on Darshan records — `rank == -1` (Darshan's shared-file reduction, all ranks touched it) → SSF; one distinct rank per distinct filename → FPP; multiple specific non--1 ranks sharing the same filename hash → partial-shared. Backed by Patel et al. (FAST 2020), per [`LitReview_task1.md`](LitReview_task1.md) Part B #4 and the Cross-Paper Synthesis's "missing dimension" note.
+
+  **Pipeline gap (not yet actionable):** [`parse_darshan.py`](../scripts/parse_darshan.py) currently discards `rank` entirely — it aggregates straight to one row per file with every counter summed (`POSIX_COUNTERS`/`MPI_COUNTERS`, all `"sum"`), so rank-level information never survives into the CSVs. Unlike size/type/frequency, which are already one `sum()` away from being computable from the existing output, sharing pattern needs a parser change (preserve `rank` per record before the aggregation step) before it can be derived at all. Flag as its own sub-task if this dimension is adopted.
 
 If a literature threshold relies on data Darshan doesn't expose (e.g. raw latency), flag it as non-actionable rather than adopting it silently.
 
