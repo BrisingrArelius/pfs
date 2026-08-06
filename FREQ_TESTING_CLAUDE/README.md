@@ -1,5 +1,53 @@
 # I/O rate distribution — real ALCF Polaris Darshan logs
 
+## How to run this pipeline
+
+Two steps, run from inside this directory (`FREQ_TESTING_CLAUDE/`).
+
+**Prerequisites:**
+- `darshan-parser` binary — defaults to `/home/advay/darshan/bin/darshan-parser`;
+  override with `--parser <path>` if it lives elsewhere.
+- `python3` with `matplotlib` installed (standard library covers everything else:
+  `csv`, `argparse`, `multiprocessing`, `subprocess`, `math`).
+- Read access to a directory tree of `.darshan` log files. The analysis in this
+  README used `/home/advay/darshan_logs_analysis/2024-20260128T084726Z-3-001/2024/`
+  (14,900 logs) — point at a different tree to run against different data.
+
+**Step 1 — parse the logs into a per-file CSV** (this is the slow step; it shells
+out to `darshan-parser` once per log file, parallelized across all CPU cores by
+default):
+
+```bash
+cd FREQ_TESTING_CLAUDE
+python3 parse_logs.py /home/advay/darshan_logs_analysis/2024-20260128T084726Z-3-001/2024/ output/per_file_rate.csv
+```
+
+Optional flags: `--parser /path/to/darshan-parser` (custom binary path), `--jobs N`
+(worker count, default = all cores). Progress is printed every 1,000 logs; on the
+14,900-log corpus this took a few minutes and produced 162,722 rows.
+
+**Step 2 — bin the rates and compute the seldom/frequent splits.** Run twice: once
+unfiltered, once with the `total_ops ≥ 20` floor (same stability floor Part D
+established for `contig_ratio`) — both are referenced in the findings below, so both
+are needed to reproduce this README's numbers:
+
+```bash
+python3 analyze_distribution.py output/per_file_rate.csv output
+python3 analyze_distribution.py output/per_file_rate.csv output --min-ops 20
+```
+
+This prints the distribution tables and split tables to stdout, and writes to
+`output/`: `rate_active_distribution[_minops20].png`,
+`rate_wallclock_distribution[_minops20].png`, one overlay PNG per metric × split
+method (`<metric>_<median|tercile|quartile>_split[_minops20].png`, 12 total), and
+`rate_splits[_minops20].csv` (the combined numeric split summary).
+
+To reproduce this README's numbers exactly, use the same log corpus path above —
+results (especially the Finding 3 peak) are Polaris/corpus-specific and will differ
+on a different log tree.
+
+## Overview
+
 Part E of the Task 1 threshold work (see
 [`../MD Files and Context/LitReview_task1.md`](../MD%20Files%20and%20Context/LitReview_task1.md)),
 parallel in method to Part D's contiguous-ratio analysis in
@@ -61,14 +109,6 @@ docstring for the aggregation-strategy table).
   `--min-ops N` filters low-op-count files first (same quantization concern Part D
   documented: a rate computed from 1-2 ops is not a stable estimate).
 - `output/` — generated CSVs and PNGs (run output, not committed logic).
-
-## Rerunning
-
-```bash
-python3 parse_logs.py <log_root_dir> output/per_file_rate.csv
-python3 analyze_distribution.py output/per_file_rate.csv output
-python3 analyze_distribution.py output/per_file_rate.csv output --min-ops 20
-```
 
 ## Finding 1: `rate_wallclock` is unusable for most of the corpus
 
