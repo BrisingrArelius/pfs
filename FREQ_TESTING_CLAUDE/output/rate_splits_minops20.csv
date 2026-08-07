@@ -1,7 +1,7 @@
 metric,split_method,n_total,cut_points_ops_per_sec,band__frequent (>p50),band__frequent (>p67),band__frequent (>p75),band__moderate (p33-p67),band__seldom (<=p25),band__seldom (<=p33),band__seldom (<=p50),band__unclassified (p25-p75)
-rate_active,median,61395,34414.0843,30693,,,,,,30702,
-rate_active,tercile,61395,32605.0040;35864.0156,,20462,,20469,,20464,,
-rate_active,quartile,61395,31273.7539;37412.3149,,,15345,,15350,,,30700
-rate_wallclock,median,2703,598.8126,1351,,,,,,1352,
-rate_wallclock,tercile,2703,460.8477;880.4367,,901,,900,,902,,
-rate_wallclock,quartile,2703,418.5151;1731.6954,,,676,,677,,,1350
+rate_active,median,800307,21118.4982,400149,,,,,,400158,
+rate_active,tercile,800307,2843.8709;29493.7653,,266742,,266822,,266743,,
+rate_active,quartile,800307,951.8142;38439.2935,,,200076,,200077,,,400154
+rate_wallclock,median,431013,294.6529,215506,,,,,,215507,
+rate_wallclock,tercile,431013,142.7387;533.7425,,143656,,143700,,143657,,
+rate_wallclock,quartile,431013,82.6428;806.0859,,,107753,,107754,,,215506
