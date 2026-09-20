@@ -2,6 +2,13 @@
 
 This document explains how `scripts/analysis/analysis.py` consumes Darshan counter data, computes derived metrics, and generates visual reports.
 
+Historical CSVs/figures moved to `results/workloads/legacy/darshan/`. The script
+is unchanged; default-path and caller repairs are tracked in
+[TODOS_SCRIPT_CHANGES.md](../../TODOS_SCRIPT_CHANGES.md). Examples below use a new
+output destination so analysis does not overwrite historical evidence. Later
+extended examples using `./output/` or `./darshan_output/` are illustrative paths,
+not locations of the preserved results.
+
 ## Overview
 
 `analysis.py` supports two modes:
@@ -14,13 +21,13 @@ This document explains how `scripts/analysis/analysis.py` consumes Darshan count
 ### Single-file analysis
 
 ```bash
-python3 scripts/analysis/analysis.py --input output/ssd/global.csv --output-dir output/ssd/analysis
+python3 scripts/analysis/analysis.py --input results/workloads/legacy/darshan/ssd/global.csv --output-dir results/workloads/runs/example/ssd-analysis
 ```
 
 ### HDD vs SSD comparison
 
 ```bash
-python3 scripts/analysis/analysis.py --hdd output/hdd/global.csv --ssd output/ssd/global.csv --output-dir output/comparison
+python3 scripts/analysis/analysis.py --hdd results/workloads/legacy/darshan/hdd/global.csv --ssd results/workloads/legacy/darshan/ssd/global.csv --output-dir results/workloads/runs/example/comparison
 ```
 
 ## Outputs
@@ -327,4 +334,3 @@ python3 analysis.py --input ./darshan_output/global.csv --output-dir ./my_analys
 - Check if your workload definitions are actually different
 - Look at discriminative counters to see what varies
 - May need to design more diverse workloads
-

@@ -1,13 +1,20 @@
 # Workloads
 
-This directory contains the workload definitions, the IOR wrapper, and the original C workload implementation used by `scripts/run_workloads.py`.
+This directory contains workload definitions, the IOR wrapper, the original C
+implementation and the relocated `run_workloads.py` / `run_pipeline.py`.
+
+Scripts were moved without content changes. Internal paths still require
+[deferred repairs](../../TODOS_SCRIPT_CHANGES.md); the usage below describes the
+legacy workflow. Historical outputs now live under
+[results/workloads/legacy](../../results/workloads/legacy/README.md).
 
 ## What this directory contains
 
 - `profiles.json` — workload profile definitions
 - `posix_synthetic_workload_IOR.py` — Python wrapper that turns profiles into IOR commands
 - `posix_synthetic_workload.c` — original C workload implementation used for some stride patterns
-- `tmp/` — scratch area for temporary workload files
+- `run_workloads.py` — relocated workload runner; internal paths pending repair
+- `run_pipeline.py` — relocated legacy orchestration; internal paths pending repair
 
 ## Profile execution model
 
@@ -21,7 +28,7 @@ The script recalculates `num_ops` from `file_size_gb` and `op_size`, so the `num
 Workload files are written to the configured `workload_dir` using a deterministic pattern:
 
 ```
-{work_dir}/workload_{profile_name}_f{file_index}
+{work_dir}/workload_{profile_name}_run{run_index}_f{file_index}
 ```
 
 This allows setup and workload phases to access the same files without extra coordination.
@@ -69,25 +76,27 @@ The available access patterns are:
 
 ## Output
 
-Parsed Darshan summary output is written by `run_workloads.py` into the configured `output_dir`, typically:
+Historical Darshan summary outputs are preserved at:
 
-- `output/hdd/global.csv`
-- `output/ssd/global.csv`
+- `results/workloads/legacy/darshan/hdd/global.csv`
+- `results/workloads/legacy/darshan/ssd/global.csv`
 
-The workload runner also logs OST space and file layout information to `scripts/ost_space_and_usage.log`.
+The unchanged runner still derives outputs and logs from its old project-root
+assumptions. Historical OST logs now live under
+`results/microbenchmarks/legacy/placement/`; future destinations need path repairs.
 
-## Recommended commands
+## Legacy CLI (after deferred path repairs)
 
 Run the full project pipeline:
 
 ```bash
-python3 run_pipeline.py --runs 5
+python3 scripts/workloads/run_pipeline.py --runs 5
 ```
 
 Run a specific profile:
 
 ```bash
-python3 scripts/run_workloads.py --only read_heavy --runs 5 --storage-type hdd
+python3 scripts/workloads/run_workloads.py --only read_heavy --runs 5 --storage-type hdd
 ```
 
 ## Adding a new profile
@@ -111,5 +120,5 @@ Add an entry to `profiles.json` with the desired parameter values. Example:
 Then run:
 
 ```bash
-python3 run_pipeline.py --runs 5
+python3 scripts/workloads/run_pipeline.py --runs 5
 ```

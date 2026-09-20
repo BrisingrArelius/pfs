@@ -1,229 +1,69 @@
-# BeeGFS Storage Pool Analysis
+# BeeGFS Storage Pool Experiments
 
-A toolkit for running synthetic BeeGFS workloads, collecting Darshan I/O counters, and comparing HDD vs SSD storage behavior.
+Existing benchmark and workload tools, historical measurements, and the experimental
+design for evaluating BeeGFS target placement.
 
----
+## Refactor status
 
-## Quick Start
+This is a file-organization and documentation refactor. Existing scripts and
+configuration contents are preserved. Their internal paths have **not** been
+updated; follow [TODOS_SCRIPT_CHANGES.md](TODOS_SCRIPT_CHANGES.md) before treating
+the relocated tools as a working pipeline. No new benchmark runners were implemented.
 
-```bash
-# Run the full pipeline on HDD and SSD pools
-python3 run_pipeline.py --runs 5
+## Repository layout
 
-# Resume if interrupted
-python3 run_pipeline.py --runs 5 --resume
-
-# Analyze existing data only
-python3 run_pipeline.py --analyze-only
+```text
+scripts/
+  microbenchmarks/
+    fio/                 existing FIO runner, configuration, analysis and visualizer
+    placement/           existing pool-management helpers
+    analysis/            OST-log, capacity and placement utilities
+  workloads/             synthetic workloads, profiles and legacy orchestration
+  analysis/              Darshan parsing and workload analysis
+  trace_analysis/        contiguity and frequency characterization of Darshan traces
+results/
+  microbenchmarks/legacy/ fio-local, fio-beegfs, network and placement evidence
+  workloads/legacy/      Darshan outputs and execution records
+  trace_analysis/legacy/ preserved contiguity/frequency CSVs and plots
+docs/                    methodology, migration map, changelog and historical guide
+  research/              historical context, profile notes and literature review
+  references/            existing reference PDFs
+archive/                 old runner versions retained for historical reference
 ```
 
-**Key outputs:**
-- `output/hdd/global.csv`
-- `output/ssd/global.csv`
-- `output/hdd/analysis/`
-- `output/ssd/analysis/`
+The former `CONTIG_TESTING_CLAUDE/` and `FREQ_TESTING_CLAUDE/` projects now live
+under `scripts/trace_analysis/contiguity/` and `scripts/trace_analysis/frequency/`.
+They support workload-profile research using external Polaris Darshan logs;
+they are not BeeGFS microbenchmark runners.
 
----
+## Experimental design
 
-## What this repository contains
+- **D:** all candidate targets in Default (the experimental “pooling off” baseline).
+- **S:** SSD-only target eligibility.
+- **H:** HDD-only target eligibility.
+- Target selection: **randomized** and **roundrobin**.
+- Capacity: proposed high/low free space on the same devices; interpretation and
+  site-specific bands remain pending confirmation.
+- Six benchmark domains: local storage, network transport, BeeGFS communication
+  (IOR + NetBench), end-to-end placement (normal IOR), cache effects and metadata.
+- The full placement matrix is retained; each domain requires durable progress
+  across allocations and its applicable preparation and instrumentation.
+- DLIO and additional application workloads provide separately specified validation.
 
-- `run_pipeline.py` — orchestrates pool setup, workload execution, Darshan parsing, and analysis
-- `scripts/run_workloads.py` — workload runner for profile execution and Darshan parsing
-- `scripts/parse_darshan.py` — extracts Darshan counters into structured CSV output
-- `scripts/analysis/analysis.py` — computes statistics and generates visualizations
-- `scripts/workloads/` — workload profile definitions and implementation helpers
-- `scripts/fio/` — FIO benchmark matrix suite
-- `scripts/pooling_scripts/` — BeeGFS pool management helpers
-- `scripts/parse_ost_logs.py` — OST usage heatmap generation
-- `scripts/parse_du.py` — disk usage summary utility
-
----
+These are specification requirements, not features already implemented by the
+preserved scripts. See [methodology](docs/methodology.md).
 
 ## Documentation
 
-- `scripts/workloads/README.md` — workload profile and execution details
-- `scripts/fio/README.md` — FIO benchmark matrix documentation
-- `scripts/parse_darshan_README.md` — Darshan parser documentation
-- `scripts/analysis/analysis_README.md` — analysis methodology and interpretation
-- `scripts/pooling_scripts/README.md` — BeeGFS pooling helper docs
-- `scripts/parse_ost_logs_README.md` — OST log heatmap documentation
-- `scripts/parse_du_README.md` — `du` output summary helper
-
----
-
-## Directory structure
-
-```
-pfs/
-├── README.md
-├── run_pipeline.py
-├── output/
-│   ├── hdd/
-│   │   ├── global.csv
-│   │   └── analysis/
-│   └── ssd/
-│       ├── global.csv
-│       └── analysis/
-├── scripts/
-│   ├── run_workloads.py
-│   ├── parse_darshan.py
-│   ├── analysis/
-│   │   └── analysis.py
-│   ├── workloads/
-│   │   ├── profiles.json
-│   │   ├── posix_synthetic_workload.c
-│   │   ├── posix_synthetic_workload_IOR.py
-│   │   └── README.md
-│   ├── fio/
-│   │   ├── matrix_benchmark.py
-│   │   ├── analyze_matrix.py
-│   │   ├── fio_config.json
-│   │   └── README.md
-│   ├── pooling_scripts/
-│   │   ├── configure_pools.sh
-│   │   ├── reset_pools.sh
-│   │   └── README.md
-│   ├── parse_ost_logs.py
-│   ├── parse_darshan_README.md
-│   ├── analysis_README.md
-│   └── parse_du.py
-```
-
----
-
-## Dependencies
-
-Install the Python requirements:
-
-```bash
-pip install darshan pandas numpy matplotlib seaborn scikit-learn
-```
-
-System dependencies:
-- `mpicc`, `mpirun`
-- Darshan runtime and parser support
-- `beegfs-ctl` access on BeeGFS client nodes
-- `fio` for the FIO benchmark suite
-
----
-
-## Recommended workflow
-
-1. Configure BeeGFS pools:
-
-```bash
-cd scripts/pooling_scripts
-sudo ./configure_pools.sh
-```
-
-2. Run the workload pipeline:
-
-```bash
-python3 run_pipeline.py --runs 5
-```
-
-3. Inspect results:
-- `output/hdd/global.csv`
-- `output/ssd/global.csv`
-- `output/hdd/analysis/`
-- `output/ssd/analysis/`
-
-4. Analyze existing data only:
-
-```bash
-python3 run_pipeline.py --analyze-only
-```
-
----
-
-## Manual control
-
-Run workloads directly:
-
-```bash
-python3 scripts/run_workloads.py --runs 5 --storage-type hdd
-python3 scripts/run_workloads.py --runs 5 --storage-type ssd
-python3 scripts/run_workloads.py --runs 5 --only read_heavy
-```
-
-Analyze data directly:
-
-```bash
-python3 scripts/analysis/analysis.py --input output/ssd/global.csv --output-dir output/ssd/analysis
-python3 scripts/analysis/analysis.py --hdd output/hdd/global.csv --ssd output/ssd/global.csv --output-dir output/comparison
-```
-
----
-
-## Notes
-
-- `run_workloads.py` uses `/mnt/beegfs/advay` and `/mnt/nfs_shared/darshan-logs` by default.
-- `run_workloads.py` attaches Darshan with `LD_PRELOAD` for measured runs and removes temporary workload files after completion.
-- `scripts/parse_ost_logs.py` consumes `scripts/ost_space_and_usage.log` and can generate OST heatmaps.
-
-**2. Run workloads on both storage pools:**
-```bash
-python3 run_pipeline.py --runs 5
-```
-
-This automatically:
-- Compiles the workload binary (with `O_DIRECT` for cache-bypass I/O)
-- Runs all 19 profiles × 3 size variants (100MB, 1GB, 10GB) × 5 runs on HDD, then SSD
-- Clears system caches before every run (2 minute stabilization wait)
-- Parses Darshan logs and appends to `output/hdd/darshan/global.csv` and `output/ssd/darshan/global.csv`
-
-**Resume if interrupted:**
-```bash
-python3 run_pipeline.py --runs 5 --resume
-```
-
-**3. Analyze and compare results:**
-```bash
-python3 run_pipeline.py --analyze-only
-```
-
-### Manual Control (Advanced)
-
-```bash
-# Run only specific profiles
-python3 scripts/run_workloads.py --runs 5 --only large_contiguous_write_heavy_freq --storage-type hdd
-
-# Run fewer iterations for testing
-python3 run_pipeline.py --runs 3
-
-# HDD or SSD only
-python3 run_pipeline.py --runs 5 --hdd-only
-python3 run_pipeline.py --runs 5 --ssd-only
-```
----
-
-## Analysis
-
-The analysis tool (`scripts/analysis.py`) processes Darshan counter data to identify patterns and discriminative features.
-
-**Key outputs:**
-- **Heatmaps**: Visualize counter patterns across workload types
-- **Bar charts**: Show top discriminative counters with error bars
-- **PCA plot**: 2D projection showing workload clustering
-- **Statistics**: Mean, std, CV, min, max for each counter
-
-**Example results:**
-
-Discriminative counters for HDD vs SSD placement:
-
-| Counter | HDD Friendly | SSD Friendly |
-|---------|-------------|-------------|
-| `POSIX_SEQ_READ_RATIO` | High (>0.8) | Low (<0.5) |
-| `POSIX_RW_SWITCHES` | Low (<2) | High (>5) |
-| `POSIX_MEAN_WRITE_SIZE` | Large (>1MB) | Small (<64KB) |
-| `POSIX_SEEK_RATE` | Low (<0.1) | High (>0.5) |
-| `POSIX_WRITE_DURATION` | Long (sustained) | Short (bursty) |
-
-**For detailed methodology and interpretation**, see `scripts/analysis_README.md`.
-```
-
----
-
-## Disclaimer
-
-This project was developed with the assistance of **GitHub Copilot (powered by Claude)**. The architecture, counter selection, aggregation logic, and implementation were designed collaboratively through an iterative conversation.
+- [Microbenchmark inventory](scripts/microbenchmarks/README.md)
+- [Historical results and provenance](results/README.md)
+- [Migration map and recovery record](docs/MIGRATION.md)
+- [Deferred script path changes](TODOS_SCRIPT_CHANGES.md)
+- [Future implementation backlog](docs/IMPLEMENTATION_BACKLOG.md)
+- [Workload documentation](scripts/workloads/README.md)
+- [Darshan parser](scripts/analysis/parse_darshan_README.md)
+- [Workload analysis](scripts/analysis/analysis_README.md)
+- [Trace-analysis tools](scripts/trace_analysis/README.md)
+- [Research notes](docs/research/CONTEXT.md)
+- [Changelog](docs/CHANGELOG.md)
+- [Historical pipeline guide](docs/legacy-pipeline.md)

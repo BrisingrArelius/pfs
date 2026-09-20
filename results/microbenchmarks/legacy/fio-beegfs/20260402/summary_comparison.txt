@@ -1,0 +1,22 @@
+
+==============================================================
+  HDD  (hdd_20260402_191721)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE    280.0 MiB/s       278           —
+  seq_read            READ     249.0 MiB/s       246           —
+  rand_write_4k       WRITE     24.4 MiB/s      6.2k           —
+  rand_read_4k        WRITE    279.0 MiB/s       279           —
+  rand_read_4k        READ       2.1 MiB/s       543           —
+
+==============================================================
+  SSD  (ssd_20260402_191721)
+==============================================================
+  Job                 Direction     Bandwidth      IOPS     Avg Lat
+  ------------------  ------  ------------  --------  ----------
+  seq_write           WRITE    282.0 MiB/s       279           —
+  seq_read            READ     282.0 MiB/s       279           —
+  rand_write_4k       WRITE     58.6 MiB/s     15.0k           —
+  rand_read_4k        WRITE    280.0 MiB/s       280           —
+  rand_read_4k        READ      70.8 MiB/s     18.1k           —
