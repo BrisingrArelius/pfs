@@ -1,130 +1,106 @@
-# FIO Benchmark Matrix Suite
+# Local-storage FIO test
 
-This is the available FIO matrix tool, not the complete six-domain experiment
-runner. New results use run-specific output directories. Historical datasets are indexed in
-[results](../../../results/microbenchmarks/legacy/README.md).
+Implemented in `run_fio.py` and `run_support.py`; cluster pilot validation is
+still pending. The previous scripts remain
+[archived](../../../archive/legacy-code/fio-abandoned/README.md).
 
-A benchmark framework that replaces static `.fio` jobs with a configurable matrix runner.
-It runs FIO workloads across BeeGFS directories or locally mounted target
-filesystems, captures repeated measurements, and produces aggregated JSON results.
+- [DESIGN.md](DESIGN.md): standalone requirements, function contracts,
+  two-module call flow, target-selectable pilot, timing fields, balanced ordering,
+  reservation handling, measurement-level resume and the results report.
+- [fio_config.json](fio_config.json): workload and planning settings.
+- [target_inventory.json](target_inventory.json): recorded host/target mapping.
 
-## Configuration
+The design incorporates `Obsidian/DaSH/BeeGFS/Specs/MicroBenchmarks.md` and
+`Global.md` from the Obsidian vault, with the user-directed per-target-only scope
+and shared-file preparation policy. It covers five workloads and five repetitions.
+Dataset size, queue depth and timing choices remain subject to a cluster pilot.
 
-Edit `fio_config.json` to control the benchmark matrix:
+Each measured job stops after **10 GiB of I/O or 60 seconds, whichever comes
+first**, with no ramp period. The configured plan has 175 measured invocations
+per host, 700 across four hosts, plus one full-data preparation per target:
+728 FIO invocations total before retries. Reuse that file for all 25 measurements,
+retain it across reservation stops, and delete it after the target is complete.
+Measurement-level checkpoint/resume preserves successful repetitions and reuses
+the retained file after validating its mount and identity.
 
-- `runs_per_test`: number of repetitions per workload configuration
-- `file_sizes`: total file sizes to test
-- `modes`: enable or disable workload types
-- `block_size_seq`: block size for sequential workloads
-- `block_size_rand`: block size for random workloads
-- `io_depth`: FIO I/O depth
-- `num_jobs`: number of FIO jobs per test
+Admission uses pilot/observed durations with a margin, not hard timeouts. Fill
+the null preparation estimates in `fio_config.json` from the pilot. A hard
+timeout is an unexpected failure: stop the session without automatic retries.
 
-Example:
+## Run the pilot
 
-```json
-{
-    "runs_per_test": 5,
-    "file_sizes": ["1g", "10g"],
-    "modes": {
-        "seq_read": true,
-        "seq_write": true,
-        "rand_read": true,
-        "rand_write": true,
-        "seq_rw": true,
-        "rand_rw": true
-    },
-    "block_size_seq": "1m",
-    "block_size_rand": "4k",
-    "io_depth": 32,
-    "num_jobs": 4
-}
-```
+Run from the repository root on an inventoried `colva` host, with Python 3.9+,
+FIO/libaio and findmnt installed. The account needs write access to the target mounts and a
+persistent results directory. No page-cache drops or privileged device access
+are used. Keep one benchmark instance active per host.
 
-## Running the benchmark
+**First set preparation estimates** in `fio_config.json`:
+`planning.prepare_seconds.hdd` and `.nvme` are deliberately `null`. Supply positive
+wall-clock seconds for writing and syncing the full 10-GiB file. For the first
+pilot, use provisional estimates based on the hardware; afterward replace them
+with observed setup times. These estimates control admission, not FIO duration.
+Missing estimates produce an explicit error; the 600-second hard timeout is
+never used as an estimate. Empty measurement estimates fall back to 60 seconds.
 
-Invocation from the repository root:
-
-```bash
-python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs
-```
-
-### BeeGFS mode
-- `--beegfs`: run against BeeGFS mountpoints
-- `--pool hdd|ssd|all`: choose target pools
-- `--custom-dir`: specify a custom mount directory
-
-Examples:
+On **colva1**, target 101 is HDD and 104 is NVMe:
 
 ```bash
-python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool all
-python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool hdd
-python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool ssd
-python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool custom --custom-dir /existing/beegfs/directory
+python3 scripts/microbenchmarks/fio/run_fio.py \
+  --results-dir results/microbenchmarks/runs/local-fio-pilot/colva1 \
+  --targets 101,104 --time-limit 2h
 ```
 
-### Local target-filesystem mode
-- `--ost`: run against locally mounted target paths; this is not raw block-device I/O
-- `--pool hdd|ssd|all`: choose target directories
+This executes 50 measurements and two preparations. Each measurement transfers
+10 GiB or stops normally at 60 seconds. The file remains the same across its 25
+measurements; explicit `overwrite=1` and `fallocate=none` avoid a fresh allocation
+phase in each measured job. The runner verifies file device/inode/size around I/O.
 
-Example:
+Resume after reacquiring a reservation:
 
 ```bash
-python3 scripts/microbenchmarks/fio/matrix_benchmark.py --ost --pool hdd
+python3 scripts/microbenchmarks/fio/run_fio.py \
+  --results-dir results/microbenchmarks/runs/local-fio-pilot/colva1 \
+  --resume --time-limit 2h
 ```
 
-### Other useful options
-- `--results-dir`: output JSON directory; defaults to a new directory under `results/microbenchmarks/runs/`
-- `--no-drop-cache`: skip dropping page cache between runs
+The saved target selection is reused. Completed repetitions are skipped; an
+interrupted repetition restarts from its beginning. Missing/incomplete prepared
+files are prepared again once; an unexpected replacement file is an error.
+Cleanup failures retry cleanup without repeating successful measurements.
 
-## Output
-
-The benchmark writes aggregated JSON results to the configured results directory, for example:
-
-The default is `results/microbenchmarks/runs/fio-<timestamp>/matrix_results_<timestamp>.json`.
-An explicit `--results-dir` overrides it.
-
-Each entry includes FIO bandwidth, IOPS, latency, and optional BeeGFS OST hit information.
-
-## Current local-storage evidence
-
-The main preserved April 4 dataset contains 840 rows:
-
-- seven runner labels: `HDD_OST1..4` and `SSD_OST1..3`
-- one and ten files
-- `1g` and `10g` FIO `size` values
-- sequential read/write/mixed and 4-KiB random read/write/mixed modes
-- five repetitions per combination
-
-The labels were generated from local path suffixes `/mnt/hdd1..4` and
-`/mnt/nvme1..3`. The result rows do not record those paths, hostnames, BeeGFS
-target IDs, filesystems, block devices, device models, or controllers. Therefore
-the dataset does not establish which OSS or physical device produced a label.
-
-The current runner retains the same generic local labels and default mount paths.
-It also retains stale BeeGFS defaults under `/mnt/beegfs/advay`, which are absent
-from the observed 2026-09-21 namespace. No verified current target-to-mount mapping
-is configured in the runner.
-
-## Analyze benchmark results
-
-Run the analyzer to summarize the JSON output:
+To extend an **active** reservation from another terminal:
 
 ```bash
-python3 analyze_matrix.py
+python3 scripts/microbenchmarks/fio/run_fio.py \
+  --results-dir results/microbenchmarks/runs/local-fio-pilot/colva1 \
+  --extend-deadline 2h
 ```
 
-Or target a specific run file:
+Alternatively use `--deadline` with a timezone-qualified ISO-8601 timestamp.
+`--cleanup-buffer` defaults to five minutes. Exit 0 means completion or an expected
+budget stop; check the manifest session outcome to distinguish them. Hard timeout
+or command/validation failure exits nonzero and stops the session. Ctrl-C/SIGTERM
+exits 130. Diagnose a failure before explicitly resuming.
+
+## Evidence and pilot checks
+
+`manifest.json` records settings, ordered cases, sessions, timing estimates,
+attempts, file identity, capacity and target-device diskstats. Each raw attempt
+directory retains `job.fio`, native `fio.json`, `stdout` and `stderr`. Preparation
+has separate directories; measurement timing excludes preparation and final setup
+sync. No analysis result is needed to resume a measurement.
+
+Check pilot file reuse, byte/time completion reasons, timing/latency fields and
+repeat-to-repeat spread. Use `command_wall_seconds` for planning; use native FIO
+statistics for performance. Scientific settings/target selection/FIO version
+must match on resume; planning estimates may be updated. For the full experiment,
+choose a new results directory and omit `--targets` to select all local targets.
+
+## Developer verification (no benchmark I/O)
 
 ```bash
-python3 analyze_matrix.py ../../../results/microbenchmarks/legacy/fio-local/20260404/matrix_results_20260404_220033.json
+python3 -B -m unittest discover -s scripts/microbenchmarks/fio/tests -v
 ```
 
-The analyzer prints a table of average metrics per pool, mode, file count, and size.
-
-No-argument analysis/visualization selects the newest result under
-`results/microbenchmarks/runs/`; visualization writes beside it under `plots/`
-unless `--output-dir` is provided.
-Historical size labels represent the configured FIO `size` with `nrfiles`; do not
-interpret them as per-file sizes without checking geometry. This script
-does not implement the primary IOR experiment in the updated specification.
+Tests use `/tmp/opencode`, sparse fixture files, mocked mount/FIO operations and
+harmless Python subprocesses. They do not run FIO, findmnt, sudo or cache drops.

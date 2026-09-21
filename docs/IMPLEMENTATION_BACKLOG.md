@@ -17,8 +17,11 @@ repository-path work is recorded separately in
 
 ## Six benchmark domains
 
-- [ ] Complete local FIO coverage, including useful simultaneous-target tests.
-  Use StorageBench only as an optional cross-check.
+- [ ] Pilot the implemented [local-storage runner](../scripts/microbenchmarks/fio/README.md)
+  on one HDD and one NVMe. Verify file reuse across all 25 measurements per target,
+  size-or-time completion, native metrics and interruption/resume on the cluster.
+  Replace provisional preparation/measurement estimates with observed wall times.
+  Simultaneous-target experiments are outside this runner's scope.
 - [ ] Add TCP/RDMA tests for both directions and simultaneous network traffic.
 - [ ] Add IOR + NetBench tests for BeeGFS communication. Check server traffic and
   always restore NetBench mode after success, failure, or interruption.

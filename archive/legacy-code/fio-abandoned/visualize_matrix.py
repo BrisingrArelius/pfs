@@ -30,7 +30,7 @@ def visualize_json(json_path, base_out_dir):
         mode = row["mode"]
         grouped[key][pool][mode].append(row)
 
-    modes_order = ["seq_read", "seq_write", "rand_read", "rand_write", "seq_rw", "rand_rw"]
+    modes_order = ["seq_read", "seq_write", "rand_read", "rand_read_128k", "rand_write", "seq_rw", "rand_rw"]
     
     # Keep generated plots with the selected run, away from legacy evidence.
     base_out_dir = Path(base_out_dir)

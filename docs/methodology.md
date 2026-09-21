@@ -8,14 +8,19 @@ and evidence. Missing experiment functionality is tracked only in the
 
 | Area | Present implementation |
 |---|---|
-| Local storage | Configurable FIO matrix runner, JSON aggregation, analysis, and visualization |
+| Local storage | Per-target FIO runner with native JSON, deadlines and measurement-level resume; cluster pilot pending |
 | Placement administration | Shell helpers with historical hard-coded target inventories |
 | Application workloads | Single-process IOR wrapper, two current contiguous read-only profiles, Darshan invocation, and run-specific logs/checkpoints |
 | Darshan parsing | Aggregate POSIX/MPI-IO/STDIO rows in `global.csv` |
 | Workload analysis | Aggregate statistics, derived POSIX metrics, heatmaps, PCA, and HDD/SSD comparisons |
 | Trace characterization | Contiguity and operation-rate analyses over preserved external Darshan-derived CSVs |
 
-The FIO runner supports filesystem-backed local-target paths and BeeGFS paths.
+The previous local FIO implementation is archived. The replacement follows the
+[local-storage design](../scripts/microbenchmarks/fio/DESIGN.md): one prepared
+file per target, five workloads with five repetitions, size-or-time completion,
+reservation deadlines and measurement-level resume. Fake-process recovery tests
+pass; real file geometry, FIO semantics and timing still require the cluster pilot.
+The user-directed scope is per-target only, with no simultaneous-target experiment.
 Historical local FIO and BeeGFS FIO datasets exist under
 `results/microbenchmarks/legacy/`. Historical network measurements also exist,
 but there is no current network benchmark runner.

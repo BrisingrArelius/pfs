@@ -74,7 +74,7 @@ def analyze_json(json_path):
         print("-" * 110)
 
         # Sort mode to be consistent
-        for mode in ["seq_read", "seq_write", "rand_read", "rand_write", "seq_rw", "rand_rw"]:
+        for mode in ["seq_read", "seq_write", "rand_read", "rand_read_128k", "rand_write", "seq_rw", "rand_rw"]:
             if mode not in modes_dict:
                 continue
             

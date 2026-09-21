@@ -1,0 +1,38 @@
+{
+  "colva1": [
+    {"target_id": 101, "media": "hdd", "mount": "/mnt/hdd2", "device": "/dev/sdb1"},
+    {"target_id": 102, "media": "hdd", "mount": "/mnt/hdd3", "device": "/dev/sdc1"},
+    {"target_id": 103, "media": "hdd", "mount": "/mnt/hdd4", "device": "/dev/sdd1"},
+    {"target_id": 104, "media": "nvme", "mount": "/mnt/nvme0", "device": "/dev/nvme1n1p1"},
+    {"target_id": 105, "media": "nvme", "mount": "/mnt/nvme1", "device": "/dev/nvme0n1p1"},
+    {"target_id": 106, "media": "nvme", "mount": "/mnt/nvme2", "device": "/dev/nvme2n1p1"},
+    {"target_id": 107, "media": "nvme", "mount": "/mnt/nvme3", "device": "/dev/nvme3n1p1"}
+  ],
+  "colva2": [
+    {"target_id": 201, "media": "hdd", "mount": "/mnt/hdd1", "device": "/dev/sda1"},
+    {"target_id": 202, "media": "hdd", "mount": "/mnt/hdd2", "device": "/dev/sdb1"},
+    {"target_id": 203, "media": "hdd", "mount": "/mnt/hdd3", "device": "/dev/sdc1"},
+    {"target_id": 204, "media": "hdd", "mount": "/mnt/hdd4", "device": "/dev/sdd1"},
+    {"target_id": 205, "media": "nvme", "mount": "/mnt/nvme1", "device": "/dev/nvme1n1p1"},
+    {"target_id": 206, "media": "nvme", "mount": "/mnt/nvme2", "device": "/dev/nvme2n1p1"},
+    {"target_id": 207, "media": "nvme", "mount": "/mnt/nvme3", "device": "/dev/nvme3n1p1"}
+  ],
+  "colva3": [
+    {"target_id": 301, "media": "hdd", "mount": "/mnt/hdd1", "device": "/dev/sda1"},
+    {"target_id": 302, "media": "hdd", "mount": "/mnt/hdd2", "device": "/dev/sdb1"},
+    {"target_id": 303, "media": "hdd", "mount": "/mnt/hdd3", "device": "/dev/sdc1"},
+    {"target_id": 304, "media": "hdd", "mount": "/mnt/hdd4", "device": "/dev/sdd1"},
+    {"target_id": 305, "media": "nvme", "mount": "/mnt/nvme1", "device": "/dev/nvme1n1p1"},
+    {"target_id": 306, "media": "nvme", "mount": "/mnt/nvme2", "device": "/dev/nvme2n1p1"},
+    {"target_id": 307, "media": "nvme", "mount": "/mnt/nvme3", "device": "/dev/nvme3n1p1"}
+  ],
+  "colva4": [
+    {"target_id": 401, "media": "hdd", "mount": "/mnt/hdd1", "device": "/dev/sda1"},
+    {"target_id": 402, "media": "hdd", "mount": "/mnt/hdd3", "device": "/dev/sdc1"},
+    {"target_id": 403, "media": "hdd", "mount": "/mnt/hdd4", "device": "/dev/sdd1"},
+    {"target_id": 404, "media": "nvme", "mount": "/mnt/nvme0", "device": "/dev/nvme0n1p1"},
+    {"target_id": 405, "media": "nvme", "mount": "/mnt/nvme1", "device": "/dev/nvme1n1"},
+    {"target_id": 406, "media": "nvme", "mount": "/mnt/nvme2", "device": "/dev/nvme2n1"},
+    {"target_id": 407, "media": "nvme", "mount": "/mnt/nvme3", "device": "/dev/nvme3n1"}
+  ]
+}

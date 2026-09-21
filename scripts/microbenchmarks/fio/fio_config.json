@@ -1,23 +1,41 @@
 {
-    "runs_per_test": 5,
-    "num_files": [
-        1,
-        10
-    ],
-    "file_sizes": [
-        "1g",
-        "10g"
-    ],
-    "modes": {
-        "seq_read": true,
-        "seq_write": true,
-        "rand_read": true,
-        "rand_write": true,
-        "seq_rw": true,
-        "rand_rw": true
+    "protocol_version": 4,
+    "repetitions": 5,
+    "order_seed": 20260921,
+    "free_space_reserve_bytes": 5368709120,
+    "measurement_timeout_seconds": 75,
+    "prepare": {
+        "rw": "write",
+        "bs": "1m",
+        "end_fsync": 1,
+        "timeout_seconds": 600
     },
-    "block_size_seq": "1m",
-    "block_size_rand": "4k",
-    "io_depth": 32,
-    "num_jobs": 4
+    "fio": {
+        "ioengine": "libaio",
+        "direct": 1,
+        "iodepth": 32,
+        "numjobs": 1,
+        "nrfiles": 1,
+        "size": 10737418240,
+        "allow_file_create": 0,
+        "time_based": 0,
+        "ramp_time": 0,
+        "runtime": 60,
+        "end_fsync": 0,
+        "clat_percentiles": 1,
+        "percentile_list": "50:95:99:99.9"
+    },
+    "workloads": [
+        {"name": "seq_read", "rw": "read", "bs": "1m"},
+        {"name": "seq_write", "rw": "write", "bs": "1m"},
+        {"name": "rand_read_4k", "rw": "randread", "bs": "4k"},
+        {"name": "rand_write_4k", "rw": "randwrite", "bs": "4k"},
+        {"name": "rand_read_128k", "rw": "randread", "bs": "128k"}
+    ],
+    "planning": {
+        "margin_multiplier": 1.25,
+        "overhead_seconds": 5,
+        "prepare_seconds": {"hdd": null, "nvme": null},
+        "measurement_seconds": {"hdd": {}, "nvme": {}}
+    }
 }
