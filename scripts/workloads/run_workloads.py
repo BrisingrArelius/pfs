@@ -47,7 +47,7 @@ WORKLOADS_DIR    = SCRIPT_DIR
 PROFILES_JSON    = os.path.join(WORKLOADS_DIR, "profiles.json")
 WORKLOAD_SRC     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload.c")
 WORKLOAD_BIN     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload_IOR.py")
-PARSE_SCRIPT     = os.path.join(PROJECT_ROOT, "scripts", "analysis", "parse_darshan.py")
+PARSE_SCRIPT     = os.path.join(WORKLOADS_DIR, "analysis", "parse_darshan.py")
 
 # Timeout configuration
 WORKLOAD_TIMEOUT = 600  # 10 minutes in seconds

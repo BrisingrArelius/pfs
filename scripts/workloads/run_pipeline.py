@@ -54,8 +54,8 @@ ANALYSIS_OUTPUT_SSD = OUTPUT_BASE / "ssd" / "analysis"
 
 # Scripts
 RUN_WORKLOADS_SCRIPT = BASE_DIR / "run_workloads.py"
-PARSE_DARSHAN_SCRIPT = REPO_ROOT / "scripts" / "analysis" / "parse_darshan.py"
-ANALYSIS_SCRIPT = REPO_ROOT / "scripts" / "analysis" / "analysis.py"
+PARSE_DARSHAN_SCRIPT = BASE_DIR / "analysis" / "parse_darshan.py"
+ANALYSIS_SCRIPT = BASE_DIR / "analysis" / "analyze_darshan.py"
 
 # =============================================================================
 # UTILITY FUNCTIONS

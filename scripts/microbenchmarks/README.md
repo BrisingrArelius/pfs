@@ -13,13 +13,11 @@ before execution.
 | `analysis/parse_du.py` | Capacity text parser | Explicit input path |
 | `analysis/generate_heatmap.py` | Placement heatmap utility | Requires BeeGFS files and `beegfs-ctl` |
 
-The IOR synthetic-workload adapter remains in `../workloads/`; it is an
-application-workload component, not the planned multi-process placement runner.
+The IOR synthetic-workload adapter is in `../workloads/`; it is an
+application-workload component, not a multi-process placement runner.
 
-Tooling for all six domains belongs beneath this directory: local storage,
-network transport, BeeGFS communication (IOR + NetBench), end-to-end placement
-(normal IOR), cache effects and metadata operations (mdtest). Dedicated runners
-for the latter five domains are not implemented yet.
+Dedicated runners for network transport, BeeGFS communication, end-to-end
+placement, cache effects, and metadata operations are missing.
 Application validation belongs in `scripts/workloads/`.
 
 See [methodology](../../docs/methodology.md) and the
@@ -27,6 +25,6 @@ See [methodology](../../docs/methodology.md) and the
 resume, instrumentation, cache preparation and allocation-planning requirements.
 
 Historical outputs live in [results/microbenchmarks/legacy](../../results/microbenchmarks/legacy/README.md).
-Future run outputs should use `results/microbenchmarks/runs/<run-id>/` with
-configuration, raw output, derived metrics, plots and provenance. That output
-contract still requires the new runner functionality in the implementation backlog.
+The FIO and plotting tools that create files default beneath
+`results/microbenchmarks/runs/<run-id>/`; `parse_du.py` prints to standard output.
+A suite-wide artifact contract is missing.

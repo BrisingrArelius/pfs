@@ -31,7 +31,7 @@ See [the migration map](MIGRATION.md) for the old and new file locations.
 ## Workload orchestration and analysis
 
 - [x] Fix `run_pipeline.py` so it finds `run_workloads.py`, the Darshan parser,
-  and `scripts/analysis/analysis.py` in their new locations. Fix where it writes
+  and `scripts/workloads/analysis/analyze_darshan.py` in their current locations. Fix where it writes
   output. Do not change pool IDs or execution behavior.
 - [x] Fix `run_workloads.py` so it finds `profiles.json`, the IOR wrapper, the C
   workload, and the Darshan parser in their new locations.
@@ -39,7 +39,7 @@ See [the migration map](MIGRATION.md) for the old and new file locations.
   Never use historical checkpoints as the starting state of a new run.
 - [x] Check the default paths and callers for `parse_darshan.py`. Keep its counter
   extraction and CSV format unchanged.
-- [x] Check the default paths and examples for `analysis.py`. New analysis must
+- [x] Check the default paths and examples for `analyze_darshan.py`. New analysis must
   not overwrite historical CSVs, figures, or statistics.
 - [x] Update old paths in script help text, docstrings, and generated commands.
 - [x] Do not make anything under `archive/legacy-code/` runnable again.

@@ -22,7 +22,7 @@ out to `darshan-parser` once per log file, parallelized across all CPU cores by
 default):
 
 ```bash
-python3 scripts/trace_analysis/frequency/parse_logs.py /home/advay/darshan_logs_analysis/2024-20260128T084726Z-3-001/2024/ results/trace_analysis/runs/example/frequency/per_file_rate.csv
+python3 scripts/trace_characterization/frequency/parse_logs.py /home/advay/darshan_logs_analysis/2024-20260128T084726Z-3-001/2024/ results/trace_analysis/runs/example/frequency/per_file_rate.csv
 ```
 
 Optional flags: `--parser /path/to/darshan-parser` (custom binary path), `--jobs N`
@@ -51,8 +51,8 @@ established for `contig_ratio`) — both are referenced in the findings below, s
 are needed to reproduce this README's numbers:
 
 ```bash
-python3 scripts/trace_analysis/frequency/analyze_distribution.py results/trace_analysis/runs/example/frequency/per_file_rate.csv results/trace_analysis/runs/example/frequency
-python3 scripts/trace_analysis/frequency/analyze_distribution.py results/trace_analysis/runs/example/frequency/per_file_rate.csv results/trace_analysis/runs/example/frequency --min-ops 20
+python3 scripts/trace_characterization/frequency/analyze_distribution.py results/trace_analysis/runs/example/frequency/per_file_rate.csv results/trace_analysis/runs/example/frequency
+python3 scripts/trace_characterization/frequency/analyze_distribution.py results/trace_analysis/runs/example/frequency/per_file_rate.csv results/trace_analysis/runs/example/frequency --min-ops 20
 ```
 
 This prints the distribution tables and split tables to stdout, and writes to
@@ -62,8 +62,8 @@ method (`<metric>_<median|tercile|quartile>_split[_minops20].png`, 12 total), an
 `rate_splits[_minops20].csv` (the combined numeric split summary).
 
 To reproduce this README's numbers exactly, use the same log corpus path above —
-results (especially the Finding 3 peak) are Polaris/corpus-specific and will differ
-on a different log tree.
+results, especially the Finding 3 peak, are specific to the recorded Polaris
+corpus and differ across log trees.
 
 ## Overview
 
@@ -245,9 +245,9 @@ narrow band of each other, so the "seldom" and "frequent" tails here are really 
 
 - **`rate_active` is the usable metric; `rate_wallclock` is not, for most of this
   corpus** — 87.2% of records have an undefined wallclock span at Polaris's timestamp
-  resolution. Any threshold adopted from this analysis should be based on
-  `rate_active`, with `rate_wallclock` noted as a supplementary, small-subsample view
-  only (skews toward longer-running jobs).
+  resolution. The threshold candidates reported here use `rate_active`;
+  `rate_wallclock` is a supplementary, small-subsample view that skews toward
+  longer-running jobs.
 - **At `total_ops ≥ 20`, `rate_active` is dominated by one tight cluster (~30–36K
   ops/sec)**, traced to broad-based write-heavy activity on `/lus/eagle`, not a
   single-job artifact — likely a genuine platform signature (a practical write-IOPS
@@ -260,9 +260,7 @@ narrow band of each other, so the "seldom" and "frequent" tails here are really 
   estimate is unstable (same quantization concern flagged for contig_ratio in Part
   D) — there's a real tension between "floor for a stable rate estimate" and "floor
   that doesn't collapse the distribution into a single platform-specific cluster."
-- This is HPC-native, Darshan-native, and **Polaris-specific** (single-platform,
-  9-day sample, same caveat Part D carries) — worth re-running against a fuller/
-  multi-platform collection before treating any specific cut point here as final.
-  No numeric threshold from this analysis has been written into `profiles_backup.json`
-  or any other existing file — this directory is a standalone empirical input for that
-  decision, left for a follow-up choice among the candidates above.
+- This is HPC-native, Darshan-native, and **Polaris-specific**: it uses a
+  single-platform, nine-day sample. Validation against a fuller or multi-platform
+  collection is missing. No numeric threshold from this analysis exists in
+  `profiles_backup.json` or another profile file.

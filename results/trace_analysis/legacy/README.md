@@ -15,7 +15,7 @@ are external. Historical counts/claims remain those of the original reports;
 this relocation does not independently revalidate them.
 
 The frequency per-file intermediate CSV is not present in this retained output
-set. See the [frequency guide](../../../scripts/trace_analysis/frequency/README.md)
-and [contiguity guide](../../../scripts/trace_analysis/contiguity/README.md) for
-the original processing and provenance. Future outputs belong under
-`results/trace_analysis/runs/<run-id>/`.
+set. See the [frequency guide](../../../scripts/trace_characterization/frequency/README.md)
+and [contiguity guide](../../../scripts/trace_characterization/contiguity/README.md) for
+the original processing and provenance. Current trace-analysis scripts place new
+outputs under `results/trace_analysis/runs/<run-id>/`.

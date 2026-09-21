@@ -1,0 +1,65 @@
+Collection time: 2026-09-21T09:29:32+00:00
+Host: colva1
+beegfs-storage: active
+
+[beegfs-storage.conf]
+storeStorageDirectory = ,/mnt/hdd2/beegfs_storage ,/mnt/hdd3/beegfs_storage ,/mnt/hdd4/beegfs_storage ,/mnt/nvme0/beegfs_storage ,/mnt/nvme1/beegfs_storage ,/mnt/nvme2/beegfs_storage ,/mnt/nvme3/beegfs_storage
+connInterfacesFile = /etc/beegfs/beegfs-network-interfaces.txt
+connUseRDMA = true
+
+[BeeGFS string target IDs]
+/mnt/hdd2/beegfs_storage/targetID:1-66E478B0-1
+/mnt/hdd3/beegfs_storage/targetID:0-66E478B1-1
+/mnt/hdd4/beegfs_storage/targetID:1-66E478B1-1
+/mnt/nvme0/beegfs_storage/targetID:0-69D776F0-1
+/mnt/nvme1/beegfs_storage/targetID:2-66E478B1-1
+/mnt/nvme2/beegfs_storage/targetID:3-66E478B1-1
+/mnt/nvme3/beegfs_storage/targetID:4-66E478B1-1
+
+[Numeric target IDs collected at 2026-09-21T10:07:57+00:00]
+/mnt/hdd2/beegfs_storage/targetNumID:101
+/mnt/hdd3/beegfs_storage/targetNumID:102
+/mnt/hdd4/beegfs_storage/targetNumID:103
+/mnt/nvme0/beegfs_storage/targetNumID:104
+/mnt/nvme1/beegfs_storage/targetNumID:105
+/mnt/nvme2/beegfs_storage/targetNumID:106
+/mnt/nvme3/beegfs_storage/targetNumID:107
+
+[Target filesystem mapping]
+/mnt/hdd2  /dev/sdb1       xfs  1.9T  rotational
+/mnt/hdd3  /dev/sdc1       xfs  1.9T  rotational
+/mnt/hdd4  /dev/sdd1       xfs  1.9T  rotational
+/mnt/nvme0 /dev/nvme1n1p1  xfs  932G  non-rotational
+/mnt/nvme1 /dev/nvme0n1p1  xfs  932G  non-rotational
+/mnt/nvme2 /dev/nvme2n1p1  xfs  932G  non-rotational
+/mnt/nvme3 /dev/nvme3n1p1  xfs  932G  non-rotational
+
+[Device models]
+/dev/sdb: HGST_HUS722T2TAL
+/dev/sdc: HGST_HUS722T2TAL
+/dev/sdd: HGST_HUS722T2TAL
+/dev/nvme0n1: Samsung SSD 980 PRO 1TB
+/dev/nvme1n1: Samsung SSD 980 PRO 1TB
+/dev/nvme2n1: Samsung SSD 980 PRO 1TB
+/dev/nvme3n1: Samsung SSD 980 PRO 1TB
+
+[Volume topology]
+/proc/mdstat: no active MD arrays
+LVM: /dev/sda3 -> ubuntu-vg/ubuntu-lv (operating-system volume only)
+
+[Network]
+BeeGFS interface file: enp7s0
+enp7s0: 192.168.0.2/24
+default route: 192.168.0.1 via enp7s0
+link: 2500Mb/s, full duplex, detected
+rdma link show: no links reported
+
+[Controllers and device paths]
+00:17.0 Intel Raptor Lake SATA AHCI controller: sda, sdb, sdc, sdd
+02:00.0 Samsung NVMe controller: nvme1n1
+03:00.0 Samsung NVMe controller: nvme0n1
+05:00.0 Samsung NVMe controller: nvme2n1
+08:00.0 Samsung NVMe controller: nvme3n1
+
+[Other observed state]
+Operating-system root: ext4, 98G total, 92G used, 1.5G available, 99% used

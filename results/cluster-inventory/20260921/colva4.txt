@@ -1,0 +1,40 @@
+Collection time: 2026-09-21T09:41:49+00:00
+Host: colva4
+beegfs-storage: active
+
+[beegfs-storage.conf]
+storeStorageDirectory = ,/mnt/hdd1/beegfs_storage ,/mnt/hdd3/beegfs_storage ,/mnt/hdd4/beegfs_storage ,/mnt/nvme0/beegfs_storage ,/mnt/nvme1/beegfs_storage ,/mnt/nvme2/beegfs_storage ,/mnt/nvme3/beegfs_storage
+connInterfacesFile =
+connUseRDMA = true
+
+[Target mapping]
+401  0-66E433FE-4  /mnt/hdd1/beegfs_storage   /dev/sda1       xfs  1.9T  23% used
+402  2-66E433FE-4  /mnt/hdd3/beegfs_storage   /dev/sdc1       xfs  1.9T  22% used
+403  3-66E433FE-4  /mnt/hdd4/beegfs_storage   /dev/sdd1       xfs  1.9T  22% used
+404  0-6A6F829E-4  /mnt/nvme0/beegfs_storage  /dev/nvme0n1p1  xfs  932G  2% used
+405  4-66E433FE-4  /mnt/nvme1/beegfs_storage  /dev/nvme1n1    xfs  932G  2% used
+406  5-66E433FE-4  /mnt/nvme2/beegfs_storage  /dev/nvme2n1    xfs  932G  2% used
+407  6-66E433FE-4  /mnt/nvme3/beegfs_storage  /dev/nvme3n1    xfs  932G  2% used
+All target filesystems reported 1% inode use.
+
+[Block topology]
+sda, sdc, sdd: 1.8T rotational ATA/HGST SATA target disks
+sdb: 1.8T rotational operating-system disk, not a BeeGFS target
+nvme0n1-nvme3n1: 931.5G non-rotational Samsung NVMe target disks
+Targets 405-407 use whole-disk XFS; target 404 uses partition nvme0n1p1.
+/proc/mdstat: no active MD arrays
+LVM: /dev/sdb3 -> ubuntu-vg-1/ubuntu-lv (operating-system volume only)
+
+[Network]
+Configured interface file: empty; referenced file does not exist
+enp7s0: 192.168.0.5/24
+default route: 192.168.0.1 via enp7s0
+link: 2500Mb/s, full duplex, detected
+rdma link show: no links reported
+
+[Controllers and device paths]
+00:17.0 Intel Raptor Lake SATA AHCI controller: sda, sdb, sdc, sdd
+02:00.0 Samsung NVMe controller: nvme0n1
+03:00.0 Samsung NVMe controller: nvme1n1
+05:00.0 Samsung NVMe controller: nvme2n1
+08:00.0 Samsung NVMe controller: nvme3n1

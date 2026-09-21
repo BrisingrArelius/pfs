@@ -53,9 +53,9 @@ comparing.)
 
 ```bash
 # From repository root; choose an available external corpus and a new run directory.
-python3 scripts/trace_analysis/contiguity/parse_logs.py <log_root_dir> results/trace_analysis/runs/example/contiguity/per_file_contig_ratio.csv
-python3 scripts/trace_analysis/contiguity/analyze_distribution.py results/trace_analysis/runs/example/contiguity/per_file_contig_ratio.csv results/trace_analysis/runs/example/contiguity
-python3 scripts/trace_analysis/contiguity/analyze_distribution.py results/trace_analysis/runs/example/contiguity/per_file_contig_ratio.csv results/trace_analysis/runs/example/contiguity --min-ops 20
+python3 scripts/trace_characterization/contiguity/parse_logs.py <log_root_dir> results/trace_analysis/runs/example/contiguity/per_file_contig_ratio.csv
+python3 scripts/trace_characterization/contiguity/analyze_distribution.py results/trace_analysis/runs/example/contiguity/per_file_contig_ratio.csv results/trace_analysis/runs/example/contiguity
+python3 scripts/trace_characterization/contiguity/analyze_distribution.py results/trace_analysis/runs/example/contiguity/per_file_contig_ratio.csv results/trace_analysis/runs/example/contiguity --min-ops 20
 ```
 
 ## Key finding: the raw distribution is dominated by a quantization artifact, not real signal
@@ -96,6 +96,6 @@ needs a minimum-op-count floor to be meaningful — below that floor the ratio i
 quantized and doesn't reflect real access-pattern behavior. This is exactly the kind of
 empirically-derived, project-specific finding flagged as missing from literature in
 `LitReview_task1.md`. The 80-85% cluster is also a reminder that single-day artifacts can
-swing the aggregate distribution meaningfully — worth re-checking once more of the full
-year-long collection is available, rather than treating this 9-day (now fully-extracted)
-slice as final.
+swing the aggregate distribution meaningfully. Validation against the full
+year-long collection is missing; this result covers the fully extracted nine-day
+slice only.

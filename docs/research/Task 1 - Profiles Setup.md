@@ -1,12 +1,20 @@
-# Task 1 — Profiles Setup
+# Historical Task 1 — Profiles Setup
 
-## Goal
+This is a dated research brief, not an active specification. It preserves the
+questions and proposed work as they were recorded. Current missing work is listed
+in [IMPLEMENTATION_BACKLOG.md](../IMPLEMENTATION_BACKLOG.md#workload-profiles-and-classification).
 
-Come up with the **top 20 most common/prevalent file I/O profiles in HPC**, stylistically similar to the existing [`scripts/workloads/profiles_backup.json`](../../scripts/workloads/profiles_backup.json), but this time with each parameter/threshold backed by literature or prior experimental results — not chosen arbitrarily.
+## Historical goal
+
+The task sought the **top 20 most common/prevalent file I/O profiles in HPC**,
+styled after [`scripts/workloads/profiles_backup.json`](../../scripts/workloads/profiles_backup.json),
+with parameters backed by literature or prior experimental results.
 
 ## Problem with the current `profiles_backup.json`
 
-The 20 profiles currently in that file were defined **without a documented research basis**. Sizes, op counts, and thresholds were picked ad hoc. The task now is to go back and determine, with literature backing, what actually defines/classifies each I/O behavior (e.g., where the "small vs. large" boundary really sits, what counts as "frequent" vs. "seldom", etc.).
+The 20 profiles in that file were defined **without a documented research basis**.
+Sizes, operation counts, and thresholds were selected ad hoc. No evidence-backed
+replacement set is implemented.
 
 ## Parameter dimensions used in the existing profiles
 
@@ -18,14 +26,16 @@ The 20 profiles currently in that file were defined **without a documented resea
 | Spatial | contiguous, random, strided (±), nd_strided | HDF5 hyperslabs, VPIC metadata |
 | Phases | 1–4 | Checkpoint periodicity |
 
-## Parameters of interest for the re-derivation (this task)
+## Parameters considered
 
 1. **I/O size:** small vs. large
 2. **I/O access pattern:** contiguous vs. random vs. strided vs. nd_strided
 3. **I/O type:** read-heavy vs. write-heavy vs. mixed
 4. **I/O access temporal frequency:** seldom vs. frequent
 
-Open question raised to Claude: whether there's an important parameter missing from this list (per literature) — still to be resolved. Candidates worth checking against the literature review (not yet confirmed): number of files/processes sharing a file (SSF vs. FPP vs. partial-shared, per the [Summer Plan](CONTEXT.md#overall-plan--summer-plan) notes), request/operation alignment to filesystem block or stripe boundaries, burst vs. sustained I/O phases, and metadata-op-heavy vs. data-op-heavy workloads.
+No resolution was recorded for additional dimensions. Candidates included file
+sharing, request alignment, burst versus sustained phases, and metadata-heavy
+behavior.
 
 ## Constraint: thresholds must be derivable from Darshan POSIX/MPI-IO counters
 
@@ -37,11 +47,12 @@ All thresholds must be groundable in **Darshan POSIX/MPI-IO counters**, since th
 - **Type (read/write/mixed):** `POSIX_BYTES_READ` vs. `POSIX_BYTES_WRITTEN` ratio.
 - **Sharing pattern (SSF/FPP)**, if added: the per-record `rank` field on Darshan records — `rank == -1` (Darshan's shared-file reduction, all ranks touched it) → SSF; one distinct rank per distinct filename → FPP; multiple specific non--1 ranks sharing the same filename hash → partial-shared. Backed by Patel et al. (FAST 2020), per [`LitReview_task1.md`](LitReview_task1.md) Part B #4 and the Cross-Paper Synthesis's "missing dimension" note.
 
-  **Pipeline gap (not yet actionable):** [`parse_darshan.py`](../../scripts/analysis/parse_darshan.py) currently discards `rank` entirely — it aggregates straight to one row per file with every counter summed (`POSIX_COUNTERS`/`MPI_COUNTERS`, all `"sum"`), so rank-level information never survives into the CSVs. Unlike size/type/frequency, which are already one `sum()` away from being computable from the existing output, sharing pattern needs a parser change (preserve `rank` per record before the aggregation step) before it can be derived at all. Flag as its own sub-task if this dimension is adopted.
+  **Pipeline gap:** [`parse_darshan.py`](../../scripts/workloads/analysis/parse_darshan.py)
+  aggregates `rank` away, so its CSV output cannot represent sharing patterns.
 
 If a literature threshold relies on data Darshan doesn't expose (e.g. raw latency), flag it as non-actionable rather than adopting it silently.
 
-## HDF5/PnetCDF-derivable classification heuristic for `nd_strided`
+## Unimplemented HDF5/PnetCDF classification heuristic
 
 The Constraint above notes `POSIX_STRIDE1_STRIDE4`+ as the access-pattern
 grounding, but those POSIX counters are flat (one stride value per record) and
@@ -57,7 +68,8 @@ counter-availability table (including why raw MPI-IO and raw POSIX are *not*
 covered) are in
 [`CONTEXT.md`](CONTEXT.md#darshans-dimensional-visibility-for-nd_strided-is-narrower-than-hdf5-or-pnetcdf).
 
-Concrete heuristic:
+The research produced the following heuristic, but no current parser or
+classifier implements it:
 
 ```
 is_multidim    = H5D_DATASPACE_NDIMS >= 2
@@ -74,7 +86,7 @@ PnetCDF instrumentation — raw MPI-IO (derived datatypes) and raw POSIX I/O
 still fall back to the flat `POSIX_STRIDE1_STRIDE4`+ proxy, with no way to
 confirm genuine dimensional structure.
 
-## Open decisions — `nd_strided` profile parameters (as of 2026-08-03)
+## Unresolved state — `nd_strided` profile parameters (as of 2026-08-03)
 
 These block the `nd_strided` entries in the top-20 profile set specifically.
 Background: the `nd_strided` generator in `posix_synthetic_workload.c` was
@@ -131,15 +143,9 @@ split into distinct 2D/3D/4D variants? Each added dimension consumes one more of
 Darshan's four `POSIX_STRIDE*_STRIDE` slots, so a 4D profile leaves no headroom
 for anything else in the stride counters.
 
-### 3. Blocker: parameters are not yet wired through
+### Current wiring limitation
 
 `run_workloads.py`'s `build_workload_cmd()` does not pass `block_size`
 (argv[12]) or `nd_dims` (argv[13]) to the C binary, so both currently fall back
 to defaults regardless of what the JSON specifies. Decisions 1 and 2 cannot take
 effect until this is plumbed.
-
-## Next steps
-
-- User will provide a literature review covering this topic in a follow-up prompt.
-- That literature will be used to set actual numeric thresholds (size cutoffs, ops/sec or ops-count cutoffs for frequency, etc.) for each dimension, replacing the ad hoc values in `profiles_backup.json`.
-- Per the [Working Rules](CONTEXT.md#working-rules) in `CONTEXT.md`, any resulting change to `profiles_backup.json` (or a successor file) must be logged in `CHANGELOG.md`.

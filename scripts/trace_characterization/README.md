@@ -1,4 +1,4 @@
-# Trace-analysis tools
+# Trace-characterization tools
 
 These tools characterize existing Darshan traces to inform workload-profile
 thresholds. They support the same research project, but do not benchmark BeeGFS.

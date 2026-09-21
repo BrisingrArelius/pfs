@@ -6,8 +6,9 @@ repository-path work is recorded separately in
 
 ## Configuration and inventory
 
-- [ ] Check the real cluster setup: hosts, devices, targets, mounts, pool IDs,
-  network topology, and active TCP/RDMA transport. Do not trust historical IDs.
+- [ ] Complete the remaining [cluster topology](CLUSTER_TOPOLOGY.md) details:
+  exact drive models for `colva2`-`colva4` and upstream PCIe/switch topology.
+  Refresh the dated inventory before benchmark execution.
 - [ ] Build the full D/S/H, chooser, stripe, concurrency, and repetition matrix.
   Add capacity only after its meaning and thresholds are agreed.
 - [ ] Define request sizes, dataset sizes, concurrency, run time, setup, and success
@@ -30,6 +31,18 @@ repository-path work is recorded separately in
 
 ## Durable progress for every experiment
 
+- [ ] Add an allocation-aware wall-clock budget to every top-level runner. Accept
+  a relative duration such as `--time-limit 5h` and an absolute deadline for the
+  remaining reservation time.
+- [ ] Reserve configurable shutdown time for result flushing, cleanup, state
+  restoration, and scheduler exit. Do not start a measurement that cannot finish
+  inside the remaining budget plus that buffer.
+- [ ] Store the active deadline in the run manifest and reread it between atomic
+  measurements. Support an atomic deadline update while the runner is active so
+  an extended reservation can be used without restarting completed work.
+- [ ] On budget expiry, finish or safely interrupt the current atomic unit, record
+  its status, restore temporary cluster state, and exit successfully as a resumable
+  stop rather than reporting an experiment failure.
 - [ ] Give every configuration, repetition, phase, and retry a stable ID.
 - [ ] Save progress safely with `pending`, `running`, `completed`, `failed`, and
   `interrupted` states. Record the cluster allocation and execution order.
@@ -52,6 +65,27 @@ repository-path work is recorded separately in
   system monitoring where Darshan cannot identify an epoch or cache state.
 - [ ] Store commands, settings, raw logs, monitoring data, and derived results in
   each run directory. Never write into historical result directories.
+
+## Workload profiles and classification
+
+- [ ] Replace the two-profile current set with an evidence-backed profile set.
+  Define size, direction, access-pattern, frequency, sharing, and phase dimensions
+  only where the available counters support them.
+- [ ] Preserve Darshan file/rank records when sharing-pattern classification is
+  required. The current parser aggregates rank away.
+- [ ] Decide whether HDF5/PnetCDF dimensional counters are in scope and add their
+  parser support before using them to classify multidimensional striding.
+- [ ] Connect supported strided/nd-strided profiles to an executable runner. Wire
+  `block_size` and `nd_dims` through configuration, and resolve classifier order
+  and dimensionality before adopting profile thresholds.
+- [ ] Fix the standalone C workload compile path on current glibc, including the
+  `_GNU_SOURCE` requirement for `O_DIRECT`.
+- [ ] Validate any HDD/SSD placement classifier against measurements. No placement
+  rules or validated thresholds currently exist.
+- [ ] Repeat contiguity and operation-rate characterization on a broader corpus;
+  current findings cover a limited nine-day Polaris sample.
+- [ ] Replace stale `/mnt/beegfs/advay` defaults with verified, authorized cluster
+  paths before workload or BeeGFS FIO execution.
 
 ## Application validation and scheduling
 

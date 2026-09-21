@@ -4,6 +4,20 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-09-21 — Organize analysis by owning domain
+
+- Moved Darshan parsing and workload-result analysis to
+  `scripts/workloads/analysis/` and renamed `analysis.py` to
+  `analyze_darshan.py`.
+- Renamed `scripts/trace_analysis/` to `scripts/trace_characterization/` to
+  distinguish external trace studies from benchmark-result analysis.
+- Kept historical trace evidence under `results/trace_analysis/legacy/` and
+  updated executable paths, defaults, and current documentation.
+- Consolidated each analysis folder's guide as `README.md` and removed empty
+  output/cache directories.
+
+---
+
 ## 2026-09-21 — Six-domain benchmark suite and execution requirements
 
 - Revised experiment specifications and repository summaries: six plainly named
@@ -136,11 +150,10 @@ The signature is now **identical across all three file sizes** (previously
 1 GB and 10 GB showed no stride signal at all), and distinct-delta count stays
 within Darshan's four `POSIX_STRIDE*_STRIDE` slots through 4D.
 
-### Known follow-ups (not addressed here)
+### Unresolved state recorded with this change
 
-Two of these are open **decisions**, not just pending work — they change what
-the `nd_strided` profile means scientifically, so they were deliberately left
-to be made explicitly. Written up in full at:
+The change left the following items unresolved because they alter the scientific
+meaning of `nd_strided`. Their historical discussion is recorded at:
 [`CONTEXT.md` § Open Decisions](research/CONTEXT.md#open-decisions--nd_strided-workload-generator-as-of-2026-08-03)
 (project-wide framing) and
 [`Task 1 - Profiles Setup.md` § Open decisions](research/Task%201%20-%20Profiles%20Setup.md#open-decisions--nd_strided-profile-parameters-as-of-2026-08-03)
@@ -153,12 +166,13 @@ to be made explicitly. Written up in full at:
   `contiguous`. Either lower it (e.g. `16384` → 75%) or classify stride-first.
 - **`nd_dims` (2–5) is configurable but unused** — every profile is 2D. Open
   question whether the top-20 set should carry distinct 3D/4D variants.
-- **`run_workloads.py` does not pass the new args.** The C binary is only
-  invoked for nd_strided profiles (per its own warning message); the new
-  parameters need plumbing through `build_workload_cmd()` to be settable from
-  the JSON. This blocks both decisions above from taking effect.
+- **`run_workloads.py` does not pass the new args.** `block_size` and `nd_dims`
+  are therefore not configurable from the JSON.
 - **Pre-existing, unrelated:** `O_DIRECT` requires `_GNU_SOURCE` on current
   glibc — the documented compile lines
   (`mpicc -O2 -o ... -ldarshan -lpthread -lrt -lz` in `run_workloads.py:250`,
   `gcc -O3 ...` in [CONTEXT.md](research/CONTEXT.md)) fail to compile on this machine
-  without `-D_GNU_SOURCE`. Not introduced by this change and not fixed here.
+  without `-D_GNU_SOURCE`. This was not introduced or fixed by that change.
+
+The active versions of these missing items are in
+[IMPLEMENTATION_BACKLOG.md](IMPLEMENTATION_BACKLOG.md#workload-profiles-and-classification).

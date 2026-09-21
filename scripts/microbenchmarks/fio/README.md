@@ -5,7 +5,8 @@ runner. New results use run-specific output directories. Historical datasets are
 [results](../../../results/microbenchmarks/legacy/README.md).
 
 A benchmark framework that replaces static `.fio` jobs with a configurable matrix runner.
-It runs FIO workloads across BeeGFS pools or raw OST targets, captures repeated measurements, and produces aggregated JSON results.
+It runs FIO workloads across BeeGFS directories or locally mounted target
+filesystems, captures repeated measurements, and produces aggregated JSON results.
 
 ## Configuration
 
@@ -42,10 +43,10 @@ Example:
 
 ## Running the benchmark
 
-Invocation from any working directory:
+Invocation from the repository root:
 
 ```bash
-python3 matrix_benchmark.py --beegfs
+python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs
 ```
 
 ### BeeGFS mode
@@ -56,20 +57,20 @@ python3 matrix_benchmark.py --beegfs
 Examples:
 
 ```bash
-python3 matrix_benchmark.py --beegfs --pool all
-python3 matrix_benchmark.py --beegfs --pool hdd
-python3 matrix_benchmark.py --beegfs --pool ssd
-python3 matrix_benchmark.py --beegfs --pool nvme-fast --custom-dir /mnt/beegfs/advay/nvme-fast
+python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool all
+python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool hdd
+python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool ssd
+python3 scripts/microbenchmarks/fio/matrix_benchmark.py --beegfs --pool custom --custom-dir /existing/beegfs/directory
 ```
 
-### Raw OST mode
-- `--ost`: run directly against OST-mounted paths
-- `--pool hdd|ssd|all`: choose target OST directories
+### Local target-filesystem mode
+- `--ost`: run against locally mounted target paths; this is not raw block-device I/O
+- `--pool hdd|ssd|all`: choose target directories
 
 Example:
 
 ```bash
-python3 matrix_benchmark.py --ost --pool hdd
+python3 scripts/microbenchmarks/fio/matrix_benchmark.py --ost --pool hdd
 ```
 
 ### Other useful options
@@ -84,6 +85,26 @@ The default is `results/microbenchmarks/runs/fio-<timestamp>/matrix_results_<tim
 An explicit `--results-dir` overrides it.
 
 Each entry includes FIO bandwidth, IOPS, latency, and optional BeeGFS OST hit information.
+
+## Current local-storage evidence
+
+The main preserved April 4 dataset contains 840 rows:
+
+- seven runner labels: `HDD_OST1..4` and `SSD_OST1..3`
+- one and ten files
+- `1g` and `10g` FIO `size` values
+- sequential read/write/mixed and 4-KiB random read/write/mixed modes
+- five repetitions per combination
+
+The labels were generated from local path suffixes `/mnt/hdd1..4` and
+`/mnt/nvme1..3`. The result rows do not record those paths, hostnames, BeeGFS
+target IDs, filesystems, block devices, device models, or controllers. Therefore
+the dataset does not establish which OSS or physical device produced a label.
+
+The current runner retains the same generic local labels and default mount paths.
+It also retains stale BeeGFS defaults under `/mnt/beegfs/advay`, which are absent
+from the observed 2026-09-21 namespace. No verified current target-to-mount mapping
+is configured in the runner.
 
 ## Analyze benchmark results
 

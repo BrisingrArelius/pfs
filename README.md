@@ -1,7 +1,7 @@
 # BeeGFS Storage Pool Experiments
 
-Existing benchmark and workload tools, historical measurements, and the experimental
-design for evaluating BeeGFS target placement.
+Existing benchmark and workload tools, historical measurements, and current
+implementation status for BeeGFS target-placement experiments.
 
 ## Status
 
@@ -20,8 +20,8 @@ scripts/
     placement/           existing pool-management helpers
     analysis/            OST-log, capacity and placement utilities
   workloads/             synthetic workloads, profiles and orchestration
-  analysis/              Darshan parsing and workload analysis
-  trace_analysis/        contiguity and frequency characterization of Darshan traces
+    analysis/            Darshan parsing and workload-result analysis
+  trace_characterization/ contiguity and frequency studies of Darshan traces
 results/
   microbenchmarks/legacy/ fio-local, fio-beegfs, network and placement evidence
   workloads/legacy/      Darshan outputs and execution records
@@ -32,35 +32,35 @@ docs/                    methodology, implementation backlog, references and his
 archive/                 old runner versions retained for historical reference
 ```
 
-The tools under `scripts/trace_analysis/` characterize external Polaris Darshan
+The tools under `scripts/trace_characterization/` characterize external Polaris Darshan
 logs for workload-profile research; they are not BeeGFS microbenchmark runners.
 
-## Experimental design
+## Missing functionality
 
-- **D:** all candidate targets in Default (the experimental “pooling off” baseline).
-- **S:** SSD-only target eligibility.
-- **H:** HDD-only target eligibility.
-- Target selection: **randomized** and **roundrobin**.
-- Capacity: proposed high/low free space on the same devices; interpretation and
-  site-specific bands remain pending confirmation.
-- Six benchmark domains: local storage, network transport, BeeGFS communication
-  (IOR + NetBench), end-to-end placement (normal IOR), cache effects and metadata.
-- The full placement matrix is retained; each domain requires durable progress
-  across allocations and its applicable preparation and instrumentation.
-- DLIO and additional application workloads provide separately specified validation.
+- The complete D/S/H placement matrix is missing.
+- Dedicated network, BeeGFS communication, cache-state, and metadata runners are
+  missing.
+- Durable suite-wide progress and resume support is missing.
+- Controlled capacity conditions and application-validation coverage are missing.
 
-These are design requirements, not all implemented features. See
-[methodology](docs/methodology.md).
+The detailed open work is in the
+[implementation backlog](docs/IMPLEMENTATION_BACKLOG.md). Current behavior and
+limitations are described in [methodology](docs/methodology.md).
 
 ## Documentation
 
+Current-state documentation describes only implemented or observed behavior.
+Missing behavior is stated as missing. The implementation backlog is kept in
+`docs/IMPLEMENTATION_BACKLOG.md`; changelog and research notes are historical
+records rather than active specifications.
+
 - [Microbenchmark inventory](scripts/microbenchmarks/README.md)
 - [Historical results and provenance](results/README.md)
-- [Future implementation backlog](docs/IMPLEMENTATION_BACKLOG.md)
+- [Implementation backlog](docs/IMPLEMENTATION_BACKLOG.md)
+- [Observed cluster topology](docs/CLUSTER_TOPOLOGY.md)
 - [Workload documentation](scripts/workloads/README.md)
-- [Darshan parser](scripts/analysis/parse_darshan_README.md)
-- [Workload analysis](scripts/analysis/analysis_README.md)
-- [Trace-analysis tools](scripts/trace_analysis/README.md)
+- [Darshan parsing and workload analysis](scripts/workloads/analysis/README.md)
+- [Trace-characterization tools](scripts/trace_characterization/README.md)
 - [Research notes](docs/research/CONTEXT.md)
 
 ## History

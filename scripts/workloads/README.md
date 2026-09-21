@@ -12,9 +12,10 @@ Historical outputs live under
 
 - `profiles.json` — workload profile definitions
 - `posix_synthetic_workload_IOR.py` — Python wrapper that turns profiles into IOR commands
-- `posix_synthetic_workload.c` — original C workload implementation used for some stride patterns
+- `posix_synthetic_workload.c` — standalone C workload implementation
 - `run_workloads.py` — workload runner with run-specific output/log paths
 - `run_pipeline.py` — HDD/SSD workload orchestration
+- `analysis/` — Darshan parsing and workload-result analysis
 
 ## Profile execution model
 
@@ -46,19 +47,17 @@ This allows setup and workload phases to access the same files without extra coo
 
 Pure-read profiles require a setup pass, while pure-write and mixed profiles run directly in workload mode.
 
-The `metadata_heavy` profile uses a special path that creates and unlinks many small files, and it does not require a separate setup phase.
-
 ## Access patterns
 
-The available access patterns are:
+`posix_synthetic_workload_IOR.py` implements sequential/contiguous and random
+profiles. `run_workloads.py` always invokes this Python IOR wrapper. Although
+the profile loader accepts `strided` and `nd_strided`, the wrapper rejects them;
+the runner does not delegate those patterns to `posix_synthetic_workload.c`.
+Metadata-heavy special handling also exists only in the standalone C program.
 
-- `sequential` / `contiguous`
-- `random`
-- `strided`
-- `nd_strided`
-
-`posix_synthetic_workload_IOR.py` handles sequential and random profiles.
-`strided` and `nd_strided` profiles are delegated to the C implementation in `posix_synthetic_workload.c` when available.
+The current `profiles.json` contains two contiguous, read-only profiles:
+`small_contiguous_read_heavy_freq_1` and
+`small_contiguous_read_heavy_freq_2`.
 
 ## Profile fields
 
@@ -96,7 +95,7 @@ python3 scripts/workloads/run_pipeline.py --runs 5
 Run a specific profile:
 
 ```bash
-python3 scripts/workloads/run_workloads.py --only read_heavy --runs 5 --storage-type hdd
+python3 scripts/workloads/run_workloads.py --only small_contiguous_read_heavy_freq_1 --runs 5 --storage-type hdd
 ```
 
 ## Adding a new profile

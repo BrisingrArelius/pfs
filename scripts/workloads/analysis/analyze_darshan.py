@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-analysis.py
+analyze_darshan.py
 
 Analyzes Darshan counter data from global.csv to:
 1. Compute statistics (mean, std, min, max, CV) across multiple runs per profile
@@ -13,10 +13,10 @@ Analyzes Darshan counter data from global.csv to:
 
 Usage:
     # Single storage analysis
-    python3 scripts/analysis/analysis.py --input <global.csv> [--output-dir <path>]
+    python3 scripts/workloads/analysis/analyze_darshan.py --input <global.csv> [--output-dir <path>]
     
     # HDD vs SSD comparison
-    python3 scripts/analysis/analysis.py --hdd <hdd-global.csv> --ssd <ssd-global.csv> [--output-dir <path>]
+    python3 scripts/workloads/analysis/analyze_darshan.py --hdd <hdd-global.csv> --ssd <ssd-global.csv> [--output-dir <path>]
 
 Options:
     --cv-threshold: Maximum coefficient of variation for "stable" counters (default: 0.2)
@@ -42,7 +42,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 CV_THRESHOLD = 0.2
 TOP_N_COUNTERS = 10
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "results" / "workloads" / "runs" / datetime.now().strftime("analysis-%Y%m%d_%H%M%S")
 
 EXCLUDE_COUNTERS = [

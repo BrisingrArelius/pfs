@@ -9,8 +9,10 @@ not retroactively establish missing transport, capacity, placement or cache meta
   historical execution records.
 - [Trace-characterization evidence](trace_analysis/legacy/README.md): contiguity
   and frequency distributions from external Polaris Darshan logs.
+- [`cluster-inventory/20260921/`](cluster-inventory/20260921/): normalized
+  read-only storage-node inventory output referenced by the cluster topology.
 
-New outputs belong under `microbenchmarks/runs/<run-id>/` or
-`workloads/runs/<run-id>/` (or `trace_analysis/runs/<run-id>/` for trace research),
+Current tools place new outputs under `microbenchmarks/runs/<run-id>/` or
+`workloads/runs/<run-id>/` (or `trace_analysis/runs/<run-id>/` for trace characterization),
 with exact commands/configuration, raw output, derived metrics/plots and
 provenance. Tools default to these run-specific areas.

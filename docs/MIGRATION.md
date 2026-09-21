@@ -72,10 +72,17 @@ Their original filenames are restored under `analysis/`, with identical contents
 - Identical destination duplicates from the interrupted refactor were compared
   byte-for-byte before merging. Differing contents were never overwritten.
 
+## Current analysis locations
+
+Later organization moved workload-owned Darshan tools to
+`scripts/workloads/analysis/` and renamed the analyzer to `analyze_darshan.py`.
+External trace-corpus tools are under `scripts/trace_characterization/`.
+Preserved trace outputs remain under `results/trace_analysis/legacy/`.
+
 ## Verification contract
 
-Moved source/config/data files must match their recovered pre-move SHA-256
-checksums. Tracked non-document artifacts must remain recoverable at their mapped
+Moved source/config/data files were compared with their recovered pre-move SHA-256
+checksums. Tracked non-document artifacts remain recoverable at their mapped
 paths except the approved empty `r.txt` and generated `.pyc` removals documented
 above. Documentation changes are checked separately. Historical outputs are not
 regenerated to make them agree with the new specification.
@@ -100,8 +107,8 @@ Trace Python contents, CSVs/plots and PDFs were preserved. The empty `r.txt` and
 generated Python bytecode caches are the only intentionally removed non-document
 artifacts; no source, configuration, trace parser or analysis logic was changed.
 Documentation links and path-repair notes were updated for the deeper locations.
-The prior snapshot checks require these additional mappings and exclusions when
-repeated.
+The repeatable snapshot definition includes these additional mappings and
+exclusions.
 
 Before final generated-cache cleanup, all 149 non-document files other than the
 approved empty `r.txt` matched the follow-up snapshot at their mapped destinations.

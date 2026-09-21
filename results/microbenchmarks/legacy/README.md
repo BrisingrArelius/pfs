@@ -41,8 +41,8 @@ The April 16 dataset has 240 rows with HDD/SSD labels. Its filename records
 
 Approximately 2.35 Gbit/s TCP agrees numerically with approximately 280–282 MiB/s
 sequential pool throughput. That is suggestive, not proof of the active BeeGFS
-transport: `connUseRDMA = true` allows RDMA and TCP fallback. Record the actual
-connection evidence in future runs. These snapshots do not establish current
+transport: `connUseRDMA = true` allows RDMA and TCP fallback. Actual connection
+evidence is missing from these runs. These snapshots do not establish current
 topology or pool membership.
 
 Some placement logs contain offline-node errors. Keep those errors as experiment

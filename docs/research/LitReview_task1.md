@@ -1,6 +1,8 @@
 # Literature Review — Task 1: I/O Profile Classification & Thresholds
 
-Supports [Task 1 - Profiles Setup.md](Task%201%20-%20Profiles%20Setup.md): finding literature-backed, Darshan-counter-derivable thresholds for size / access-pattern / type / frequency, used to redefine the profiles in [`profiles_backup.json`](../../scripts/workloads/profiles_backup.json).
+This historical review records evidence considered for
+[Task 1 - Profiles Setup.md](Task%201%20-%20Profiles%20Setup.md). It did not produce
+an implemented replacement profile set or validated classifier.
 
 **Note:** "Location in Paper" fields from the original handout (`Lit_Review_Manoj.pdf`) are known-wrong and omitted. Only dimensions each paper actually covers are listed. Paper 10's stated year (2008) looks inconsistent with its use of the IO500 suite (~2017+) — flagged, not corrected.
 
@@ -149,7 +151,7 @@ The closest Darshan-native proxy remains the raw counters Darshan does expose �
 Since no paper reviewed (Parts A–C) gives a validated file-level threshold for "% of ops
 contiguous ⇒ classify file as sequential" (see Cross-Paper Synthesis below), this was
 derived directly from real Darshan logs instead of literature. Method, code, and full
-results: [contiguity analysis](../../scripts/trace_analysis/contiguity/README.md).
+results: [contiguity analysis](../../scripts/trace_characterization/contiguity/README.md).
 
 **Data:** real ALCF Polaris Darshan logs (verified genuine via mount points `/lus/eagle`,
 `/lus/grand`, `/home`, `/local/scratch`, Slingshot `cxi0`/`cxi1` interfaces, and the
@@ -178,8 +180,7 @@ the ratio is quantized, not descriptive). Above that floor, in this real HPC sam
 that do meaningful I/O are essentially fully contiguous (≥95%), which is a much cleaner
 empirical basis than any of Papers 1–10 or Paper 9's 0.77–95.25% enterprise-Windows
 range. This is HPC-native, Darshan-native, and Polaris-specific (single-platform,
-9-day sample) — worth re-running against the fuller collection once available to check
-it holds beyond this slice.
+9-day sample). Validation against the fuller collection is missing.
 
 ---
 
@@ -187,6 +188,6 @@ it holds beyond this slice.
 
 - **Size:** ~4 KB "small" is consistent across papers 4/5/6/9 — matches current profile threshold. "Large" varies widely (100 KB–4 MB) except the HPC-specific Paper 6, which uses **>16 MB** — best basis to revise the current 4 MB+ cutoff. Drishti (Part B #6) offers a third, HPC-production-validated anchor at **<1 MB**, though its cutoff traces back to Darshan's own histogram bucket boundaries rather than an independent derivation — useful as a middle tier, not a replacement for Paper 6's >16 MB "large" bound.
 - **Type:** Read-ratio formula is universal; "dominant" cutoffs range 50–80%+. **Metadata-heavy** recurs as a distinct 5th category (Papers 6, 10) — worth adding.
-- **Frequency:** Weakest-supported dimension — no paper uses a flat op-count cutoff like the current "<5K seldom/>20K frequent." All use rate/burstiness (ops/sec, peak:avg ratio, Hurst parameter). Should be reframed as a rate, not a raw count. Part D's empirical check adds one concrete data point regardless: a minimum-op-count **floor** (≥20) is needed before *any* per-file ratio counter is meaningful — below it, low op counts quantize ratios like contig_ratio into a few discrete values that look like signal but aren't.
+- **Frequency:** Weakest-supported dimension — no paper uses a flat op-count cutoff like the historical "<5K seldom/>20K frequent." All use rate/burstiness (ops/sec, peak:avg ratio, Hurst parameter). No replacement threshold is implemented. Part D's empirical check adds one concrete data point regardless: a minimum-op-count **floor** (≥20) is needed before *any* per-file ratio counter is meaningful — below it, low op counts quantize ratios like contig_ratio into a few discrete values that look like signal but aren't.
 - **Access pattern:** Sequential/random via `POSIX_SEQ_READS/POSIX_READS` is solid and Darshan-native, and now has real-data backing: Part D found real ALCF Polaris files (`total_ops ≥ 20`) are 98.11% contiguous (95–100% bucket) — a much cleaner empirical signal than any literature threshold reviewed. **Strided/nd_strided is a confirmed, genuine gap, not just an unexplored one** — Papers 3, 6, 9, 10 flagged it qualitatively, and Part C's HPC-I/O-library-native literature (Bez et al. 2023's formal `off_{p,i+1}=off_{p,i}+stride_i` definition, Thakur & Gropp's MPI derived-datatype/file-view model, Kang et al. 2021's HDF5-hyperslab nd_strided study, Li et al. 2003's PnetCDF `start/count/stride` API) all independently confirm that classifying strided/nd_strided access requires per-request or DXT trace-level detail — none reduce to a validated Darshan summary-counter threshold. Best available Darshan-native proxy: `POSIX_STRIDE1_STRIDE4`/`_COUNT` (top-4 strides + counts) for a **strided** heuristic (unvalidated by any paper, our own construction); **nd_strided has no Darshan-counter proxy at all** since Darshan's stride counters are flat, not dimensional.
 - **Missing dimension:** file **sharing pattern** (SSF/FPP/partial-shared) recurs in HPC literature (Patel et al., Summer Plan) but isn't one of the current four parameters.

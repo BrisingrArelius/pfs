@@ -6,7 +6,9 @@
 > [methodology](../methodology.md) and [migration map](../MIGRATION.md).
 > Network-ceiling claims require active-transport evidence; client configuration
 > alone does not establish TCP versus RDMA. Historical commands are not current
-> refactor run instructions.
+> refactor run instructions. To-do items, proposals, open decisions, and expected
+> results below are preserved historical notes, not active work definitions. Active
+> missing work is listed only in [IMPLEMENTATION_BACKLOG.md](../IMPLEMENTATION_BACKLOG.md).
 
 ## Project Goal
 
@@ -17,12 +19,12 @@ Basically what we are trying to do in this project is something like this:
 - **Put the appropriate file in the appropriate pool for performance gains.** E.g., a file that is read frequently in random order and not written much → SSD; a file with occasional long writes (checkpoint-type workload) → HDD.
 - We can't really measure SSD perf gains on the Dash cluster because of the network bus bandwidth bottleneck. So for now we're pivoting to good HDD vs. bad HDD type comparisons.
 
-## Working Rules
+## Historical working rules
 
 - **Every change to the codebase must be logged in [docs/CHANGELOG.md](../CHANGELOG.md).** Add an entry describing what changed and why whenever a script, config, or pipeline behavior is modified.
 - **Task 1 (Profiles Setup)** has its own supporting docs in this same folder — refer to them when working on I/O profile classification: [`Task 1 - Profiles Setup.md`](Task%201%20-%20Profiles%20Setup.md) (goal, current profile params, Darshan-counter constraint) and [`LitReview_task1.md`](LitReview_task1.md) (literature review backing the size/pattern/type/frequency thresholds).
 
-## Overall Plan / Summer Plan
+## Historical overall plan / summer plan
 
 Source: handwritten kickoff/planning notes (for Tejas & Advay, Manoj), summarized from [Summer plan dash annotated.pdf](../references/Summer%20plan%20dash%20annotated.pdf).
 
@@ -789,7 +791,7 @@ flagged.
 
 ---
 
-## Open Decisions — `nd_strided` Workload Generator (as of 2026-08-03)
+## Unresolved historical state — `nd_strided` workload generator (as of 2026-08-03)
 
 The `nd_strided` offset generator in `posix_synthetic_workload.c` was fixed on
 2026-08-03 (see [`CHANGELOG.md`](../CHANGELOG.md)) — it had been emitting

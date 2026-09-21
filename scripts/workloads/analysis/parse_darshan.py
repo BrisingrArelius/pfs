@@ -2,9 +2,8 @@
 """
 parse_darshan.py
 
-Parses a Darshan log file and extracts I/O counters into:
-  - A per-run CSV:  {label}_{modules}.csv  (one row per file accessed)
-  - A global CSV:   global.csv             (one row per run, all counters, NaN if not collected)
+Parses one or more Darshan logs and appends one aggregate row per invocation to
+global.csv. Per-file CSV output is not implemented.
 
 Usage:
     python parse_darshan.py --log <path.darshan> --label <name> [--posix] [--mpi] [--stdio] [--output-dir <path>]
@@ -23,7 +22,7 @@ import pandas as pd
 # OUTPUT CONFIGURATION
 # =============================================================================
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 OUTPUT_DIR = REPO_ROOT / "results" / "workloads" / "runs" / datetime.now().strftime("darshan-%Y%m%d_%H%M%S") / "metrics"
 GLOBAL_CSV = "global.csv"
 

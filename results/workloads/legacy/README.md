@@ -7,6 +7,6 @@
 - `execution/from-scripts/` preserves the separate script-local checkpoint/errors.
 
 Raw Darshan-log linkage, exact commands, tool versions and run manifests are
-incomplete. Treat CSVs/figures as legacy-derived results, not verified runs of
-the revised D/S/H × chooser × capacity design. Do not use historical checkpoints
-as the initial state for future runs. Source bytes and separate origins are retained.
+incomplete. The CSVs/figures are legacy-derived results, not verified runs of
+the revised D/S/H × chooser × capacity design. Historical checkpoints are not
+valid initial state for a new run. Source bytes and separate origins are retained.
