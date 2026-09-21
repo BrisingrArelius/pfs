@@ -64,7 +64,7 @@ class RunnerTests(unittest.TestCase):
         return {"free_bytes": 10**12, "free_inodes": 10000, "total_bytes": 2 * 10**12,
                 "free_percent": 50, "mount": target["mount"], "diskstats": "fake"}
 
-    def fake_fio(self, argv, stdout, stderr, deadline, cleanup, timeout):
+    def fake_fio(self, argv, stdout, stderr, deadline, cleanup, timeout, cwd=None):
         """Simulate accounting and sparse fixture-file growth, not benchmark I/O."""
         options = configparser.ConfigParser(interpolation=None)
         options.read(argv[-1])
@@ -72,6 +72,11 @@ class RunnerTests(unittest.TestCase):
         job = options[name]
         path = Path(job["filename"])
         self.assertTrue(path.is_relative_to(self.base))
+        self.assertEqual(Path(cwd), Path(argv[-1]).parent)
+        self.assertIn(f"--aux-path={cwd}", argv)
+        self.assertEqual(path.name, "data")
+        self.assertEqual(path.parent.name, f"target-{name.removeprefix('target-')}")
+        self.assertEqual(path.parents[2].name, ".local-fio")
         is_prepare = "runtime" not in job
         self.calls.append((is_prepare, path, job["rw"]))
         Path(stdout).write_text("fake stdout\n")
@@ -80,7 +85,7 @@ class RunnerTests(unittest.TestCase):
             self.fail_at = None
             raise self.failure
         if is_prepare:
-            with path.open("r+b") as data:
+            with path.open("xb") as data:
                 data.truncate(int(job["size"]))
         else:
             self.assertEqual(job["allow_file_create"], "0")
@@ -185,9 +190,9 @@ class RunnerTests(unittest.TestCase):
 
     def test_bad_deadline_does_not_prevent_failure_checkpoint(self):
         """Even non-finite JSON deadline values cannot poison the manifest write."""
-        def invalid_update(*args):
+        def invalid_update(*args, **kwargs):
             """Inject malformed live state while a measured attempt is active."""
-            elapsed = self.fake_fio(*args)
+            elapsed = self.fake_fio(*args, **kwargs)
             if len(self.calls) == 2:
                 Path(args[3]).write_text('{"deadline_epoch": NaN}')
                 raise ValueError("invalid live deadline")
@@ -318,6 +323,74 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("ramp_time=0\n", job)
         self.assertIn("runtime=60\n", job)
         self.assertIn("fallocate=none\n", job)
+
+    def test_jobs_never_name_devices_or_beegfs_storage(self):
+        """Every phase writes only the exact generated private data pathname."""
+        target = self.targets[0]
+        run_id = "a" * 32
+        path = runner.target_data_path(target, run_id)
+        self.assertEqual(path, Path(target["mount"]) / ".local-fio" / run_id / "target-101" / "data")
+        for phase in ("prepare", "measure"):
+            for workload in self.config["workloads"]:
+                job = runner.build_job(self.config, target, dict(workload, repetition=1), path, phase)
+                options = configparser.ConfigParser(interpolation=None)
+                options.read_string(job)
+                filename = options[options.sections()[0]]["filename"]
+                self.assertEqual(filename, str(path))
+                self.assertNotEqual(filename, target["device"])
+                self.assertNotIn("beegfs_storage", Path(filename).parts)
+
+    def test_adjacent_target_files_are_never_modified(self):
+        """Preparation and cleanup cannot touch BeeGFS data or unrelated siblings."""
+        mount = Path(self.targets[0]["mount"])
+        protected = {
+            mount / "beegfs_storage" / "important": b"beegfs sentinel",
+            mount / ".local-fio" / "unrelated": b"unrelated sentinel",
+            mount / "ordinary-file": b"ordinary sentinel",
+        }
+        for path, content in protected.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+        self.assertEqual(self.invoke("--targets", "101", "--pilot"), 0)
+        for path, content in protected.items():
+            self.assertEqual(path.read_bytes(), content)
+
+    def test_tampered_manifest_data_path_cannot_delete_victim(self):
+        """A resumed manifest cannot redirect FIO or cleanup to an arbitrary file."""
+        self.fail_at = 2
+        self.invoke("--targets", "101", "--pilot")
+        victim = self.base / "victim"
+        victim.write_text("do not touch")
+        manifest = self.manifest()
+        manifest["targets"]["101"]["path"] = str(victim)
+        atomic_json(self.root / "manifest.json", manifest)
+        self.assertEqual(self.invoke("--resume"), 1)
+        self.assertEqual(victim.read_text(), "do not touch")
+
+    def test_symlinked_data_file_cannot_redirect_io_or_cleanup(self):
+        """Replacing the private file with a symlink stops before following it."""
+        self.fail_at = 2
+        self.invoke("--targets", "101", "--pilot")
+        data = Path(self.manifest()["targets"]["101"]["path"])
+        victim = self.base / "victim"
+        victim.write_text("do not touch")
+        data.unlink()
+        data.symlink_to(victim)
+        self.assertEqual(self.invoke("--resume"), 1)
+        self.assertEqual(victim.read_text(), "do not touch")
+        self.assertTrue(data.is_symlink())
+
+    def test_tampered_artifact_path_cannot_escape_results(self):
+        """Resume validation never reads evidence through traversal or outside symlinks."""
+        self.fail_at = 3
+        self.invoke("--targets", "101", "--pilot")
+        victim = self.base / "outside.json"
+        victim.write_text("do not touch")
+        manifest = self.manifest()
+        manifest["cases"][0]["attempts"][0]["artifacts"] = "../../outside.json"
+        atomic_json(self.root / "manifest.json", manifest)
+        self.assertEqual(self.invoke("--resume"), 1)
+        self.assertEqual(victim.read_text(), "do not touch")
 
 
 if __name__ == "__main__":

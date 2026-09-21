@@ -256,6 +256,11 @@ main
 `run_command` owns the process; `atomic_json` owns durable state replacement.
 Record exact paths before creating data. Reject symlinked work directories/files,
 verify mount identity before any cleanup, and never delete via a broad glob.
+The implementation derives and revalidates the sole writable data pathname from
+the verified mount, run ID and target ID; a manifest cannot redirect it. Raw
+artifacts are likewise confined beneath the selected results directory. FIO runs
+with that artifact directory as its process/auxiliary directory and receives no
+device or `beegfs_storage` pathname.
 
 If admission fails, leave the next case pending and stop normally. After valid
 preparation, recheck time before the first measurement; if time is insufficient,

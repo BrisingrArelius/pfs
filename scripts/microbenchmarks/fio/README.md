@@ -105,3 +105,23 @@ python3 -B -m unittest discover -s scripts/microbenchmarks/fio/tests -v
 
 Tests use `/tmp/opencode`, sparse fixture files, mocked mount/FIO operations and
 harmless Python subprocesses. They do not run FIO, findmnt, sudo or cache drops.
+
+## Write-safety boundary
+
+The runner may modify only the selected results directory and this exact generated
+file on a verified target mount:
+
+```text
+<mount>/.local-fio/<32-character-run-id>/target-<inventory-id>/data
+```
+
+FIO receives that explicit regular-file path, never an inventory device path or
+anything below `beegfs_storage`. It runs with its working/auxiliary directory in
+the corresponding raw results folder. Cleanup validates the generated path,
+mount, symlink-free regular-file identity and inode before unlinking exactly
+`data`; it does not use globs or recursive deletion.
+
+Tests reject tampered manifest traversal, artifact paths outside results, symlink
+redirection and unexpected replacement files. They also place sentinels in
+`beegfs_storage`, the mount root and adjacent `.local-fio` paths, then verify all
+remain unchanged through preparation, measurements and cleanup.

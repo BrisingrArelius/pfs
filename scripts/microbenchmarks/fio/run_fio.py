@@ -171,6 +171,36 @@ def completed(attempts):
     return bool(attempts and attempts[-1]["state"] == "completed")
 
 
+def target_data_path(target, run_id):
+    """Return the only data pathname this run may create, write or unlink."""
+    if not re.fullmatch(r"[0-9a-f]{32}", run_id):
+        raise ValueError("invalid run ID in manifest")
+    mount = Path(target["mount"])
+    if not mount.is_absolute() or target["target_id"] <= 0:
+        raise ValueError("target mount and ID cannot form a safe data path")
+    return mount / ".local-fio" / run_id / f"target-{target['target_id']}" / "data"
+
+
+def require_data_path(target, run_id, path):
+    """Reject tampered/traversing paths before inspection, execution or deletion."""
+    path, expected = Path(path), target_data_path(target, run_id)
+    if path != expected or "beegfs_storage" in path.parts or path == Path(target["device"]):
+        raise ValueError(f"unsafe benchmark data path: {path}")
+    return path
+
+
+def artifact_path(root, relative):
+    """Confine raw evidence to the selected results directory, including on resume."""
+    relative = Path(relative)
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ValueError(f"unsafe artifact path: {relative}")
+    root = Path(root).resolve()
+    path = (root / relative).resolve(strict=False)
+    if not path.is_relative_to(root):
+        raise ValueError(f"artifact escapes results directory: {relative}")
+    return path
+
+
 def save(run):
     """Checkpoint the sole progress record, including the observed live deadline."""
     if run["deadline"].exists():
@@ -224,9 +254,10 @@ def load_run(args):
                        "sessions": []}
     for target in targets:
         tid = str(target["target_id"])
-        path = Path(target["mount"]) / ".local-fio" / manifest["run_id"] / f"target-{tid}" / "data"
+        path = target_data_path(target, manifest["run_id"])
         state = manifest["targets"].setdefault(tid, {
-            "path": str(path), "preparations": [], "file_identity": None, "cleanup": "pending"})
+            "path": str(path), "preparations": [], "file_identity": None,
+            "file_owned": False, "cleanup": "pending"})
         if state["path"] != str(path):
             raise ValueError("recorded data path does not match this run and target")
     for owner in list(manifest["targets"].values()) + manifest["cases"]:
@@ -234,8 +265,8 @@ def load_run(args):
             if attempt["state"] == "running":
                 attempt.update(state="interrupted", error="previous session ended without checkpoint")
             if attempt["state"] == "completed":
+                folder = artifact_path(args.results_dir, attempt["artifacts"])
                 try:
-                    folder = args.results_dir / attempt["artifacts"]
                     if not all((folder / name).is_file() for name in ("job.fio", "fio.json", "stdout", "stderr")):
                         raise ValueError("required raw artifact missing")
                     validate_result(folder / "fio.json", attempt["expected"])
@@ -316,11 +347,11 @@ def execute_fio(run, target, workload, repetition, phase, attempts, estimate):
     """Checkpoint one FIO invocation; share evidence handling for setup and measurement."""
     config, manifest = run["config"], run["manifest"]
     state = manifest["targets"][str(target["target_id"])]
-    path = Path(state["path"])
+    path = require_data_path(target, manifest["run_id"], state["path"])
     number = len(attempts) + 1
     relative = (f"raw/target-{target['target_id']}/prepare-{number}" if phase == "prepare" else
                 f"raw/{target['target_id']}__{workload['name']}__r{repetition}/attempt-{number}")
-    folder = run["root"] / relative
+    folder = artifact_path(run["root"], relative)
     if folder.exists():
         raise ValueError(f"refusing to overwrite existing artifacts: {folder}")
     timeout = config["prepare"]["timeout_seconds"] if phase == "prepare" else config["measurement_timeout_seconds"]
@@ -344,13 +375,10 @@ def execute_fio(run, target, workload, repetition, phase, attempts, estimate):
             if file_identity(path) is not None:
                 raise ValueError("preparation needs an absent, owned data path")
             make_directory(path.parent)
-            with path.open("xb") as data:
-                os.fsync(data.fileno())
-            sync_directory(path.parent)
-            state["file_identity"] = file_identity(path)
+            state["file_owned"] = True
             save(run)
         before_identity = file_identity(path)
-        if before_identity != state["file_identity"] or before_identity is None:
+        if phase != "prepare" and (before_identity != state["file_identity"] or before_identity is None):
             raise ValueError("prepared file identity changed")
         job = build_job(config, target, dict(workload or {}, repetition=repetition), path, phase)
         with (folder / "job.fio").open("x") as output:
@@ -359,19 +387,20 @@ def execute_fio(run, target, workload, repetition, phase, attempts, estimate):
             os.fsync(output.fileno())
         sync_directory(folder)
         attempt["command"] = ["fio", "--output-format=json", f"--output={folder / 'fio.json'}",
-                              "--eta=never", str(folder / "job.fio")]
+                              f"--aux-path={folder}", "--eta=never", str(folder / "job.fio")]
         attempt["file_before"] = before_identity
         save(run)
         attempt["command_wall_seconds"] = run_command(
             attempt["command"], folder / "stdout", folder / "stderr", run["deadline"],
-            run["cleanup_seconds"], timeout)
+            run["cleanup_seconds"], timeout, cwd=folder)
         with (folder / "fio.json").open("rb") as output:
             os.fsync(output.fileno())
         sync_directory(folder)
         _, summary = validate_result(folder / "fio.json", expected)
         after_identity = file_identity(path)
-        wanted = dict(before_identity, size=config["fio"]["size"])
-        if after_identity != wanted:
+        if after_identity is None or after_identity["size"] != config["fio"]["size"]:
+            raise ValueError("FIO did not leave a complete target file")
+        if phase != "prepare" and after_identity != before_identity:
             raise ValueError("FIO recreated, truncated or lost the target file")
         attempt.update(summary, file_after=after_identity, after=check_target(target), returncode=0)
         if attempt["after"]["free_bytes"] < config["free_space_reserve_bytes"]:
@@ -403,11 +432,14 @@ def run_case(run, case):
 def run_target(run, target, cases):
     """Own one prepared file across measurements and allocations; delete it last."""
     state = run["manifest"]["targets"][str(target["target_id"])]
-    path = Path(state["path"])
+    path = require_data_path(target, run["manifest"]["run_id"], state["path"])
     state["last_check"] = check_target(target)
     actual = file_identity(path)
     known = state["file_identity"]
-    if actual is not None and (known is None or any(actual[key] != known[key] for key in ("device", "inode"))):
+    if actual is not None and not state.get("file_owned", False):
+        raise ValueError(f"unexpected file at {path}; refusing to overwrite/delete it")
+    if actual is not None and known is not None and any(
+            actual[key] != known[key] for key in ("device", "inode")):
         raise ValueError(f"unexpected file at {path}; refusing to overwrite/delete it")
     pending = [case for case in cases if not completed(case["attempts"])]
     if pending:
@@ -424,6 +456,8 @@ def run_target(run, target, cases):
                 path.unlink()
                 sync_directory(path.parent)
             state["file_identity"] = None
+            state["file_owned"] = True
+            save(run)
             print(f"target {target['target_id']}: prepare once", flush=True)
             execute_fio(run, target, None, 0, "prepare", state["preparations"], estimate)
         for case in pending:
@@ -439,6 +473,7 @@ def run_target(run, target, cases):
             path.unlink()
             sync_directory(path.parent)
         state["cleanup"] = "completed"
+        state["file_owned"] = False
         state.pop("cleanup_error", None)
     except BaseException as error:
         state.update(cleanup="failed", cleanup_error=str(error))

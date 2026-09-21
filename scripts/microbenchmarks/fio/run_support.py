@@ -96,7 +96,7 @@ def set_deadline(path, *, time_limit=None, deadline=None, extend=None):
 
 
 def run_command(argv, stdout_path, stderr_path, deadline_path, cleanup_seconds,
-                timeout_seconds):
+                timeout_seconds, cwd=None):
     """Run/reap one process group, enforcing allocation and hard time limits."""
     if remaining_seconds(deadline_path, cleanup_seconds) <= 0:
         raise BudgetExpired("reservation cleanup window reached")
@@ -104,7 +104,7 @@ def run_command(argv, stdout_path, stderr_path, deadline_path, cleanup_seconds,
     process = None
     with open(stdout_path, "xb") as stdout, open(stderr_path, "xb") as stderr:
         try:
-            process = subprocess.Popen(argv, stdout=stdout, stderr=stderr,
+            process = subprocess.Popen(argv, stdout=stdout, stderr=stderr, cwd=cwd,
                                        start_new_session=True)
             while True:
                 available = remaining_seconds(deadline_path, cleanup_seconds)
