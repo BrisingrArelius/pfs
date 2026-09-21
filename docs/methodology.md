@@ -106,8 +106,7 @@ point: 54 h at one minute each or 270 h at five, before overhead. The existing
 for 240 pool invocations before preparation. These are conditional estimates,
 not observed total runtimes. Fit restartable measurements within allocations.
 
-Future functionality is tracked in the [implementation backlog](IMPLEMENTATION_BACKLOG.md);
-[path repairs](../TODOS_SCRIPT_CHANGES.md) remain a separate mechanical checklist.
+Future functionality is tracked in the [implementation backlog](IMPLEMENTATION_BACKLOG.md).
 
 ## Historical interpretation
 

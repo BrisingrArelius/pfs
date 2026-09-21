@@ -5,6 +5,9 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+RUNS_DIR = REPO_ROOT / "results" / "microbenchmarks" / "runs"
+
 def fmt_bw(mib):
     if mib < 1:
         return f"{mib*1024:.1f} KiB/s"
@@ -95,15 +98,10 @@ def main():
     if args.file:
         files = [Path(args.file)]
     else:
-        # Try to find the newest matrix_results in results/ or ost_results/
-        files = []
-        for d in ["results", "ost_results"]:
-            p = Path(__file__).parent / d
-            if p.exists():
-                files.extend(list(p.glob("matrix_results_*.json")))
+        files = list(RUNS_DIR.glob("*/matrix_results_*.json")) if RUNS_DIR.exists() else []
         
         if not files:
-            print("No matrix_results_*.json files found in results/ or ost_results/. Please specify a file.")
+            print(f"No matrix_results_*.json files found under {RUNS_DIR}. Please specify a file.")
             return
             
         files.sort(key=lambda x: x.stat().st_mtime)

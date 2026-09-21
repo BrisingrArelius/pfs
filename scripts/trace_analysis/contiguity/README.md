@@ -1,6 +1,6 @@
 # Contiguous ratio distribution — real ALCF Polaris Darshan logs
 
-Relocated unchanged from `CONTIG_TESTING_CLAUDE/`. Historical outputs are now in
+Historical outputs are in
 [results/trace_analysis/legacy/contiguity](../../../results/trace_analysis/legacy/contiguity/).
 This is workload-characterization research, not a BeeGFS microbenchmark.
 External corpus/parser paths below describe the original environment.
@@ -39,8 +39,8 @@ comparing.)
 
 ## Files
 
-- `parse_logs.py` — walks a log directory, runs `darshan-parser` (at
-  `/home/advay/darshan/bin/darshan-parser`) on every `.darshan` file, sums
+- `parse_logs.py` — walks a log directory, runs `darshan-parser` from `PATH` (or
+  the explicit `--parser` path) on every `.darshan` file, sums
   `POSIX_READS/WRITES/CONSEC_READS/CONSEC_WRITES` **per record_id** (i.e. per file,
   aggregated across all MPI ranks — safe because Darshan never keeps both per-rank
   and shared-aggregate records for the same file), and writes one row per

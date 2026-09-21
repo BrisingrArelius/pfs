@@ -67,7 +67,7 @@ def parse_du_output(filepath):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python3 parse_du.py <du_output.txt>")
+        print("Usage: python3 scripts/microbenchmarks/analysis/parse_du.py <du_output.txt>")
         sys.exit(1)
         
     parse_du_output(sys.argv[1])

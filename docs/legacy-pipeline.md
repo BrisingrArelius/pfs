@@ -3,7 +3,7 @@
 This is the pre-refactor guide, retained for historical context. Commands, paths,
 pool IDs, and layout below describe the old repository and are not current run
 instructions. See [the current README](../README.md),
-[migration map](MIGRATION.md), and [deferred path fixes](../TODOS_SCRIPT_CHANGES.md).
+[migration map](MIGRATION.md), and [completed path fixes](COMPLETED_PATH_REPAIRS.md).
 
 A toolkit for running synthetic BeeGFS workloads, collecting Darshan I/O counters, and comparing HDD vs SSD storage behavior.
 

@@ -13,34 +13,20 @@ The heatmap shows:
             (calculated as BEFORE_free - AFTER_free per OST per run)
 
 Usage:
-    python3 parse_ost_logs.py
-    python3 parse_ost_logs.py --log path/to/ost_space_and_usage.log
-    python3 parse_ost_logs.py --log scripts/ost_space_and_usage.log --output output/ost_heatmap.png
-    python3 parse_ost_logs.py --active-only   # skip OSTs with 0 bytes written across all profiles
-
-
-
-
-
-
-    # Default paths (log in scripts/, output in output/)
-python3 scripts/parse_ost_logs.py
-
-# Explicit paths
-python3 scripts/parse_ost_logs.py --log scripts/ost_space_and_usage.log --output output/ost_heatmap.png
-
-# Skip OSTs that show 0 writes across all profiles (cleaner plot)
-python3 scripts/parse_ost_logs.py --active-only
-
-# Include offline nodes (colva1/colva4) — normally not useful
-python3 scripts/parse_ost_logs.py --all-nodes
+    python3 scripts/microbenchmarks/analysis/parse_ost_logs.py
+    python3 scripts/microbenchmarks/analysis/parse_ost_logs.py --log <log-path>
+    python3 scripts/microbenchmarks/analysis/parse_ost_logs.py --log <log-path> --output <png-path>
+    python3 scripts/microbenchmarks/analysis/parse_ost_logs.py --active-only
+    python3 scripts/microbenchmarks/analysis/parse_ost_logs.py --all-nodes
 """
 
 import argparse
 import os
 import re
 import sys
+import time
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -53,9 +39,8 @@ import seaborn as sns
 # Configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_LOG    = "/home/pfs/advay/pfs/logs_and_checkpoints/ost_space_and_usage_jun_28.log"
-DEFAULT_OUTPUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              "output","23rd april", "ost_heatmap.png")
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_LOG = REPO_ROOT / "results" / "microbenchmarks" / "legacy" / "placement" / "from-logs" / "ost_space_and_usage_jun_28.log"
 
 # Only show storage OSTs (node 2 and 3 in your setup) — skip offline nodes
 # Set to None to include all OSTs found in the log
@@ -71,13 +56,12 @@ def parse_args():
     )
     parser.add_argument(
         "--log",
-        default=DEFAULT_LOG,
+        default=str(DEFAULT_LOG),
         help=f"Path to ost_space_and_usage.log (default: {DEFAULT_LOG})"
     )
     parser.add_argument(
         "--output",
-        default=DEFAULT_OUTPUT,
-        help=f"Output PNG path (default: {DEFAULT_OUTPUT})"
+        help="Output PNG path (default: a new microbenchmark run directory)"
     )
     parser.add_argument(
         "--active-only",
@@ -94,7 +78,11 @@ def parse_args():
         action="store_true",
         help="One row per run (profile [STORAGE] runN) instead of aggregating across runs."
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.output is None:
+        run_id = time.strftime("ost-log-%Y%m%d_%H%M%S")
+        args.output = str(REPO_ROOT / "results" / "microbenchmarks" / "runs" / run_id / "analysis" / "ost_heatmap.png")
+    return args
 
 
 # ---------------------------------------------------------------------------

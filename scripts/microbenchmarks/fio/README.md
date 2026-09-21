@@ -1,10 +1,8 @@
 # FIO Benchmark Matrix Suite
 
-Moved from `scripts/fio/` without script or configuration edits. Examples below
-describe the legacy CLI, not a validated implementation of the revised experiment.
-Input discovery and output defaults require the
-[deferred path repairs](../../../TODOS_SCRIPT_CHANGES.md). Historical datasets
-are indexed in [results](../../../results/microbenchmarks/legacy/README.md).
+This is the available FIO matrix tool, not the complete six-domain experiment
+runner. New results use run-specific output directories. Historical datasets are indexed in
+[results](../../../results/microbenchmarks/legacy/README.md).
 
 A benchmark framework that replaces static `.fio` jobs with a configurable matrix runner.
 It runs FIO workloads across BeeGFS pools or raw OST targets, captures repeated measurements, and produces aggregated JSON results.
@@ -44,7 +42,7 @@ Example:
 
 ## Running the benchmark
 
-Legacy invocation from `scripts/microbenchmarks/fio/` (path repairs pending):
+Invocation from any working directory:
 
 ```bash
 python3 matrix_benchmark.py --beegfs
@@ -75,18 +73,15 @@ python3 matrix_benchmark.py --ost --pool hdd
 ```
 
 ### Other useful options
-- `--results-dir`: output JSON file directory in BeeGFS mode; the preserved OST-only implementation uses `ost_results` instead
+- `--results-dir`: output JSON directory; defaults to a new directory under `results/microbenchmarks/runs/`
 - `--no-drop-cache`: skip dropping page cache between runs
 
 ## Output
 
 The benchmark writes aggregated JSON results to the configured results directory, for example:
 
-These are unchanged runtime defaults relative to the working directory, not the
-current locations of preserved results:
-
-- `results/matrix_results_YYYYMMDD_HHMMSS.json`
-- `ost_results/matrix_results_YYYYMMDD_HHMMSS.json`
+The default is `results/microbenchmarks/runs/fio-<timestamp>/matrix_results_<timestamp>.json`.
+An explicit `--results-dir` overrides it.
 
 Each entry includes FIO bandwidth, IOPS, latency, and optional BeeGFS OST hit information.
 
@@ -106,7 +101,9 @@ python3 analyze_matrix.py ../../../results/microbenchmarks/legacy/fio-local/2026
 
 The analyzer prints a table of average metrics per pool, mode, file count, and size.
 
-The no-argument discovery and visualizer output paths still assume the old layout.
+No-argument analysis/visualization selects the newest result under
+`results/microbenchmarks/runs/`; visualization writes beside it under `plots/`
+unless `--output-dir` is provided.
 Historical size labels represent the configured FIO `size` with `nrfiles`; do not
-interpret them as per-file sizes without checking geometry. The preserved script
+interpret them as per-file sizes without checking geometry. This script
 does not implement the primary IOR experiment in the updated specification.

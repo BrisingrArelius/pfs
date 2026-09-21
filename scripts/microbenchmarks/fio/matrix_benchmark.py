@@ -9,6 +9,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parents[2]
 
 def load_config(config_file):
     with open(config_file) as f:
@@ -83,7 +84,7 @@ stonewall
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default="fio_config.json")
+    parser.add_argument("--config", default=str(SCRIPT_DIR / "fio_config.json"))
     parser.add_argument("--beegfs", action="store_true")
     parser.add_argument("--ost", action="store_true")
     parser.add_argument("--pool", default="all", help="Pool name to run on (all, hdd, ssd, or custom)")
@@ -92,11 +93,15 @@ def main():
     parser.add_argument("--ssd-dir", default="/mnt/beegfs/advay/ssd")
     parser.add_argument("--hdd-ost-dir", default="/mnt/hdd")
     parser.add_argument("--ssd-ost-dir", default="/mnt/nvme")
-    parser.add_argument("--results-dir", default="results")
+    parser.add_argument("--results-dir", help="Directory for the result JSON (default: a new run directory)")
     parser.add_argument("--no-drop-cache", action="store_true")
     args = parser.parse_args()
 
     config = load_config(args.config)
+    ts = time.strftime("%Y%m%d_%H%M%S")
+    results_dir = Path(args.results_dir) if args.results_dir else (
+        REPO_ROOT / "results" / "microbenchmarks" / "runs" / f"fio-{ts}"
+    )
     modes_map = {
         "seq_read":   ("read", config["block_size_seq"]),
         "seq_write":  ("write", config["block_size_seq"]),
@@ -115,10 +120,9 @@ def main():
         if args.pool not in ["all", "hdd", "ssd"]:
             target_d = args.custom_dir if args.custom_dir else f"/mnt/beegfs/advay/{args.pool}"
             targets.append((args.pool.upper(), target_d, True))
-        os.makedirs(args.results_dir, exist_ok=True)
+        results_dir.mkdir(parents=True, exist_ok=True)
     if args.ost:
-        res_dir = args.results_dir if args.beegfs else "ost_results"
-        os.makedirs(res_dir, exist_ok=True)
+        results_dir.mkdir(parents=True, exist_ok=True)
         if args.pool in ["all", "hdd"]:
             for i in range(1, 5): targets.append((f"HDD_OST{i}", f"{args.hdd_ost_dir}{i}", False))
         if args.pool in ["all", "ssd"]:
@@ -131,8 +135,7 @@ def main():
         print("Must specify --beegfs or --ost")
         return
 
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    out_file = Path(args.results_dir if args.beegfs else "ost_results") / f"matrix_results_{ts}.json"
+    out_file = results_dir / f"matrix_results_{ts}.json"
     
     all_results = []
 

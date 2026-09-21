@@ -1,9 +1,8 @@
 # Archived material
 
-- `legacy-code/old_scripts/`: original older workload runner versions, moved
-  unchanged from root `old_scripts/`; not maintained execution entry points.
-- The former `trace-analysis/` fragment was byte-compared and merged into
-  `results/trace_analysis/legacy/contiguity/`. Trace-analysis code now lives
-  under `scripts/trace_analysis/`.
+- `legacy-code/old_scripts/`: older workload runner versions kept only for
+  reference; they are not maintained execution entry points.
+- Trace-analysis code is maintained under `scripts/trace_analysis/`; its
+  historical outputs are under `results/trace_analysis/legacy/`.
 
-Existing reference PDFs now live in `docs/references/`; no papers were added.
+Reference PDFs are stored in `docs/references/`.

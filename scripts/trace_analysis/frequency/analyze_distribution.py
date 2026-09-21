@@ -3,14 +3,15 @@ Read the per-file rate CSV produced by parse_logs.py, show the log10-scale
 distribution of rate_active / rate_wallclock (ops/sec), and report three candidate
 seldom/frequent split methods (median, tercile, quartile) for each metric.
 
-Standalone script, parallel to but independent of CONTIG_TESTING_CLAUDE/analyze_distribution.py.
+Standalone script parallel to the sibling contiguity analysis.
 
 Usage:
-    python3 analyze_distribution.py <in_csv> <out_dir> [--min-ops N]
+    python3 analyze_distribution.py <in_csv> [out_dir] [--min-ops N]
 """
 import argparse
 import csv
 import math
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib
@@ -28,6 +29,7 @@ METRICS = ["rate_active", "rate_wallclock"]
 # log10-scale bucket edges in ops/sec: <1, 1-10, 10-100, ..., 100K-1M, >1M
 LOG_EDGES = [0, 1, 2, 3, 4, 5, 6]  # log10(rate) edges; below 0 and above 6 are open-ended
 LOG_LABELS = ["<1", "1-10", "10-100", "100-1K", "1K-10K", "10K-100K", "100K-1M", ">1M"]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def load_rates(csv_path, min_ops=0):
@@ -170,7 +172,8 @@ def plot_split_overlay(rates, metric, method, cuts, out_dir, suffix, n_total, mi
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("in_csv")
-    ap.add_argument("out_dir")
+    default_output = REPO_ROOT / "results" / "trace_analysis" / "runs" / datetime.now().strftime("frequency-analysis-%Y%m%d_%H%M%S")
+    ap.add_argument("out_dir", nargs="?", default=str(default_output))
     ap.add_argument("--min-ops", type=int, default=0,
                      help="exclude files with fewer than this many total_ops before "
                           "computing rate distributions/splits")

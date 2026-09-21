@@ -13,10 +13,10 @@ Analyzes Darshan counter data from global.csv to:
 
 Usage:
     # Single storage analysis
-    python analysis.py --input ./output/ssd/global.csv --output ./analysis_output/ssd
+    python3 scripts/analysis/analysis.py --input <global.csv> [--output-dir <path>]
     
     # HDD vs SSD comparison
-    python analysis.py --hdd ./output/hdd/global.csv --ssd ./output/ssd/global.csv --output ./analysis_output/comparison
+    python3 scripts/analysis/analysis.py --hdd <hdd-global.csv> --ssd <ssd-global.csv> [--output-dir <path>]
 
 Options:
     --cv-threshold: Maximum coefficient of variation for "stable" counters (default: 0.2)
@@ -26,6 +26,8 @@ Options:
 import argparse
 import os
 import sys
+from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -40,6 +42,8 @@ from sklearn.preprocessing import MinMaxScaler
 
 CV_THRESHOLD = 0.2
 TOP_N_COUNTERS = 10
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "results" / "workloads" / "runs" / datetime.now().strftime("analysis-%Y%m%d_%H%M%S")
 
 EXCLUDE_COUNTERS = [
     'timestamp',
@@ -99,8 +103,8 @@ def parse_args():
     input_group.add_argument("--hdd",   help="Path to HDD global.csv file (for comparison mode)")
 
     parser.add_argument("--ssd",        help="Path to SSD global.csv file (required with --hdd)")
-    parser.add_argument("--output-dir", default="./analysis_output",
-                        help="Output directory for analysis results (default: ./analysis_output)")
+    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR),
+                        help=f"Output directory for analysis results (default: {DEFAULT_OUTPUT_DIR})")
     parser.add_argument("--cv-threshold", type=float, default=CV_THRESHOLD,
                         help=f"CV threshold for stable counters (default: {CV_THRESHOLD})")
     parser.add_argument("--top-n",      type=int, default=TOP_N_COUNTERS,

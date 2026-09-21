@@ -17,6 +17,20 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-09-21 — Repair paths after repository reorganization
+
+- Updated relocated scripts to find companion files from their installed
+  locations instead of relying on the caller's working directory.
+- Directed new benchmark, workload, analysis, checkpoint, and trace outputs to
+  run-specific directories while keeping historical results read-only by default.
+- Updated help text and documentation. Benchmark settings, pool IDs, formulas,
+  filters, thresholds, cache behavior, and measurement logic were not changed.
+- Verified with syntax checks, alternate-working-directory help commands, mocked
+  Darshan traces, a workload dry run, and historical analysis inputs. No benchmark,
+  pool-management, cache-drop, or cluster workload command ran.
+
+---
+
 ## 2026-09-20 — Consolidate trace analysis and research documentation
 
 - Moved contiguity/frequency tools under `scripts/trace_analysis/`, with Python
@@ -26,8 +40,8 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   `docs/references/`, and this changelog under `docs/`.
 - Removed the empty root `r.txt` and generated Python bytecode caches; retained
   the separate nonempty FIO transcript and all source files.
-- Updated documentation links and added trace-analysis path follow-ups to
-  `TODOS_SCRIPT_CHANGES.md`. No script logic or output defaults were edited.
+- Updated documentation links and recorded trace-analysis path follow-ups in the
+  path-repair checklist. No script logic or output defaults were edited.
 
 ---
 
@@ -39,8 +53,8 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   `scripts/microbenchmarks/`; grouped workload orchestration and Darshan analysis.
 - Moved historical measurements, plots, logs and checkpoints into `results/`;
   restored Apr-2 text summaries from `edc3d69` without regenerating derived data.
-- Added migration/provenance documentation and `TODOS_SCRIPT_CHANGES.md` for
-  deferred input/output, script-lookup and working-directory repairs.
+- Added migration/provenance documentation and a checklist for deferred
+  input/output, script-lookup and working-directory repairs.
 - Documented D/S/H, randomized/roundrobin, proposed capacity conditions, cache
   evidence, blocked repetitions and NetBench interpretation.
 - Script/configuration logic is unchanged. No benchmark or pool commands ran.

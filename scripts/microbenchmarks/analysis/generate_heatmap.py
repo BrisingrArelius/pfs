@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import subprocess
 import re
 import glob
 import sys
+import time
+from pathlib import Path
 try:
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -45,11 +48,12 @@ def get_file_targets(filepath):
         sys.exit(1)
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python3 generate_heatmap.py <directory_with_test_files>")
-        sys.exit(1)
-        
-    target_dir = sys.argv[1]
+    parser = argparse.ArgumentParser(description="Generate a BeeGFS file-to-target heatmap.")
+    parser.add_argument("directory", help="Directory containing files to inspect")
+    parser.add_argument("--output", help="Output PNG path (default: a new microbenchmark run directory)")
+    args = parser.parse_args()
+
+    target_dir = args.directory
     files = glob.glob(os.path.join(target_dir, '**', '*'), recursive=True)
     files = [f for f in files if os.path.isfile(f)]
     
@@ -98,7 +102,12 @@ def main():
     plt.xlabel("Storage Targets (OSTs)")
     plt.ylabel("Files")
     
-    out_img = "ost_heatmap.png"
+    repo_root = Path(__file__).resolve().parents[3]
+    run_id = time.strftime("placement-%Y%m%d_%H%M%S")
+    out_img = Path(args.output) if args.output else (
+        repo_root / "results" / "microbenchmarks" / "runs" / run_id / "analysis" / "ost_heatmap.png"
+    )
+    out_img.parent.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
     plt.savefig(out_img)
     print(f"Heatmap successfully generated and saved to {out_img}")

@@ -1,80 +1,65 @@
 # Experiment implementation backlog
 
-These are future requirements from the documented experiment methodology.
-Mechanical relocation repairs are tracked separately in
-[TODOS_SCRIPT_CHANGES.md](../TODOS_SCRIPT_CHANGES.md).
+These are the experiment features that are not implemented yet. Completed
+repository-path work is recorded separately in
+[COMPLETED_PATH_REPAIRS.md](COMPLETED_PATH_REPAIRS.md).
 
 ## Configuration and inventory
 
-- [ ] Verify live host/device/target mapping, mounts, pool IDs, topology and active
-  transport. Reconcile historical hard-coded inventories before implementing
-  placement administration; historical labels are not authoritative live IDs.
-- [ ] Represent the full D/S/H × chooser × stripe × concurrency × repetition
-  matrix and the capacity factor once its meaning/bands are confirmed. Validate
-  eligibility and headroom, and record infeasible cells with reasons.
-- [ ] Define per-domain request sizes, dataset geometry, concurrency, durations,
-  preparation and completion criteria. Preserve the 128-KiB random-read point
-  alongside 4-KiB local FIO tests. Record exact commands and tool versions.
+- [ ] Check the real cluster setup: hosts, devices, targets, mounts, pool IDs,
+  network topology, and active TCP/RDMA transport. Do not trust historical IDs.
+- [ ] Build the full D/S/H, chooser, stripe, concurrency, and repetition matrix.
+  Add capacity only after its meaning and thresholds are agreed.
+- [ ] Define request sizes, dataset sizes, concurrency, run time, setup, and success
+  checks for each domain. Keep both 4-KiB and 128-KiB local random-read tests.
+- [ ] Record skipped or impossible matrix cases and explain why they cannot run.
 
 ## Six benchmark domains
 
-- [ ] Extend local FIO coverage to identified gaps and relevant concurrent target
-  combinations. Reuse compatible evidence; StorageBench is an optional cross-check.
-- [ ] Add active-transport TCP/RDMA tests for relevant paths, directions and
-  simultaneous traffic; capture native metrics and transport evidence.
-- [ ] Add IOR + NetBench communication runs with explicit client/server participation,
-  request sizes and stripe fan-out. Validate synthetic read setup and server
-  traffic; record/restore mode on all clients, including after interruptions.
-- [ ] Add a dedicated multi-process normal-IOR placement runner for the complete
-  matrix, verified fresh-file layouts, synchronization-inclusive write timing,
-  declared cache preparation and client/server/backend telemetry.
-- [ ] Add controlled normal-read cache experiments with feasible miss/miss,
-  miss/hit and client-hit states. Verify achieved state with network/backend
-  evidence; cache mode and residency are separate fields.
-- [ ] Add mdtest operations, directory layouts and concurrency with explicit
-  namespace-only versus data-bearing scope and native phase metrics.
+- [ ] Complete local FIO coverage, including useful simultaneous-target tests.
+  Use StorageBench only as an optional cross-check.
+- [ ] Add TCP/RDMA tests for both directions and simultaneous network traffic.
+- [ ] Add IOR + NetBench tests for BeeGFS communication. Check server traffic and
+  always restore NetBench mode after success, failure, or interruption.
+- [ ] Add a multi-process normal-IOR runner for the full placement matrix. Verify
+  fresh file layouts and include write synchronization in measured time.
+- [ ] Add controlled read-cache tests for client miss/server miss, client
+  miss/server hit, and client hit. Verify states with network and device evidence.
+- [ ] Add mdtest coverage for selected operations, directory layouts, and process
+  counts. Distinguish metadata-only work from operations that also write data.
 
 ## Durable progress for every experiment
 
-- [ ] Create a persistent suite manifest and scientific-configuration fingerprint;
-  use stable configuration × repetition × phase IDs and separate retry attempts.
-- [ ] Atomically persist pending/running/completed/failed/interrupted status,
-  required evidence and allocation/session/block/order information in durable storage.
-- [ ] Validate completion before skipping a case; preserve interrupted artifacts
-  and rerun interrupted measurement units after restoring preparation.
-- [ ] Separate measurement, parsing and analysis status so parser failures can be
-  retried without repeating successful expensive I/O.
-- [ ] Revalidate topology, transport, membership, chooser, stripes, capacity and
-  NetBench state on resume. Recreate cache/filler/data prerequisites; do not treat
-  warm RAM as durable progress or resume dependent epochs mid-sequence.
-- [ ] Replace the legacy workload runner's limited profile/storage/repetition keys
-  and non-atomic progress writes with the full contract; prevent incompatible
-  configuration reuse and test recovery at interruption boundaries.
+- [ ] Give every configuration, repetition, phase, and retry a stable ID.
+- [ ] Save progress safely with `pending`, `running`, `completed`, `failed`, and
+  `interrupted` states. Record the cluster allocation and execution order.
+- [ ] Skip only runs whose required output was successfully saved and validated.
+  Retry interrupted measurements after restoring their setup.
+- [ ] Track measurement, parsing, and analysis separately. A parser failure must
+  not repeat a successful benchmark.
+- [ ] On resume, recheck topology, pool membership, chooser, stripes, capacity,
+  transport, and NetBench mode. Recreate required files and cache preparation.
+- [ ] Never treat warm RAM as saved progress or resume a dependent epoch sequence
+  in the middle after releasing the cluster nodes.
 
 ## Instrumentation and artifacts
 
-- [ ] Validate Darshan integration, enabled modules, MPI-rank and worker/loader
-  coverage and overhead for normal IOR and supported applications. Document
-  optional synthetic NetBench coverage and supplementary mdtest coverage.
-- [ ] Associate logs with explicit run/attempt/process IDs instead of selecting
-  the newest shared-directory log. Preserve raw logs after parsing; replace the
-  legacy runner's attempted raw-log deletion with durable artifact retention.
-- [ ] Keep preparation and measured phases attributable; use native phase output
-  and aligned telemetry where Darshan summaries cannot supply epoch/state metrics.
-- [ ] Store manifests, commands, raw outputs/logs, telemetry and derived artifacts
-  under run-specific results directories; protect historical evidence from reuse
-  as mutable run output. Define required evidence validation per domain.
+- [ ] Check that Darshan captures every intended MPI rank and application worker.
+  Measure its overhead before enabling it for the full matrix.
+- [ ] Match every raw log to a run, retry, and process ID. Do not select logs only
+  because they are newest, and do not delete raw logs after parsing.
+- [ ] Keep setup I/O separate from measured I/O. Use native benchmark output and
+  system monitoring where Darshan cannot identify an epoch or cache state.
+- [ ] Store commands, settings, raw logs, monitoring data, and derived results in
+  each run directory. Never write into historical result directories.
 
 ## Application validation and scheduling
 
-- [ ] Implement separately specified DLIO training-input, synchronized checkpoint-
-  write and recovery phases with realistic prefetch/caching and epoch attribution.
-  Experiment-progress checkpoints must remain distinct from workload checkpoints.
-- [ ] Pilot setup, measurement, synchronization and cleanup costs per domain;
-  estimate full-matrix duration and uncertainty, updating from completed cases.
-- [ ] Schedule recorded/counterbalanced blocks across allocations while preserving
-  the matrix. Bound restartable units; dependent epoch sequences restart as a
-  unit. Obtain adequate allocation time or justify segmentation in advance.
-- [ ] Verify manifests/resume/evidence handling with fixtures and simulated
-  interruptions before cluster pilots; validate scientific path/cache/placement
-  assumptions with instrumented pilots on the confirmed topology.
+- [ ] Add DLIO input, checkpoint-write, and recovery tests with realistic caching
+  and separate epoch results. Workload checkpoints and runner progress are different.
+- [ ] Use pilots to estimate setup, run, synchronization, and cleanup time for the
+  full matrix. Update estimates as measurements finish.
+- [ ] Split the matrix across allocations without dropping cases. Restart dependent
+  epoch sequences as one unit after interruption.
+- [ ] Test manifests and resume behavior with fake interruptions before cluster
+  runs. Use instrumented pilots to verify placement, cache, and path assumptions.

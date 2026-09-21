@@ -1,6 +1,6 @@
 # I/O rate distribution — real ALCF Polaris Darshan logs
 
-Relocated unchanged from `FREQ_TESTING_CLAUDE/`. Historical outputs are now in
+Historical outputs are in
 [results/trace_analysis/legacy/frequency](../../../results/trace_analysis/legacy/frequency/).
 References to `output/` in historical findings below describe that old output tree.
 This is workload-profile research; the original external corpus is not bundled.
@@ -10,8 +10,7 @@ This is workload-profile research; the original external corpus is not bundled.
 Two steps, run from the repository root with explicit input/output paths.
 
 **Prerequisites:**
-- `darshan-parser` binary — defaults to `/home/advay/darshan/bin/darshan-parser`;
-  override with `--parser <path>` if it lives elsewhere.
+- `darshan-parser` binary on `PATH`, or pass `--parser <path>`.
 - `python3` with `matplotlib` installed (standard library covers everything else:
   `csv`, `argparse`, `multiprocessing`, `subprocess`, `math`).
 - Read access to a directory tree of `.darshan` log files. The analysis in this

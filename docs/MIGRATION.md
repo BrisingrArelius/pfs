@@ -90,8 +90,8 @@ regenerated to make them agree with the new specification.
 - `git diff HEAD --check` passes. The rename-aware diff shows zero content
   changes for moved scripts and configurations.
 
-No runtime test or benchmark was needed for this byte-preserving reorganization;
-execution-path validation belongs to the deferred script patch.
+No runtime test or benchmark was needed for the byte-preserving reorganization.
+Relocation-path validation was completed later in the path-only repair.
 
 ### Follow-up consolidation
 
@@ -99,7 +99,7 @@ execution-path validation belongs to the deferred script patch.
 Trace Python contents, CSVs/plots and PDFs were preserved. The empty `r.txt` and
 generated Python bytecode caches are the only intentionally removed non-document
 artifacts; no source, configuration, trace parser or analysis logic was changed.
-Documentation links and deferred path notes were updated for the deeper locations.
+Documentation links and path-repair notes were updated for the deeper locations.
 The prior snapshot checks require these additional mappings and exclusions when
 repeated.
 

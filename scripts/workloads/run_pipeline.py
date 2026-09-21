@@ -13,7 +13,7 @@ Usage:
     python3 run_pipeline.py --runs 5
     python3 run_pipeline.py --runs 5 --hdd-only
     python3 run_pipeline.py --runs 5 --ssd-only
-    python3 run_pipeline.py --analyze-only  # Skip workloads, just analyze existing data
+    python3 run_pipeline.py --analyze-only --output-dir <existing-run-dir>
 """
 
 import argparse
@@ -34,7 +34,8 @@ POOL_HDD = 2
 POOL_SSD = 3
 
 # Base directories
-BASE_DIR = Path(__file__).parent.absolute()
+BASE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BASE_DIR.parents[1]
 BEEGFS_BASE = Path("/mnt/beegfs/advay")
 
 # Workload directories (files are created here)
@@ -42,7 +43,8 @@ WORKLOAD_DIR_HDD = BEEGFS_BASE / "hdd" / "workloads" / "tmp"
 WORKLOAD_DIR_SSD = BEEGFS_BASE / "ssd" / "workloads" / "tmp"
 
 # Output directories (Darshan CSVs and Analysis results)
-OUTPUT_BASE = BASE_DIR / "output"
+RUN_ID = time.strftime("pipeline-%Y%m%d_%H%M%S")
+OUTPUT_BASE = REPO_ROOT / "results" / "workloads" / "runs" / RUN_ID
 DARSHAN_OUTPUT_HDD = OUTPUT_BASE / "hdd" #/ "darshan"
 DARSHAN_OUTPUT_SSD = OUTPUT_BASE / "ssd" #/ "darshan"
 
@@ -51,10 +53,9 @@ ANALYSIS_OUTPUT_HDD = OUTPUT_BASE / "hdd" / "analysis"
 ANALYSIS_OUTPUT_SSD = OUTPUT_BASE / "ssd" / "analysis"
 
 # Scripts
-SCRIPTS_DIR = BASE_DIR / "scripts"
-RUN_WORKLOADS_SCRIPT = SCRIPTS_DIR / "run_workloads.py"
-PARSE_DARSHAN_SCRIPT = SCRIPTS_DIR / "parse_darshan.py"
-ANALYSIS_SCRIPT = SCRIPTS_DIR / "analysis.py"
+RUN_WORKLOADS_SCRIPT = BASE_DIR / "run_workloads.py"
+PARSE_DARSHAN_SCRIPT = REPO_ROOT / "scripts" / "analysis" / "parse_darshan.py"
+ANALYSIS_SCRIPT = REPO_ROOT / "scripts" / "analysis" / "analysis.py"
 
 # =============================================================================
 # UTILITY FUNCTIONS
@@ -145,7 +146,7 @@ def verify_pools_configured():
     if not has_hdd or not has_ssd:
         print("\nERROR: HDD or SSD pool not found!")
         print(f"Expected pool {POOL_HDD} (HDD) and pool {POOL_SSD} (SSD)")
-        print("Run pooling_scripts/configure_pools.sh first")
+        print("Run scripts/microbenchmarks/placement/configure_pools.sh first")
         return False
     
     print("✓ HDD and SSD pools are configured")
@@ -193,7 +194,8 @@ def stage_run_workloads_hdd(num_runs, resume=False):
         "--runs", str(num_runs),
         "--storage-type", "hdd",
         "--output-dir", str(DARSHAN_OUTPUT_HDD),
-        "--workload-dir", str(WORKLOAD_DIR_HDD)
+        "--workload-dir", str(WORKLOAD_DIR_HDD),
+        "--run-dir", str(OUTPUT_BASE)
     ]
     
     if resume:
@@ -214,7 +216,8 @@ def stage_run_workloads_ssd(num_runs, resume=False):
         "--runs", str(num_runs),
         "--storage-type", "ssd",
         "--output-dir", str(DARSHAN_OUTPUT_SSD),
-        "--workload-dir", str(WORKLOAD_DIR_SSD)
+        "--workload-dir", str(WORKLOAD_DIR_SSD),
+        "--run-dir", str(OUTPUT_BASE)
     ]
     
     if resume:
@@ -357,7 +360,7 @@ Examples:
   python3 run_pipeline.py --runs 3 --ssd-only
   
   # Skip workloads, just analyze existing data
-  python3 run_pipeline.py --analyze-only
+  python3 run_pipeline.py --analyze-only --output-dir results/workloads/runs/<run-id>
   
   # Setup directories only (configure pools)
   python3 run_pipeline.py --setup-only
@@ -400,8 +403,22 @@ Examples:
         action="store_true",
         help="Resume from checkpoint - skip already completed runs"
     )
+
+    parser.add_argument(
+        "--output-dir",
+        help="Run directory for outputs, logs, and checkpoints (default: a new run directory)"
+    )
     
     args = parser.parse_args()
+
+    global OUTPUT_BASE, DARSHAN_OUTPUT_HDD, DARSHAN_OUTPUT_SSD
+    global ANALYSIS_OUTPUT_HDD, ANALYSIS_OUTPUT_SSD
+    if args.output_dir:
+        OUTPUT_BASE = Path(args.output_dir).resolve()
+        DARSHAN_OUTPUT_HDD = OUTPUT_BASE / "hdd"
+        DARSHAN_OUTPUT_SSD = OUTPUT_BASE / "ssd"
+        ANALYSIS_OUTPUT_HDD = DARSHAN_OUTPUT_HDD / "analysis"
+        ANALYSIS_OUTPUT_SSD = DARSHAN_OUTPUT_SSD / "analysis"
     
     print("\n" + "="*80)
     print("BeeGFS STORAGE POOL ANALYSIS PIPELINE")

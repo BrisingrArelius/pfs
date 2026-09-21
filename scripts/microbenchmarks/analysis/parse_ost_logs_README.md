@@ -1,8 +1,8 @@
 # parse_ost_logs.py
 
 Parses historical OST usage logs and generates heatmaps for workload runs.
-Relocated unchanged; default input/output paths still reference the old layout.
-Use explicit paths and see [deferred repairs](../../../TODOS_SCRIPT_CHANGES.md).
+The default input is the preserved June 28 log. New heatmaps default to a new
+directory under `results/microbenchmarks/runs/`; explicit paths are also accepted.
 
 ## Usage
 
@@ -33,5 +33,5 @@ The script:
 
 ## Output
 
-The preserved script's default output is script-relative `output/23rd april/ost_heatmap.png`;
-the default log is an absolute historical site path. Both require deferred repair.
+The default output is a timestamped run directory. Historical logs and plots are
+never used as output destinations.

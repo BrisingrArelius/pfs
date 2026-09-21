@@ -2,12 +2,9 @@
 
 This document explains how `scripts/analysis/analysis.py` consumes Darshan counter data, computes derived metrics, and generates visual reports.
 
-Historical CSVs/figures moved to `results/workloads/legacy/darshan/`. The script
-is unchanged; default-path and caller repairs are tracked in
-[TODOS_SCRIPT_CHANGES.md](../../TODOS_SCRIPT_CHANGES.md). Examples below use a new
-output destination so analysis does not overwrite historical evidence. Later
-extended examples using `./output/` or `./darshan_output/` are illustrative paths,
-not locations of the preserved results.
+Historical CSVs/figures are under `results/workloads/legacy/darshan/`. New
+analysis defaults to a timestamped directory under `results/workloads/runs/` so
+it does not overwrite historical evidence.
 
 ## Overview
 
@@ -241,16 +238,16 @@ def recommend_storage(counters):
 ### Single Storage Type Analysis
 
 ```bash
-python3 analysis.py --input ./output/hdd/global.csv --output-dir ./output/hdd/analysis
+python3 scripts/analysis/analysis.py --input results/workloads/legacy/darshan/hdd/global.csv --output-dir results/workloads/runs/example/hdd-analysis
 ```
 
-Output in `./output/hdd/analysis/`
+Output in `results/workloads/runs/example/hdd-analysis/`
 
 ### HDD vs SSD Comparison Mode
 
 ```bash
-python3 analysis.py --hdd ./output/hdd/global.csv --ssd ./output/ssd/global.csv \
-    --output-dir ./analysis_output/comparison
+python3 scripts/analysis/analysis.py --hdd results/workloads/legacy/darshan/hdd/global.csv --ssd results/workloads/legacy/darshan/ssd/global.csv \
+    --output-dir results/workloads/runs/example/comparison
 ```
 
 Generates comparison visualizations:
@@ -265,25 +262,25 @@ Also generates individual analysis for both storage types in separate subdirecto
 
 ```bash
 # Stricter stability requirement (CV < 0.1 instead of 0.2)
-python3 analysis.py --input ./darshan_output/global.csv --cv-threshold 0.1
+python3 scripts/analysis/analysis.py --input <global.csv> --cv-threshold 0.1
 
 # Show top 20 discriminative counters instead of 10
-python3 analysis.py --input ./darshan_output/global.csv --top-n 20
+python3 scripts/analysis/analysis.py --input <global.csv> --top-n 20
 
 # Custom output directory
-python3 analysis.py --input ./darshan_output/global.csv --output-dir ./my_analysis
+python3 scripts/analysis/analysis.py --input <global.csv> --output-dir results/workloads/runs/example/custom-analysis
 ```
 
 ### Workflow
 
 1. **Run workloads** (5+ runs per profile recommended):
    ```bash
-   python3 run_workloads.py --runs 5
+   python3 scripts/workloads/run_workloads.py --runs 5
    ```
 
 2. **Analyze**:
    ```bash
-   python3 analysis.py --input ./darshan_output/global.csv
+   python3 scripts/analysis/analysis.py --input results/workloads/runs/<run-id>/hdd/global.csv
    ```
 
 3. **Inspect outputs**:

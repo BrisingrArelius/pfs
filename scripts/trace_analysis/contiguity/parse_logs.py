@@ -4,16 +4,18 @@ compute the "contiguous ratio" -- (POSIX_CONSEC_READS + POSIX_CONSEC_WRITES) / t
 -- for every file record (one row per (log, record_id), aggregated across MPI ranks).
 
 Usage:
-    python3 parse_logs.py <log_root_dir> <out_csv> [--parser /path/to/darshan-parser] [--jobs N]
+    python3 parse_logs.py <log_root_dir> [out_csv] [--parser /path/to/darshan-parser] [--jobs N]
 """
 import argparse
 import csv
 import multiprocessing as mp
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 NEEDED_COUNTERS = {"POSIX_READS", "POSIX_WRITES", "POSIX_CONSEC_READS", "POSIX_CONSEC_WRITES"}
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def parse_one_log(args):
@@ -82,8 +84,9 @@ def parse_one_log(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("log_root", help="directory to recursively search for *.darshan files")
-    ap.add_argument("out_csv", help="output CSV path (one row per file record)")
-    ap.add_argument("--parser", default="/home/advay/darshan/bin/darshan-parser")
+    default_output = REPO_ROOT / "results" / "trace_analysis" / "runs" / datetime.now().strftime("contiguity-%Y%m%d_%H%M%S") / "per_file_contig_ratio.csv"
+    ap.add_argument("out_csv", nargs="?", default=str(default_output), help=f"output CSV path (default: {default_output})")
+    ap.add_argument("--parser", default="darshan-parser", help="darshan-parser executable or path")
     ap.add_argument("--jobs", type=int, default=mp.cpu_count())
     args = ap.parse_args()
 

@@ -2,11 +2,9 @@
 
 Helper scripts for configuring BeeGFS storage pools used by the workload pipeline.
 
-Relocated unchanged from `scripts/pooling_scripts/`. These scripts contain
-historical target inventories and are not verified against the current cluster.
-See [methodology](../../../docs/methodology.md) for D/S/H and
-[deferred path repairs](../../../TODOS_SCRIPT_CHANGES.md). The revised experiment
-is documentation, not newly implemented pool-management behavior.
+These scripts contain historical target inventories and are not verified against
+the current cluster. See [methodology](../../../docs/methodology.md) for D/S/H.
+The full experiment design is not implemented by these helpers.
 
 ## Files
 

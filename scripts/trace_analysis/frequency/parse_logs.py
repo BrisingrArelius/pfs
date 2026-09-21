@@ -6,13 +6,11 @@ aggregated across MPI ranks):
     rate_active    = (POSIX_READS + POSIX_WRITES) / (POSIX_F_READ_TIME + POSIX_F_WRITE_TIME)
     rate_wallclock = (POSIX_READS + POSIX_WRITES) / (POSIX_F_CLOSE_END_TIMESTAMP - POSIX_F_OPEN_START_TIMESTAMP)
 
-Same methodology as CONTIG_TESTING_CLAUDE/parse_logs.py (darshan-parser CLI via
-subprocess, not pydarshan) applied to the frequency/rate dimension instead of the
-contiguous-ratio dimension. This is a standalone script -- it does not import or
-modify anything in CONTIG_TESTING_CLAUDE/.
+Same methodology as the sibling contiguity parser (darshan-parser CLI via
+subprocess, not pydarshan), applied to the frequency/rate dimension.
 
 Usage:
-    python3 parse_logs.py <log_root_dir> <out_csv> [--parser /path/to/darshan-parser] [--jobs N]
+    python3 parse_logs.py <log_root_dir> [out_csv] [--parser /path/to/darshan-parser] [--jobs N]
         [--chunksize N] [--timeout SECONDS]
 
 Notes on scaling to large corpora (500K+ logs):
@@ -20,8 +18,8 @@ Notes on scaling to large corpora (500K+ logs):
     in memory until the end -- keeps memory flat and means a kill/crash partway
     through still leaves a usable partial CSV.
   - --chunksize controls how many logs each worker pulls off the queue at once
-    before reporting back. The default (32, inherited from CONTIG_TESTING_CLAUDE)
-    is fine for small/uniform corpora, but on large corpora with a few unusually
+    before reporting back. The default (4) spreads slow logs across workers while
+    remaining suitable for small corpora, but on large corpora with a few unusually
     slow/huge logs it causes a "straggler" effect: one worker can get stuck
     serially churning through a chunk containing several slow logs (each up to
     --timeout seconds) while the rest of the pool sits idle, waiting -- this shows
@@ -40,6 +38,8 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # counter_name -> (python_type, aggregation_strategy)
 # - POSIX_READS/WRITES: op counts, summed across ranks.
@@ -149,8 +149,9 @@ def parse_one_log(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("log_root", help="directory to recursively search for *.darshan files")
-    ap.add_argument("out_csv", help="output CSV path (one row per file record)")
-    ap.add_argument("--parser", default="/home/advay/darshan/bin/darshan-parser")
+    default_output = REPO_ROOT / "results" / "trace_analysis" / "runs" / time.strftime("frequency-%Y%m%d_%H%M%S") / "per_file_rate.csv"
+    ap.add_argument("out_csv", nargs="?", default=str(default_output), help=f"output CSV path (default: {default_output})")
+    ap.add_argument("--parser", default="darshan-parser", help="darshan-parser executable or path")
     ap.add_argument("--jobs", type=int, default=mp.cpu_count())
     ap.add_argument("--chunksize", type=int, default=4,
                      help="logs per worker batch (default 4; lower spreads slow/large "

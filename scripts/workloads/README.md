@@ -1,11 +1,11 @@
 # Workloads
 
-This directory contains workload definitions, the IOR wrapper, the original C
-implementation and the relocated `run_workloads.py` / `run_pipeline.py`.
+This directory contains workload definitions, the IOR wrapper, the C workload
+implementation, and the workload/pipeline runners.
 
-Scripts were moved without content changes. Internal paths still require
-[deferred repairs](../../TODOS_SCRIPT_CHANGES.md); the usage below describes the
-legacy workflow. Historical outputs now live under
+The runners use run-specific output locations. This is an application-workload
+pipeline rather than the complete six-domain suite.
+Historical outputs live under
 [results/workloads/legacy](../../results/workloads/legacy/README.md).
 
 ## What this directory contains
@@ -13,8 +13,8 @@ legacy workflow. Historical outputs now live under
 - `profiles.json` — workload profile definitions
 - `posix_synthetic_workload_IOR.py` — Python wrapper that turns profiles into IOR commands
 - `posix_synthetic_workload.c` — original C workload implementation used for some stride patterns
-- `run_workloads.py` — relocated workload runner; internal paths pending repair
-- `run_pipeline.py` — relocated legacy orchestration; internal paths pending repair
+- `run_workloads.py` — workload runner with run-specific output/log paths
+- `run_pipeline.py` — HDD/SSD workload orchestration
 
 ## Profile execution model
 
@@ -81,11 +81,11 @@ Historical Darshan summary outputs are preserved at:
 - `results/workloads/legacy/darshan/hdd/global.csv`
 - `results/workloads/legacy/darshan/ssd/global.csv`
 
-The unchanged runner still derives outputs and logs from its old project-root
-assumptions. Historical OST logs now live under
-`results/microbenchmarks/legacy/placement/`; future destinations need path repairs.
+New outputs, logs, errors, and checkpoints go under
+`results/workloads/runs/<run-id>/`. Historical OST logs remain under
+`results/microbenchmarks/legacy/placement/` and are not resume state.
 
-## Legacy CLI (after deferred path repairs)
+## Usage
 
 Run the full project pipeline:
 

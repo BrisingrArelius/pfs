@@ -2,9 +2,8 @@
 
 Extracts Darshan counters from one or more `.darshan` logs and writes structured CSV output.
 
-Relocated unchanged to `scripts/analysis/`. Caller path repairs are deferred in
-[TODOS_SCRIPT_CHANGES.md](../../TODOS_SCRIPT_CHANGES.md). Use explicit new output
-locations; historical CSVs live under `results/workloads/legacy/darshan/`.
+Standalone output defaults to a new run directory; historical CSVs live under
+`results/workloads/legacy/darshan/`.
 
 ## Usage
 
@@ -22,7 +21,7 @@ At least one of `--posix`, `--mpi`, or `--stdio` is required.
 - `--posix`: extract POSIX counters
 - `--mpi`: extract MPI-IO counters
 - `--stdio`: extract STDIO counters
-- `--output-dir <path>`: output directory (default: `./darshan_output_ssd`)
+- `--output-dir <path>`: output directory (default: a timestamped directory under `results/workloads/runs/`)
 
 ## Output files
 
@@ -36,7 +35,7 @@ At least one of `--posix`, `--mpi`, or `--stdio` is required.
 
 ## Notes
 
-- This parser is used by the relocated `scripts/workloads/run_workloads.py` to generate run-level Darshan counter summaries; its lookup is pending repair.
+- This parser is used by `scripts/workloads/run_workloads.py` to generate run-level Darshan counter summaries.
 - The synthetic workload suite primarily generates POSIX counters.
 - If you pass `--logs`, all listed logs are aggregated into the same global CSV output.
 - By default, `global.csv` is appended, so repeated runs accumulate additional rows.

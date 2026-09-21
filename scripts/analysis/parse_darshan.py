@@ -13,6 +13,8 @@ Usage:
 import argparse
 import os
 import sys
+from datetime import datetime
+from pathlib import Path
 
 import darshan
 import pandas as pd
@@ -21,7 +23,8 @@ import pandas as pd
 # OUTPUT CONFIGURATION
 # =============================================================================
 
-OUTPUT_DIR = "./darshan_output_ssd"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_DIR = REPO_ROOT / "results" / "workloads" / "runs" / datetime.now().strftime("darshan-%Y%m%d_%H%M%S") / "metrics"
 GLOBAL_CSV = "global.csv"
 
 # =============================================================================
@@ -217,7 +220,7 @@ def parse_args():
     parser.add_argument("--posix",      action="store_true", help="Extract POSIX counters")
     parser.add_argument("--mpi",        action="store_true", help="Extract MPI-IO counters")
     parser.add_argument("--stdio",      action="store_true", help="Extract STDIO counters")
-    parser.add_argument("--output-dir", default=None,   help=f"Output directory (default: {OUTPUT_DIR})")
+    parser.add_argument("--output-dir", default=None, help=f"Output directory (default: {OUTPUT_DIR})")
 
     args = parser.parse_args()
 
@@ -345,7 +348,7 @@ def write_global_csv(aggregated_row, output_dir):
 def main():
     args = parse_args()
 
-    output_dir = args.output_dir if args.output_dir else OUTPUT_DIR
+    output_dir = args.output_dir if args.output_dir else str(OUTPUT_DIR)
     os.makedirs(output_dir, exist_ok=True)
 
     # Determine which modules were requested

@@ -6,6 +6,9 @@ import os
 from collections import defaultdict
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+RUNS_DIR = REPO_ROOT / "results" / "microbenchmarks" / "runs"
+
 try:
     import matplotlib.pyplot as plt
     import numpy as np
@@ -14,7 +17,7 @@ except ImportError:
     print("Please install them using: pip3 install matplotlib numpy")
     exit(1)
 
-def visualize_json(json_path):
+def visualize_json(json_path, base_out_dir):
     print(f"Processing data from: {json_path}")
     with open(json_path) as f:
         data = json.load(f)
@@ -29,9 +32,8 @@ def visualize_json(json_path):
 
     modes_order = ["seq_read", "seq_write", "rand_read", "rand_write", "seq_rw", "rand_rw"]
     
-    # Create output directory structure outside scripts
-    repo_root = Path(__file__).resolve().parent.parent.parent
-    base_out_dir = repo_root / "results" / "ost_plots"
+    # Keep generated plots with the selected run, away from legacy evidence.
+    base_out_dir = Path(base_out_dir)
     bar_dir = base_out_dir / "bar_graphs"
     box_dir = base_out_dir / "box_plots"
     heatmap_dir = base_out_dir / "heatmaps"
@@ -175,27 +177,25 @@ def visualize_json(json_path):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate bar charts from matrix benchmark JSON.")
-    parser.add_argument("file", nargs="?", help="Path to matrix_results_*.json file. Defaults to newest in results/ or ost_results/.")
+    parser.add_argument("file", nargs="?", help="Path to matrix_results_*.json file. Defaults to the newest run result.")
+    parser.add_argument("--output-dir", help="Plot directory (default: <result-directory>/plots)")
     args = parser.parse_args()
 
     if args.file:
         files = [Path(args.file)]
     else:
-        files = []
-        for d in ["results", "ost_results"]:
-            p = Path(__file__).parent / d
-            if p.exists():
-                files.extend(list(p.glob("matrix_results_*.json")))
+        files = list(RUNS_DIR.glob("*/matrix_results_*.json")) if RUNS_DIR.exists() else []
         
         if not files:
-            print("No matrix_results JSON found. Please run the benchmark first.")
+            print(f"No matrix_results JSON found under {RUNS_DIR}. Please specify a file.")
             return
             
         files.sort(key=lambda x: x.stat().st_mtime)
         files = [files[-1]] # analyze the newest file by default
 
     for f in files:
-        visualize_json(f)
+        output_dir = Path(args.output_dir) if args.output_dir else f.parent / "plots"
+        visualize_json(f, output_dir)
 
 if __name__ == "__main__":
     main()

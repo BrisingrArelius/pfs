@@ -42,19 +42,21 @@ from pathlib import Path
 # =============================================================================
 
 SCRIPT_DIR       = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT     = os.path.dirname(SCRIPT_DIR)
-WORKLOADS_DIR    = os.path.join(SCRIPT_DIR, "workloads")
+PROJECT_ROOT     = str(Path(SCRIPT_DIR).parents[1])
+WORKLOADS_DIR    = SCRIPT_DIR
 PROFILES_JSON    = os.path.join(WORKLOADS_DIR, "profiles.json")
 WORKLOAD_SRC     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload.c")
 WORKLOAD_BIN     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload_IOR.py")
-PARSE_SCRIPT     = os.path.join(SCRIPT_DIR, "parse_darshan.py")
+PARSE_SCRIPT     = os.path.join(PROJECT_ROOT, "scripts", "analysis", "parse_darshan.py")
 
 # Timeout configuration
 WORKLOAD_TIMEOUT = 600  # 10 minutes in seconds
 MAX_RETRIES = 2  # Total attempts per profile (original + 1 retry)
 
 # Error logging and checkpoint tracking
-LOGS_DIR        = os.path.join(PROJECT_ROOT, "logs_and_checkpoints")
+RUN_ID          = datetime.now().strftime("workloads-%Y%m%d_%H%M%S")
+RUN_DIR         = os.path.join(PROJECT_ROOT, "results", "workloads", "runs", RUN_ID)
+LOGS_DIR        = os.path.join(RUN_DIR, "execution")
 ERROR_LOG_FILE  = os.path.join(LOGS_DIR, "errors.log")
 CHECKPOINT_FILE = os.path.join(LOGS_DIR, "checkpoint.json")
 OST_LOG_FILE    = os.path.join(LOGS_DIR, "ost_space_and_usage_test.log")
@@ -63,11 +65,11 @@ OST_LOG_FILE    = os.path.join(LOGS_DIR, "ost_space_and_usage_test.log")
 STORAGE_POOLS = {
     "hdd": {
         "workload_dir": "/mnt/beegfs/advay/hdd/workloads/tmp",
-        "output_dir": os.path.join(PROJECT_ROOT, "output", "hdd")
+        "output_dir": os.path.join(RUN_DIR, "hdd")
     },
     "ssd": {
         "workload_dir": "/mnt/beegfs/advay/ssd/workloads/tmp",
-        "output_dir": os.path.join(PROJECT_ROOT, "output", "ssd")
+        "output_dir": os.path.join(RUN_DIR, "ssd")
     }
 }
 
@@ -197,6 +199,11 @@ def parse_args():
         "--workload-dir",
         default=None,
         help=f"Directory where workload files are created (default: auto-determined by storage pool)"
+    )
+    parser.add_argument(
+        "--run-dir",
+        default=None,
+        help="Directory for outputs, logs, and checkpoints (default: a new run directory)"
     )
     parser.add_argument(
         "--storage-type",
@@ -725,6 +732,19 @@ def run_profile(name, params, run_index, modules, output_dir, workload_dir, dry_
 
 def main():
     args = parse_args()
+
+    global RUN_DIR, LOGS_DIR, ERROR_LOG_FILE, CHECKPOINT_FILE, OST_LOG_FILE
+    if args.run_dir:
+        RUN_DIR = os.path.abspath(args.run_dir)
+    elif args.output_dir:
+        RUN_DIR = os.path.abspath(os.path.join(args.output_dir, os.pardir))
+    LOGS_DIR = os.path.join(RUN_DIR, "execution")
+    ERROR_LOG_FILE = os.path.join(LOGS_DIR, "errors.log")
+    CHECKPOINT_FILE = os.path.join(LOGS_DIR, "checkpoint.json")
+    OST_LOG_FILE = os.path.join(LOGS_DIR, "ost_space_and_usage_test.log")
+    STORAGE_POOLS["hdd"]["output_dir"] = os.path.join(RUN_DIR, "hdd")
+    STORAGE_POOLS["ssd"]["output_dir"] = os.path.join(RUN_DIR, "ssd")
+    os.makedirs(LOGS_DIR, exist_ok=True)
 
     modules = args.modules if args.modules else DEFAULT_MODULES
 

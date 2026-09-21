@@ -3,10 +3,11 @@ Read the per-file contig_ratio CSV produced by parse_logs.py, bin contig_ratio
 into 5%-wide buckets, print the distribution table, and plot it.
 
 Usage:
-    python3 analyze_distribution.py <in_csv> <out_dir>
+    python3 analyze_distribution.py <in_csv> [out_dir]
 """
 import argparse
 import csv
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib
@@ -17,6 +18,7 @@ import matplotlib.ticker as mticker
 BAR_COLOR = "#3B6FA0"      # single hue, sequential-magnitude use (one series)
 GRID_COLOR = "#D9D9D9"     # recessive gridlines
 TEXT_COLOR = "#333333"
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def load_ratios(csv_path, min_ops=0):
@@ -41,7 +43,8 @@ def bucket_index(ratio, n_bins=20):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("in_csv")
-    ap.add_argument("out_dir")
+    default_output = REPO_ROOT / "results" / "trace_analysis" / "runs" / datetime.now().strftime("contiguity-analysis-%Y%m%d_%H%M%S")
+    ap.add_argument("out_dir", nargs="?", default=str(default_output))
     ap.add_argument("--bin-width-pct", type=int, default=5)
     ap.add_argument("--min-ops", type=int, default=0,
                      help="exclude files with fewer than this many total_ops "
