@@ -35,7 +35,22 @@
     "planning": {
         "margin_multiplier": 1.25,
         "overhead_seconds": 5,
-        "prepare_seconds": {"hdd": 120, "nvme": 30},
-        "measurement_seconds": {"hdd": {}, "nvme": {}}
+        "prepare_seconds": {"hdd": 130, "nvme": 6},
+        "measurement_seconds": {
+            "hdd": {
+                "seq_read": 61,
+                "seq_write": 61,
+                "rand_read_4k": 61,
+                "rand_write_4k": 61,
+                "rand_read_128k": 61
+            },
+            "nvme": {
+                "seq_read": 6,
+                "seq_write": 3,
+                "rand_read_4k": 7,
+                "rand_write_4k": 10,
+                "rand_read_128k": 3
+            }
+        }
     }
 }

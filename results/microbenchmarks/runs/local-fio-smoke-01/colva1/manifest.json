@@ -1,0 +1,1189 @@
+{
+  "run_id": "3acbdf3195c84442af2a224731133b7c",
+  "mode": "pilot",
+  "fingerprint": "b77964b4519597e7b58133cdea9c17f9564045e2fe32ac409896f158e3b219db",
+  "config": {
+    "protocol_version": 4,
+    "repetitions": 1,
+    "order_seed": 20260921,
+    "free_space_reserve_bytes": 5368709120,
+    "measurement_timeout_seconds": 75,
+    "prepare": {
+      "rw": "write",
+      "bs": "1m",
+      "end_fsync": 1,
+      "timeout_seconds": 600
+    },
+    "fio": {
+      "ioengine": "libaio",
+      "direct": 1,
+      "iodepth": 32,
+      "numjobs": 1,
+      "nrfiles": 1,
+      "size": 10737418240,
+      "allow_file_create": 0,
+      "time_based": 0,
+      "ramp_time": 0,
+      "runtime": 60,
+      "end_fsync": 0,
+      "clat_percentiles": 1,
+      "percentile_list": "50:95:99:99.9"
+    },
+    "workloads": [
+      {
+        "name": "seq_read",
+        "rw": "read",
+        "bs": "1m"
+      },
+      {
+        "name": "seq_write",
+        "rw": "write",
+        "bs": "1m"
+      },
+      {
+        "name": "rand_read_4k",
+        "rw": "randread",
+        "bs": "4k"
+      },
+      {
+        "name": "rand_write_4k",
+        "rw": "randwrite",
+        "bs": "4k"
+      },
+      {
+        "name": "rand_read_128k",
+        "rw": "randread",
+        "bs": "128k"
+      }
+    ],
+    "planning": {
+      "margin_multiplier": 1.25,
+      "overhead_seconds": 5,
+      "prepare_seconds": {
+        "hdd": 120,
+        "nvme": 30
+      },
+      "measurement_seconds": {
+        "hdd": {},
+        "nvme": {}
+      }
+    }
+  },
+  "inventory": [
+    {
+      "target_id": 101,
+      "media": "hdd",
+      "mount": "/mnt/hdd2",
+      "device": "/dev/sdb1"
+    },
+    {
+      "target_id": 104,
+      "media": "nvme",
+      "mount": "/mnt/nvme0",
+      "device": "/dev/nvme1n1p1"
+    }
+  ],
+  "fio_version": "fio-3.36",
+  "host": "colva1",
+  "targets": {
+    "101": {
+      "path": "/mnt/hdd2/.local-fio/3acbdf3195c84442af2a224731133b7c/target-101/data",
+      "preparations": [
+        {
+          "estimated_wall_seconds": 120,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 155.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "prepare",
+          "started_at": "2026-09-21T21:13:20.404186+00:00",
+          "session": 1,
+          "artifacts": "raw/target-101/prepare-1",
+          "expected": {
+            "jobname": "target-101",
+            "size": 10737418240,
+            "operation": "write",
+            "runtime": 0,
+            "hard_timeout": 600
+          },
+          "hard_timeout_seconds": 600,
+          "preparation_generation": 1,
+          "remaining_seconds": 3268.5892560482025,
+          "before": {
+            "captured_at": "2026-09-21T21:13:20.434771+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1609465081856,
+            "free_percent": 80.49655629258515,
+            "free_inodes": 195207849,
+            "diskstats": "   8      17 sdb1 386443 589 35742636 1197968 1123431 12461 1335144715 28546123 0 4923113 29744092 0 0 0 0 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/target-101/prepare-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/target-101/prepare-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/target-101/prepare-1/job.fio"
+          ],
+          "file_before": null,
+          "command_wall_seconds": 126.48158259876072,
+          "completion_reason": "byte_limit",
+          "fio_runtime_ms": 62441,
+          "io_bytes": 10737418240,
+          "total_ios": 10240,
+          "file_after": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:15:26.963906+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 386443 589 35742636 1197968 1151185 12465 1377087997 33054161 0 5048147 34252130 0 0 0 0 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:15:26.963923+00:00",
+          "phase_wall_seconds": 126.53970091603696
+        }
+      ],
+      "file_identity": {
+        "device": 2065,
+        "inode": 2149391521,
+        "size": 10737418240
+      },
+      "file_owned": false,
+      "cleanup": "completed",
+      "last_check": {
+        "captured_at": "2026-09-21T21:13:20.396632+00:00",
+        "mount": {
+          "target": "/mnt/hdd2",
+          "source": "/dev/sdb1",
+          "fstype": "xfs",
+          "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+        },
+        "total_bytes": 1999421038592,
+        "free_bytes": 1609465081856,
+        "free_percent": 80.49655629258515,
+        "free_inodes": 195207849,
+        "diskstats": "   8      17 sdb1 386443 589 35742636 1197968 1123431 12461 1335144715 28546123 0 4923113 29744092 0 0 0 0 0 0"
+      },
+      "cleanup_wall_seconds": 0.41553278639912605
+    },
+    "104": {
+      "path": "/mnt/nvme0/.local-fio/3acbdf3195c84442af2a224731133b7c/target-104/data",
+      "preparations": [
+        {
+          "estimated_wall_seconds": 30,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 42.5,
+          "id": 1,
+          "state": "completed",
+          "phase": "prepare",
+          "started_at": "2026-09-21T21:12:49.016898+00:00",
+          "session": 1,
+          "artifacts": "raw/target-104/prepare-1",
+          "expected": {
+            "jobname": "target-104",
+            "size": 10737418240,
+            "operation": "write",
+            "runtime": 0,
+            "hard_timeout": 600
+          },
+          "hard_timeout_seconds": 600,
+          "preparation_generation": 1,
+          "remaining_seconds": 3299.9765079021454,
+          "before": {
+            "captured_at": "2026-09-21T21:12:49.047733+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 969787666432,
+            "free_percent": 97.00644126160434,
+            "free_inodes": 488380391,
+            "diskstats": " 259       4 nvme1n1p1 2960004 0 746577359 1173428 5275988 12582 1219233275 2316935 0 499679 3567583 3981 246 32968740784 77219 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/target-104/prepare-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/target-104/prepare-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/target-104/prepare-1/job.fio"
+          ],
+          "file_before": null,
+          "command_wall_seconds": 5.668801823630929,
+          "completion_reason": "byte_limit",
+          "fio_runtime_ms": 2097,
+          "io_bytes": 10737418240,
+          "total_ios": 10240,
+          "file_after": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:12:54.784587+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 2960007 0 746577376 1173437 5439832 12582 1261176330 3336240 0 503902 4586896 3981 246 32968740784 77219 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:12:54.784639+00:00",
+          "phase_wall_seconds": 5.750505929812789
+        }
+      ],
+      "file_identity": {
+        "device": 66308,
+        "inode": 536871046,
+        "size": 10737418240
+      },
+      "file_owned": false,
+      "cleanup": "completed",
+      "last_check": {
+        "captured_at": "2026-09-21T21:12:49.010018+00:00",
+        "mount": {
+          "target": "/mnt/nvme0",
+          "source": "/dev/nvme1n1p1",
+          "fstype": "xfs",
+          "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+        },
+        "total_bytes": 999714713600,
+        "free_bytes": 969787666432,
+        "free_percent": 97.00644126160434,
+        "free_inodes": 488380391,
+        "diskstats": " 259       4 nvme1n1p1 2960004 0 746577359 1173428 5275988 12582 1219233275 2316935 0 499679 3567583 3981 246 32968740784 77219 0 0"
+      },
+      "cleanup_wall_seconds": 0.012283701449632645
+    }
+  },
+  "cases": [
+    {
+      "id": "104__rand_read_128k__r1",
+      "target_id": 104,
+      "workload": {
+        "name": "rand_read_128k",
+        "rw": "randread",
+        "bs": "128k"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:12:54.791069+00:00",
+          "session": 1,
+          "artifacts": "raw/104__rand_read_128k__r1/attempt-1",
+          "expected": {
+            "jobname": "target-104",
+            "size": 10737418240,
+            "operation": "read",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3294.2023944854736,
+          "before": {
+            "captured_at": "2026-09-21T21:12:54.819604+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 2960007 0 746577376 1173437 5439832 12582 1261176330 3336240 0 503902 4586896 3981 246 32968740784 77219 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_read_128k__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_read_128k__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_read_128k__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 2.215910218656063,
+          "completion_reason": "byte_limit",
+          "fio_runtime_ms": 1913,
+          "io_bytes": 10737418240,
+          "total_ios": 81920,
+          "file_after": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:12:57.056686+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 3041927 0 767548896 1233113 5439832 12582 1261176330 3336240 0 505814 4646573 3981 246 32968740784 77219 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:12:57.056738+00:00",
+          "phase_wall_seconds": 2.2478616312146187
+        }
+      ]
+    },
+    {
+      "id": "104__rand_read_4k__r1",
+      "target_id": 104,
+      "workload": {
+        "name": "rand_read_4k",
+        "rw": "randread",
+        "bs": "4k"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:12:57.064160+00:00",
+          "session": 1,
+          "artifacts": "raw/104__rand_read_4k__r1/attempt-1",
+          "expected": {
+            "jobname": "target-104",
+            "size": 10737418240,
+            "operation": "read",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3291.9293138980865,
+          "before": {
+            "captured_at": "2026-09-21T21:12:57.092977+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 3041927 0 767548896 1233113 5439832 12582 1261176330 3336240 0 505814 4646573 3981 246 32968740784 77219 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_read_4k__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_read_4k__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_read_4k__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 6.617854820564389,
+          "completion_reason": "byte_limit",
+          "fio_runtime_ms": 6301,
+          "io_bytes": 10737418240,
+          "total_ios": 2621440,
+          "file_after": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:13:03.734042+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 5663367 0 788520416 1346164 5439832 12582 1261176330 3336240 0 512114 4759624 3981 246 32968740784 77219 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:13:03.734125+00:00",
+          "phase_wall_seconds": 6.653317170217633
+        }
+      ]
+    },
+    {
+      "id": "104__rand_write_4k__r1",
+      "target_id": 104,
+      "workload": {
+        "name": "rand_write_4k",
+        "rw": "randwrite",
+        "bs": "4k"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:13:03.742857+00:00",
+          "session": 1,
+          "artifacts": "raw/104__rand_write_4k__r1/attempt-1",
+          "expected": {
+            "jobname": "target-104",
+            "size": 10737418240,
+            "operation": "write",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3285.2504823207855,
+          "before": {
+            "captured_at": "2026-09-21T21:13:03.767294+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 5663367 0 788520416 1346164 5439832 12582 1261176330 3336240 0 512114 4759624 3981 246 32968740784 77219 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_write_4k__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_write_4k__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__rand_write_4k__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 8.919923229143023,
+          "completion_reason": "byte_limit",
+          "fio_runtime_ms": 8611,
+          "io_bytes": 10737418240,
+          "total_ios": 2621440,
+          "file_after": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:13:12.715971+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 5663367 0 788520416 1346164 8061281 12587 1282147977 3361154 0 520643 4784538 3981 246 32968740784 77219 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:13:12.715988+00:00",
+          "phase_wall_seconds": 8.96519847214222
+        }
+      ]
+    },
+    {
+      "id": "104__seq_read__r1",
+      "target_id": 104,
+      "workload": {
+        "name": "seq_read",
+        "rw": "read",
+        "bs": "1m"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:13:12.721212+00:00",
+          "session": 1,
+          "artifacts": "raw/104__seq_read__r1/attempt-1",
+          "expected": {
+            "jobname": "target-104",
+            "size": 10737418240,
+            "operation": "read",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3276.272259235382,
+          "before": {
+            "captured_at": "2026-09-21T21:13:12.764157+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 5663367 0 788520416 1346164 8061281 12587 1282147977 3361154 0 520643 4784538 3981 246 32968740784 77219 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__seq_read__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__seq_read__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__seq_read__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 4.969407845288515,
+          "completion_reason": "byte_limit",
+          "fio_runtime_ms": 4628,
+          "io_bytes": 10737418240,
+          "total_ios": 10240,
+          "file_after": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:13:17.769564+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 5745287 0 809491936 2501984 8061281 12587 1282147977 3361154 0 525269 5940359 3981 246 32968740784 77219 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:13:17.769581+00:00",
+          "phase_wall_seconds": 5.016729166731238
+        }
+      ]
+    },
+    {
+      "id": "104__seq_write__r1",
+      "target_id": 104,
+      "workload": {
+        "name": "seq_write",
+        "rw": "write",
+        "bs": "1m"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:13:17.776430+00:00",
+          "session": 1,
+          "artifacts": "raw/104__seq_write__r1/attempt-1",
+          "expected": {
+            "jobname": "target-104",
+            "size": 10737418240,
+            "operation": "write",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3271.216962814331,
+          "before": {
+            "captured_at": "2026-09-21T21:13:17.817733+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 5745287 0 809491936 2501984 8061281 12587 1282147977 3361154 0 525269 5940359 3981 246 32968740784 77219 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__seq_write__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__seq_write__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/104__seq_write__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 2.5167868863791227,
+          "completion_reason": "byte_limit",
+          "fio_runtime_ms": 2185,
+          "io_bytes": 10737418240,
+          "total_ios": 10240,
+          "file_after": {
+            "device": 66308,
+            "inode": 536871046,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:13:20.357365+00:00",
+            "mount": {
+              "target": "/mnt/nvme0",
+              "source": "/dev/nvme1n1p1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 999714713600,
+            "free_bytes": 959050248192,
+            "free_percent": 95.93239302624984,
+            "free_inodes": 488380388,
+            "diskstats": " 259       4 nvme1n1p1 5745287 0 809491936 2501984 8143201 12587 1303119497 3906308 0 527454 6485512 3981 246 32968740784 77219 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:13:20.357420+00:00",
+          "phase_wall_seconds": 2.552790954709053
+        }
+      ]
+    },
+    {
+      "id": "101__rand_read_128k__r1",
+      "target_id": 101,
+      "workload": {
+        "name": "rand_read_128k",
+        "rw": "randread",
+        "bs": "128k"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:15:26.971730+00:00",
+          "session": 1,
+          "artifacts": "raw/101__rand_read_128k__r1/attempt-1",
+          "expected": {
+            "jobname": "target-101",
+            "size": 10737418240,
+            "operation": "read",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3142.0216619968414,
+          "before": {
+            "captured_at": "2026-09-21T21:15:27.015757+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 386443 589 35742636 1197968 1151185 12465 1377087997 33054161 0 5048147 34252130 0 0 0 0 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_read_128k__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_read_128k__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_read_128k__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 60.545997546985745,
+          "completion_reason": "time_limit",
+          "fio_runtime_ms": 60216,
+          "io_bytes": 2538340352,
+          "total_ios": 19366,
+          "file_after": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:16:27.596608+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 405809 589 40700332 3118616 1151187 12465 1377088031 33054411 0 5108362 36173028 0 0 0 0 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:16:27.596659+00:00",
+          "phase_wall_seconds": 60.596597930416465
+        }
+      ]
+    },
+    {
+      "id": "101__rand_read_4k__r1",
+      "target_id": 101,
+      "workload": {
+        "name": "rand_read_4k",
+        "rw": "randread",
+        "bs": "4k"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:16:27.612909+00:00",
+          "session": 1,
+          "artifacts": "raw/101__rand_read_4k__r1/attempt-1",
+          "expected": {
+            "jobname": "target-101",
+            "size": 10737418240,
+            "operation": "read",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3081.3805615901947,
+          "before": {
+            "captured_at": "2026-09-21T21:16:27.643808+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 405809 589 40700332 3118616 1151187 12465 1377088031 33054411 0 5108362 36173028 0 0 0 0 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_read_4k__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_read_4k__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_read_4k__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 60.49493754655123,
+          "completion_reason": "time_limit",
+          "fio_runtime_ms": 60152,
+          "io_bytes": 107790336,
+          "total_ios": 26316,
+          "file_after": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:17:28.171646+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 432125 589 40910860 5037933 1151191 12465 1377088037 33054846 0 5168514 38092779 0 0 0 0 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:17:28.171696+00:00",
+          "phase_wall_seconds": 60.550082651898265
+        }
+      ]
+    },
+    {
+      "id": "101__rand_write_4k__r1",
+      "target_id": 101,
+      "workload": {
+        "name": "rand_write_4k",
+        "rw": "randwrite",
+        "bs": "4k"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:17:28.199053+00:00",
+          "session": 1,
+          "artifacts": "raw/101__rand_write_4k__r1/attempt-1",
+          "expected": {
+            "jobname": "target-101",
+            "size": 10737418240,
+            "operation": "write",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 3020.794404745102,
+          "before": {
+            "captured_at": "2026-09-21T21:17:28.232677+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 432125 589 40910860 5037933 1151191 12465 1377088037 33054846 0 5168514 38092779 0 0 0 0 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_write_4k__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_write_4k__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__rand_write_4k__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 60.39362154901028,
+          "completion_reason": "time_limit",
+          "fio_runtime_ms": 60081,
+          "io_bytes": 111546368,
+          "total_ios": 27233,
+          "file_after": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:18:28.654879+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 432125 589 40910860 5037933 1178430 12465 1377305913 34977648 0 5228594 40015581 0 0 0 0 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:18:28.654930+00:00",
+          "phase_wall_seconds": 60.433493211865425
+        }
+      ]
+    },
+    {
+      "id": "101__seq_read__r1",
+      "target_id": 101,
+      "workload": {
+        "name": "seq_read",
+        "rw": "read",
+        "bs": "1m"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:18:28.673573+00:00",
+          "session": 1,
+          "artifacts": "raw/101__seq_read__r1/attempt-1",
+          "expected": {
+            "jobname": "target-101",
+            "size": 10737418240,
+            "operation": "read",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 2960.3198959827423,
+          "before": {
+            "captured_at": "2026-09-21T21:18:28.712631+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 432125 589 40910860 5037933 1178430 12465 1377305913 34977648 0 5228594 40015581 0 0 0 0 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__seq_read__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__seq_read__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__seq_read__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 60.546538311988115,
+          "completion_reason": "time_limit",
+          "fio_runtime_ms": 60193,
+          "io_bytes": 10353639424,
+          "total_ios": 9874,
+          "file_after": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:19:29.282583+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 448516 589 61132812 8198071 1178432 12465 1377305947 34978244 0 5288785 43176316 0 0 0 0 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:19:29.282634+00:00",
+          "phase_wall_seconds": 60.58136133477092
+        }
+      ]
+    },
+    {
+      "id": "101__seq_write__r1",
+      "target_id": 101,
+      "workload": {
+        "name": "seq_write",
+        "rw": "write",
+        "bs": "1m"
+      },
+      "repetition": 1,
+      "attempts": [
+        {
+          "estimated_wall_seconds": 60,
+          "estimate_source": "config/fallback",
+          "admission_seconds": 80.0,
+          "id": 1,
+          "state": "completed",
+          "phase": "measure",
+          "started_at": "2026-09-21T21:19:29.304339+00:00",
+          "session": 1,
+          "artifacts": "raw/101__seq_write__r1/attempt-1",
+          "expected": {
+            "jobname": "target-101",
+            "size": 10737418240,
+            "operation": "write",
+            "runtime": 60,
+            "hard_timeout": 75
+          },
+          "hard_timeout_seconds": 75,
+          "preparation_generation": 1,
+          "remaining_seconds": 2899.6891322135925,
+          "before": {
+            "captured_at": "2026-09-21T21:19:29.340320+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 448516 589 61132812 8198071 1178432 12465 1377305947 34978244 0 5288785 43176316 0 0 0 0 0 0"
+          },
+          "command": [
+            "fio",
+            "--output-format=json",
+            "--output=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__seq_write__r1/attempt-1/fio.json",
+            "--aux-path=/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__seq_write__r1/attempt-1",
+            "--eta=never",
+            "/home/pfs/pfs-results/local-fio-smoke-01/colva1/raw/101__seq_write__r1/attempt-1/job.fio"
+          ],
+          "file_before": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "command_wall_seconds": 60.54825031943619,
+          "completion_reason": "time_limit",
+          "fio_runtime_ms": 60190,
+          "io_bytes": 10486808576,
+          "total_ios": 10001,
+          "file_after": {
+            "device": 2065,
+            "inode": 2149391521,
+            "size": 10737418240
+          },
+          "after": {
+            "captured_at": "2026-09-21T21:20:29.923569+00:00",
+            "mount": {
+              "target": "/mnt/hdd2",
+              "source": "/dev/sdb1",
+              "fstype": "xfs",
+              "options": "rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+            },
+            "total_bytes": 1999421038592,
+            "free_bytes": 1598727663616,
+            "free_percent": 79.95952992181327,
+            "free_inodes": 195207845,
+            "diskstats": "   8      17 sdb1 448516 589 61132812 8198071 1191873 12465 1397788011 37555582 0 5348974 45753654 0 0 0 0 0 0"
+          },
+          "returncode": 0,
+          "ended_at": "2026-09-21T21:20:29.923586+00:00",
+          "phase_wall_seconds": 60.59465619549155
+        }
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "id": 1,
+      "started_at": "2026-09-21T21:12:48.993561+00:00",
+      "outcome": "completed",
+      "kernel": "6.8.0-117-generic",
+      "memory": "MemTotal:       65601692 kB\nMemFree:        54214272 kB\nMemAvailable:   63185072 kB\nBuffers:          756700 kB\nCached:          8474544 kB\nSwapCached:          104 kB\nActive:          2016816 kB\nInactive:        8015944 kB\nActive(anon):     822952 kB\nInactive(anon):      108 kB\nActive(file):    1193864 kB\nInactive(file):  8015836 kB\nUnevictable:       38112 kB\nMlocked:           27584 kB\nSwapTotal:       8388604 kB\nSwapFree:        8387824 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:               592 kB\nWriteback:             0 kB\nAnonPages:        839532 kB\nMapped:           262124 kB\nShmem:             12812 kB\nKReclaimable:     490088 kB\nSlab:             781700 kB\nSReclaimable:     490088 kB\nSUnreclaim:       291612 kB\nKernelStack:       11216 kB\nPageTables:        14308 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    41189448 kB\nCommitted_AS:    3578020 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:      158832 kB\nVmallocChunk:          0 kB\nPercpu:            99280 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:     8192 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:     3174984 kB\nDirectMap2M:    62642176 kB\nDirectMap1G:     1048576 kB\n",
+      "planning": {
+        "margin_multiplier": 1.25,
+        "overhead_seconds": 5,
+        "prepare_seconds": {
+          "hdd": 120,
+          "nvme": 30
+        },
+        "measurement_seconds": {
+          "hdd": {},
+          "nvme": {}
+        }
+      },
+      "allocation_id": null,
+      "device_cache_settings": null,
+      "controller_details": null,
+      "execution_assumption": "operator runs one benchmark instance per host",
+      "deadline": {
+        "deadline_epoch": 1790028768.9936173,
+        "updated_at": "2026-09-21T21:12:48.993618+00:00"
+      },
+      "ended_at": "2026-09-21T21:20:30.373510+00:00",
+      "wall_seconds": 461.3993136007339
+    }
+  ]
+}

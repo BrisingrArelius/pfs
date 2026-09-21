@@ -23,10 +23,10 @@ retain it across reservation stops, and delete it after the target is complete.
 Measurement-level checkpoint/resume preserves successful repetitions and reuses
 the retained file after validating its mount and identity.
 
-Admission uses pilot/observed durations with a margin, not hard timeouts. The
-configuration starts with conservative provisional preparation estimates of
-120 seconds for HDD and 30 seconds for NVMe; replace them with observed pilot
-times. A hard timeout is an unexpected failure: stop without automatic retries.
+Admission uses pilot/observed durations with a margin, not hard timeouts. Current
+estimates come from the colva1 target-101/104 smoke pilot: 130 seconds for HDD
+preparation, 6 seconds for NVMe preparation, and rounded-up command times by
+workload. A hard timeout is an unexpected failure with no automatic retries.
 
 ## Run the pilot
 
@@ -35,10 +35,9 @@ FIO/libaio and findmnt installed. The account needs write access to the target m
 persistent results directory. No page-cache drops or privileged device access
 are used. Keep one benchmark instance active per host.
 
-Preparation estimates control admission, not FIO duration. The initial values
-are provisional; replace them with observed setup wall times after this pilot.
-The 600-second hard timeout is never used as an estimate. Empty measurement
-estimates fall back to 60 seconds.
+Preparation estimates control admission, not FIO duration. Review them if another
+host is slower; admission applies the configured margin. The 600-second hard
+timeout is never used as an estimate.
 
 On **colva1**, target 101 is HDD and 104 is NVMe:
 
