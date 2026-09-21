@@ -120,6 +120,26 @@ class RunnerTests(unittest.TestCase):
             self.assertFalse(Path(state["path"]).exists())
             self.assertEqual(state["cleanup"], "completed")
 
+    def test_pilot_runs_one_round_and_resume_remembers_mode(self):
+        """Pilot covers every workload once per target without weakening full runs."""
+        self.fail_at = 3
+        self.assertEqual(self.invoke("--targets", "101,104", "--pilot"), 0)
+        stopped = self.manifest()
+        self.assertEqual(stopped["mode"], "pilot")
+        self.assertEqual(len(stopped["cases"]), 10)
+        self.assertEqual({case["repetition"] for case in stopped["cases"]}, {1})
+        self.assertEqual(self.invoke("--resume"), 0)
+        self.assertEqual(len(self.calls), 13)  # two preparations, ten completions, one interrupted attempt
+        self.assertEqual(sum(prepare for prepare, _, _ in self.calls), 2)
+
+    def test_pilot_cannot_convert_an_existing_full_run(self):
+        """Pilot mode is part of scientific compatibility, not a resume shortcut."""
+        self.fail_at = 2
+        self.invoke("--targets", "101")
+        before = len(self.calls)
+        self.assertEqual(self.invoke("--resume", "--pilot"), 1)
+        self.assertEqual(len(self.calls), before)
+
     def test_resume_retains_file_and_skips_completed_measurements(self):
         """A stop during the second measurement retries it, not setup or the first."""
         self.fail_at = 3

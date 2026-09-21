@@ -35,6 +35,8 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--results-dir", type=Path, required=True)
     parser.add_argument("--targets", help="Comma-separated local target IDs; default: all")
+    parser.add_argument("--pilot", action="store_true",
+                        help="Run one repetition per workload instead of the full five")
     parser.add_argument("--resume", action="store_true")
     timing = parser.add_mutually_exclusive_group(required=True)
     timing.add_argument("--time-limit", type=duration)
@@ -47,8 +49,8 @@ def parse_args(argv=None):
             args.targets = [int(value) for value in args.targets.split(",")]
             if len(set(args.targets)) != len(args.targets):
                 raise ValueError("duplicate target IDs")
-        if args.extend_deadline is not None and (args.resume or args.targets is not None):
-            raise ValueError("extension mode does not accept --resume or --targets")
+        if args.extend_deadline is not None and (args.resume or args.pilot or args.targets is not None):
+            raise ValueError("extension mode does not accept --resume, --pilot or --targets")
         if args.deadline:
             deadline = datetime.fromisoformat(args.deadline.replace("Z", "+00:00"))
             if deadline.tzinfo is None:
@@ -73,8 +75,8 @@ def validate_config(config):
                             "clat_percentiles", "percentile_list"}
     if set(fio) - allowed or any(fio.get(key) != value for key, value in fixed.items()):
         raise ValueError("unsupported FIO options: require one direct-I/O file/job")
-    if fio["ioengine"] != "libaio" or config["repetitions"] != 5:
-        raise ValueError("this protocol requires libaio and five repetitions")
+    if fio["ioengine"] != "libaio" or config["repetitions"] not in (1, 5):
+        raise ValueError("require libaio and either one pilot or five full repetitions")
     if set(prep) != {"rw", "bs", "end_fsync", "timeout_seconds"} or (
             prep["rw"], prep["bs"], prep["end_fsync"]) != ("write", "1m", 1):
         raise ValueError("preparation must be a full sequential 1-MiB write with final sync")
@@ -193,6 +195,10 @@ def load_run(args):
     if manifest_path.exists() != args.resume:
         raise ValueError("use --resume for an existing manifest; a new run needs a new directory")
     old = read_json(manifest_path) if args.resume else None
+    mode = old.get("mode", "full") if old else ("pilot" if args.pilot else "full")
+    if old and args.pilot and mode != "pilot":
+        raise ValueError("--pilot cannot change an existing full run")
+    config["repetitions"] = 1 if mode == "pilot" else 5
     ids = args.targets if args.targets is not None else (
         [target["target_id"] for target in old["inventory"]] if old else
         [target["target_id"] for target in inventory[host]])
@@ -212,7 +218,7 @@ def load_run(args):
     fingerprint = hashlib.sha256(json.dumps(scientific, sort_keys=True).encode()).hexdigest()
     if old and old["fingerprint"] != fingerprint:
         raise ValueError("resume rejected: scientific settings, targets or FIO version changed")
-    manifest = old or {"run_id": uuid.uuid4().hex, "fingerprint": fingerprint,
+    manifest = old or {"run_id": uuid.uuid4().hex, "mode": mode, "fingerprint": fingerprint,
                        "config": config, "inventory": targets, "fio_version": version,
                        "host": host, "targets": {}, "cases": plan_cases(config, targets),
                        "sessions": []}

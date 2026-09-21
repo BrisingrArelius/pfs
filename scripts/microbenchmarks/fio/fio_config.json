@@ -35,7 +35,7 @@
     "planning": {
         "margin_multiplier": 1.25,
         "overhead_seconds": 5,
-        "prepare_seconds": {"hdd": null, "nvme": null},
+        "prepare_seconds": {"hdd": 120, "nvme": 30},
         "measurement_seconds": {"hdd": {}, "nvme": {}}
     }
 }

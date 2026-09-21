@@ -334,13 +334,13 @@ leave them behind; recovery relies on recorded state, not guaranteed cleanup.
 Commands (run on the inventoried host):
 
 ```bash
-python3 run_fio.py --results-dir /persistent/pilot/colva1 --targets 101,104 --time-limit 2h
+python3 run_fio.py --results-dir /persistent/pilot/colva1 --targets 101,104 --pilot --time-limit 30m
 python3 run_fio.py --results-dir /persistent/run/colva1 --time-limit 5h
 python3 run_fio.py --results-dir /persistent/run/colva1 --resume --time-limit 5h
 python3 run_fio.py --results-dir /persistent/run/colva1 --extend-deadline 2h
 ```
 
-Only `--results-dir`, `--targets`, `--resume`, `--time-limit`, `--deadline`,
+Only `--results-dir`, `--targets`, `--pilot`, `--resume`, `--time-limit`, `--deadline`,
 `--extend-deadline`, and `--cleanup-buffer` (default `5m`). Read config/inventory
 beside the script and detect the actual host. Require one positive duration or
 timezone-qualified absolute deadline for execution. Duration suffixes are `s`,
@@ -351,8 +351,11 @@ Reject unknown, duplicate or other-host IDs before touching target files. A new
 run defaults to every target on that host. On resume, omission means reuse the
 saved selection; an explicit list must match it. Pilot subsets use the exact same
 preparation, execution and checkpoint path, without editing the inventory. Two
-selected targets produce 50 measurements and two preparations; five repetitions
-remain fixed. A separate full-run directory preserves the pilot evidence.
+selected targets in `--pilot` mode produce 10 measurements and two preparations:
+all five workloads once on each target. This smoke test validates mechanics and
+rough timing, not five-run variability. Pilot mode is fingerprinted and restored
+automatically on resume; it cannot convert a full run. A separate full-run
+directory preserves the pilot evidence. Without `--pilot`, five repetitions remain fixed.
 
 The operator guarantees one active benchmark instance per host and controls
 competing activity. Record this execution assumption; do not add another host
@@ -405,16 +408,19 @@ device/partition row, not a full host telemetry log.
 Before the full 700-measurement experiment:
 
 1. Pilot one HDD and one NVMe with these same FIO options across all five workloads
-   and five repetitions using `--targets`. Record preparation time and per-workload
+   once using `--targets ... --pilot`. Record preparation time and per-workload
    wall time. Bootstrap preparation planning with a documented provisional estimate
    from available device throughput evidence, then replace it with observed timing;
    an unknown estimate is not silently replaced by the hard timeout.
 2. Confirm full-file setup, reuse without truncation, existing-file overwrites,
    native JSON semantics, actual bytes/duration, latency units, backend activity,
    capacity snapshots and cleanup. Check whether the fastest runs are stable.
-3. Freeze the scientific protocol. Extend only demonstrated problematic cases
+3. If repeat-to-repeat stability itself still needs a pilot, start a separate
+   two-target full five-repetition run; do not treat the smoke pilot as variability
+   evidence. Freeze the scientific protocol after the required checks.
+4. Extend only demonstrated problematic cases
    through an explicit protocol revision, not an automatic runtime adjustment.
-4. Supply planning estimates and run the fixed per-target matrix across as many
+5. Supply planning estimates and run the fixed per-target matrix across as many
    reservations as necessary. Keep settings and monitoring consistent.
 
 Local verification uses pure checks and fake processes, never benchmark I/O:

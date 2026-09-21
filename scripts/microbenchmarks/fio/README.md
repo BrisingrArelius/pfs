@@ -23,9 +23,10 @@ retain it across reservation stops, and delete it after the target is complete.
 Measurement-level checkpoint/resume preserves successful repetitions and reuses
 the retained file after validating its mount and identity.
 
-Admission uses pilot/observed durations with a margin, not hard timeouts. Fill
-the null preparation estimates in `fio_config.json` from the pilot. A hard
-timeout is an unexpected failure: stop the session without automatic retries.
+Admission uses pilot/observed durations with a margin, not hard timeouts. The
+configuration starts with conservative provisional preparation estimates of
+120 seconds for HDD and 30 seconds for NVMe; replace them with observed pilot
+times. A hard timeout is an unexpected failure: stop without automatic retries.
 
 ## Run the pilot
 
@@ -34,23 +35,22 @@ FIO/libaio and findmnt installed. The account needs write access to the target m
 persistent results directory. No page-cache drops or privileged device access
 are used. Keep one benchmark instance active per host.
 
-**First set preparation estimates** in `fio_config.json`:
-`planning.prepare_seconds.hdd` and `.nvme` are deliberately `null`. Supply positive
-wall-clock seconds for writing and syncing the full 10-GiB file. For the first
-pilot, use provisional estimates based on the hardware; afterward replace them
-with observed setup times. These estimates control admission, not FIO duration.
-Missing estimates produce an explicit error; the 600-second hard timeout is
-never used as an estimate. Empty measurement estimates fall back to 60 seconds.
+Preparation estimates control admission, not FIO duration. The initial values
+are provisional; replace them with observed setup wall times after this pilot.
+The 600-second hard timeout is never used as an estimate. Empty measurement
+estimates fall back to 60 seconds.
 
 On **colva1**, target 101 is HDD and 104 is NVMe:
 
 ```bash
 python3 scripts/microbenchmarks/fio/run_fio.py \
   --results-dir results/microbenchmarks/runs/local-fio-pilot/colva1 \
-  --targets 101,104 --time-limit 2h
+  --targets 101,104 --pilot --time-limit 30m
 ```
 
-This executes 50 measurements and two preparations. Each measurement transfers
+This smoke pilot executes 10 measurements and two preparations: every workload
+once on each target. Its configured measurement time is at most 10 minutes.
+Each measurement transfers
 10 GiB or stops normally at 60 seconds. The file remains the same across its 25
 measurements; explicit `overwrite=1` and `fallocate=none` avoid a fresh allocation
 phase in each measured job. The runner verifies file device/inode/size around I/O.
@@ -60,13 +60,14 @@ Resume after reacquiring a reservation:
 ```bash
 python3 scripts/microbenchmarks/fio/run_fio.py \
   --results-dir results/microbenchmarks/runs/local-fio-pilot/colva1 \
-  --resume --time-limit 2h
+  --resume --time-limit 30m
 ```
 
 The saved target selection is reused. Completed repetitions are skipped; an
 interrupted repetition restarts from its beginning. Missing/incomplete prepared
 files are prepared again once; an unexpected replacement file is an error.
 Cleanup failures retry cleanup without repeating successful measurements.
+Pilot mode is also restored from the manifest; `--pilot` is optional on resume.
 
 To extend an **active** reservation from another terminal:
 
