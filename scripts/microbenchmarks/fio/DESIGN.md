@@ -141,10 +141,10 @@ wall time; configured estimates are not promised durations.
   These configurable margins are planning choices, not scientific factors.
   Before initial setup, budget preparation plus the first pending measurement.
   Thereafter budget only the next measurement. Always subtract the cleanup buffer
-  from available reservation time. Never budget the 600-second failure timeout
+  from available reservation time. Never budget the 1,800-second failure timeout
   as if it were expected preparation time.
-- **Hard timeout:** exceptional failure protection. Initially allow 600 seconds
-  for preparation and 75 seconds for measurement wall time. Pilot the limits;
+- **Hard timeout:** exceptional failure protection. Allow 1,800 seconds for
+  preparation and 90 seconds for measurement wall time. Pilot the limits;
   normal commands should never reach them. If reached, kill/reap the child,
   mark the attempt failed, preserve evidence and **abandon the current session**.
   No automatic retry and no continuing to the next measurement. Diagnose before

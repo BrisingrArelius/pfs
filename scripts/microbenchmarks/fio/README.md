@@ -41,7 +41,7 @@ persistent results directory. No page-cache drops or privileged device access
 are used. Keep one benchmark instance active per host.
 
 Preparation estimates control admission, not FIO duration. Review them if another
-host is slower; admission applies the configured margin. The 600-second hard
+host is slower; admission applies the configured margin. The 1,800-second hard
 timeout is never used as an estimate.
 
 On **colva1**, target 101 is HDD and 104 is NVMe:
@@ -103,7 +103,7 @@ choose a new `RUN` name rather than reusing an existing result directory:
 ```bash
 set -euo pipefail
 REPO="$HOME/pfs"
-RUN="local-fio-full-02"
+RUN="local-fio-full-03"
 HOST="$(hostname -s)"
 case "$HOST" in colva1|colva2|colva3|colva4) ;; *) echo "Unexpected host: $HOST" >&2; exit 1 ;; esac
 cd "$REPO"
@@ -121,7 +121,7 @@ last line says `completed`; if it says `budget_stop`, reacquire time and paste:
 ```bash
 set -euo pipefail
 REPO="$HOME/pfs"
-RUN="local-fio-full-02"
+RUN="local-fio-full-03"
 HOST="$(hostname -s)"
 cd "$REPO"
 python3 scripts/microbenchmarks/fio/run_fio.py \
@@ -135,7 +135,7 @@ host's archive with a newly generated copy:
 
 ```bash
 set -euo pipefail
-RUN="local-fio-full-02"
+RUN="local-fio-full-03"
 HOST="$(hostname -s)"
 ARCHIVE="$RUN-$HOST.tar.gz"
 ssh pfs@anjuna3 "mkdir -p ~/pfs-results/fio-staging/$RUN"
@@ -153,7 +153,7 @@ per-access-pattern plots:
 ```bash
 (
   set -euo pipefail
-  RUN="local-fio-full-02"
+  RUN="local-fio-full-03"
   JUMP="dashlab@lab.dashlab.in"
   STAGING_HOST="pfs@anjuna3.dashlab.in"
   DOWNLOAD="$HOME/fio-result-downloads/$RUN"
@@ -211,7 +211,7 @@ or more copied host result directories. The output directory may be below the
 input tree because the parser explicitly excludes it from evidence discovery:
 
 ```bash
-RUN="local-fio-full-02"
+RUN="local-fio-full-03"
 python3 scripts/microbenchmarks/fio/parse_results.py \
   "results/microbenchmarks/runs/$RUN" \
   --output-dir "results/microbenchmarks/runs/$RUN/analysis"
@@ -222,7 +222,7 @@ each access pattern. Each figure places OST IDs on the horizontal axis and measu
 bandwidth in MiB/s on the vertical axis. This requires Matplotlib:
 
 ```bash
-RUN="local-fio-full-02"
+RUN="local-fio-full-03"
 python3 scripts/microbenchmarks/fio/visualize_results.py \
   "results/microbenchmarks/runs/$RUN/analysis/measurements.csv" \
   --output-dir "results/microbenchmarks/runs/$RUN/analysis/plots"

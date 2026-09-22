@@ -8,7 +8,7 @@
         "rw": "write",
         "bs": "1m",
         "end_fsync": 1,
-        "timeout_seconds": 600
+        "timeout_seconds": 1800
     },
     "fio": {
         "ioengine": "libaio",
