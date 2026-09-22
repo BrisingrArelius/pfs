@@ -1,9 +1,9 @@
 {
-    "protocol_version": 4,
+    "protocol_version": 5,
     "repetitions": 5,
     "order_seed": 20260921,
     "free_space_reserve_bytes": 5368709120,
-    "measurement_timeout_seconds": 75,
+    "measurement_timeout_seconds": 90,
     "prepare": {
         "rw": "write",
         "bs": "1m",
@@ -14,42 +14,65 @@
         "ioengine": "libaio",
         "direct": 1,
         "iodepth": 32,
-        "numjobs": 1,
+        "numjobs": 4,
         "nrfiles": 1,
         "size": 10737418240,
         "allow_file_create": 0,
-        "time_based": 0,
-        "ramp_time": 0,
+        "time_based": 1,
+        "ramp_time": 5,
         "runtime": 60,
         "end_fsync": 0,
         "clat_percentiles": 1,
         "percentile_list": "50:95:99:99.9"
     },
     "workloads": [
-        {"name": "seq_read", "rw": "read", "bs": "1m"},
-        {"name": "seq_write", "rw": "write", "bs": "1m"},
-        {"name": "rand_read_4k", "rw": "randread", "bs": "4k"},
-        {"name": "rand_write_4k", "rw": "randwrite", "bs": "4k"},
-        {"name": "rand_read_128k", "rw": "randread", "bs": "128k"}
+        {
+            "name": "seq_read",
+            "rw": "read",
+            "bs": "1m"
+        },
+        {
+            "name": "seq_write",
+            "rw": "write",
+            "bs": "1m"
+        },
+        {
+            "name": "rand_read_4k",
+            "rw": "randread",
+            "bs": "4k"
+        },
+        {
+            "name": "rand_write_4k",
+            "rw": "randwrite",
+            "bs": "4k"
+        },
+        {
+            "name": "rand_read_128k",
+            "rw": "randread",
+            "bs": "128k"
+        }
     ],
     "planning": {
         "margin_multiplier": 1.25,
         "overhead_seconds": 5,
-        "prepare_seconds": {"hdd": 130, "nvme": 6},
+        "prepare_seconds": {
+            "hdd": 360,
+            "nvme": 20
+        },
         "measurement_seconds": {
             "hdd": {
-                "seq_read": 61,
-                "seq_write": 61,
-                "rand_read_4k": 61,
-                "rand_write_4k": 61,
-                "rand_read_128k": 61
+                "seq_read": 66,
+                "seq_write": 66,
+                "rand_read_4k": 66,
+                "rand_write_4k": 66,
+                "rand_read_128k": 66
             },
             "nvme": {
-                "seq_read": 6,
-                "seq_write": 3,
-                "rand_read_4k": 7,
-                "rand_write_4k": 10,
-                "rand_read_128k": 3
+                "seq_read": 66,
+                "seq_write": 66,
+                "rand_read_4k": 66,
+                "rand_write_4k": 66,
+                "rand_read_128k": 66
             }
         }
     }

@@ -60,6 +60,21 @@ def atomic_json(path, value):
         Path(temporary).unlink(missing_ok=True)
 
 
+def atomic_text(path, value):
+    """Durably replace a text artifact without exposing partial content."""
+    path = Path(path)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w") as output:
+            output.write(value)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, path)
+        sync_directory(path.parent)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
 def duration(value):
     """Parse positive seconds or a duration suffixed with s, m or h."""
     match = re.fullmatch(r"(\d+(?:\.\d+)?)([smh]?)", value)

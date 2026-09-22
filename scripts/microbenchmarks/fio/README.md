@@ -1,7 +1,8 @@
 # Local-storage FIO test
 
-Implemented in `run_fio.py` and `run_support.py`; cluster pilot validation is
-still pending. The previous scripts remain
+Implemented in `run_fio.py` and `run_support.py`. The earlier single-job protocol
+completed a cluster pilot and four-host run; protocol 5 changes the measurement
+to four sustained parallel jobs and therefore requires a new pilot. Previous scripts remain
 [archived](../../../archive/legacy-code/fio-abandoned/README.md).
 
 - [DESIGN.md](DESIGN.md): standalone requirements, function contracts,
@@ -13,20 +14,24 @@ still pending. The previous scripts remain
 The design incorporates `Obsidian/DaSH/BeeGFS/Specs/MicroBenchmarks.md` and
 `Global.md` from the Obsidian vault, with the user-directed per-target-only scope
 and shared-file preparation policy. It covers five workloads and five repetitions.
-Dataset size, queue depth and timing choices remain subject to a cluster pilot.
+The old pilot does not validate protocol 5's larger dataset or timing estimates.
 
-Each measured job stops after **10 GiB of I/O or 60 seconds, whichever comes
-first**, with no ramp period. The configured plan has 175 measured invocations
-per host, 700 across four hosts, plus one full-data preparation per target:
-728 FIO invocations total before retries. Reuse that file for all 25 measurements,
-retain it across reservation stops, and delete it after the target is complete.
+Each measured invocation runs four jobs concurrently for **60 measured seconds
+after a 5-second ramp**. Every job owns a disjoint 10-GiB region of one 40-GiB
+file, uses `iodepth=32`, and repeatedly accesses its region until runtime expires.
+The resulting bandwidth and IOPS are aggregate per-OST values across the four
+jobs. The configured plan has 175 measured invocations per host, 700 across four
+hosts, plus one full-data preparation per target: 728 FIO invocations total before
+retries. Reuse the file for all 25 measurements, retain it across reservation
+stops, and delete it after the target is complete.
 Measurement-level checkpoint/resume preserves successful repetitions and reuses
 the retained file after validating its mount and identity.
 
-Admission uses pilot/observed durations with a margin, not hard timeouts. Current
-estimates come from the colva1 target-101/104 smoke pilot: 130 seconds for HDD
-preparation, 6 seconds for NVMe preparation, and rounded-up command times by
-workload. A hard timeout is an unexpected failure with no automatic retries.
+Admission uses pilot/observed durations with a margin, not hard timeouts. Protocol
+5 starts with conservative estimates of 360 seconds for HDD preparation, 20
+seconds for NVMe preparation and 66 seconds per measured invocation. Replace
+these estimates with observed pilot timings if they are insufficient. A hard
+timeout is an unexpected failure with no automatic retries.
 
 ## Run the pilot
 
@@ -48,11 +53,11 @@ python3 scripts/microbenchmarks/fio/run_fio.py \
 ```
 
 This smoke pilot executes 10 measurements and two preparations: every workload
-once on each target. Its configured measurement time is at most 10 minutes.
-Each measurement transfers
-10 GiB or stops normally at 60 seconds. The file remains the same across its 25
-measurements; explicit `overwrite=1` and `fallocate=none` avoid a fresh allocation
-phase in each measured job. The runner verifies file device/inode/size around I/O.
+once on each target. Each invocation has a 5-second ramp and 60 measured seconds.
+The same prepared 40-GiB file is split into four non-overlapping 10-GiB job
+regions and remains in place across all measurements; explicit `overwrite=1` and
+`fallocate=none` avoid a fresh allocation phase. The runner verifies file
+device/inode/size around I/O.
 
 Resume after reacquiring a reservation:
 
@@ -82,6 +87,94 @@ budget stop; check the manifest session outcome to distinguish them. Hard timeou
 or command/validation failure exits nonzero and stops the session. Ctrl-C/SIGTERM
 exits 130. Diagnose a failure before explicitly resuming.
 
+## Run the full experiment
+
+These commands run protocol 5's four-job sustained aggregate-throughput
+experiment. Four jobs increase offered concurrency but do not prove an absolute
+hardware maximum; use the pilot to confirm the OST is saturated and results are
+stable. Use the same repository revision and run name on all four hosts. Home directories on the
+storage nodes may be node-local, so retrieve or stage every host's results before
+discarding the reservation or node state.
+
+Paste this complete block from the repository checkout on each of `colva1`,
+`colva2`, `colva3` and `colva4`. Change `REPO` if the checkout is elsewhere and
+choose a new `RUN` name rather than reusing an existing result directory:
+
+```bash
+set -euo pipefail
+REPO="$HOME/pfs"
+RUN="local-fio-full-02"
+HOST="$(hostname -s)"
+case "$HOST" in colva1|colva2|colva3|colva4) ;; *) echo "Unexpected host: $HOST" >&2; exit 1 ;; esac
+cd "$REPO"
+printf 'Host: %s\nRevision: %s\n' "$HOST" "$(git rev-parse HEAD)"
+fio --version
+python3 scripts/microbenchmarks/fio/run_fio.py \
+  --results-dir "$HOME/fio-results/$RUN/$HOST" \
+  --time-limit 5h
+```
+
+The command intentionally omits `--targets`, selecting every inventory target on
+the current host. A zero exit can also mean a planned budget stop. Confirm the
+last line says `completed`; if it says `budget_stop`, reacquire time and paste:
+
+```bash
+set -euo pipefail
+REPO="$HOME/pfs"
+RUN="local-fio-full-02"
+HOST="$(hostname -s)"
+cd "$REPO"
+python3 scripts/microbenchmarks/fio/run_fio.py \
+  --results-dir "$HOME/fio-results/$RUN/$HOST" \
+  --resume --time-limit 5h
+```
+
+After a host reports `completed`, create a checksummed archive and stage it on
+`anjuna3`. Paste this block on that `colva` host; rerunning it replaces only that
+host's archive with a newly generated copy:
+
+```bash
+set -euo pipefail
+RUN="local-fio-full-02"
+HOST="$(hostname -s)"
+ARCHIVE="$RUN-$HOST.tar.gz"
+ssh pfs@anjuna3 "mkdir -p ~/fio-results-staging/$RUN"
+tar -C "$HOME/fio-results/$RUN" -czf "$HOME/fio-results/$ARCHIVE" "$HOST"
+(cd "$HOME/fio-results" && sha256sum "$ARCHIVE" > "$ARCHIVE.sha256")
+scp "$HOME/fio-results/$ARCHIVE" "$HOME/fio-results/$ARCHIVE.sha256" \
+  "pfs@anjuna3:~/fio-results-staging/$RUN/"
+```
+
+After staging all four hosts, paste this block on the PC from the repository root.
+It downloads the archives, verifies their checksums, extracts the four host
+directories, validates and normalizes all native evidence, and creates the five
+per-access-pattern plots:
+
+```bash
+set -euo pipefail
+RUN="local-fio-full-02"
+DOWNLOAD="$HOME/fio-result-downloads/$RUN"
+DEST="results/microbenchmarks/runs/$RUN"
+mkdir -p "$DOWNLOAD" "$DEST"
+scp "pfs@anjuna3:~/fio-results-staging/$RUN/*" "$DOWNLOAD/"
+(cd "$DOWNLOAD" && sha256sum -c -- *.sha256)
+for ARCHIVE in "$DOWNLOAD"/*.tar.gz; do
+  tar -xzf "$ARCHIVE" -C "$DEST"
+done
+for HOST in colva1 colva2 colva3 colva4; do
+  test -f "$DEST/$HOST/manifest.json"
+done
+python3 scripts/microbenchmarks/fio/parse_results.py \
+  "$DEST" --output-dir "$DEST/analysis"
+python3 scripts/microbenchmarks/fio/visualize_results.py \
+  "$DEST/analysis/measurements.csv" \
+  --output-dir "$DEST/analysis/plots"
+```
+
+The parser must report 700 measurements, 28 preparations and no errors or
+warnings for a complete four-host run. Review `$DEST/analysis/parse_report.json`
+before interpreting the CSV summaries or figures.
+
 ## Evidence and pilot checks
 
 `manifest.json` records settings, ordered cases, sessions, timing estimates,
@@ -96,14 +189,50 @@ statistics for performance. Scientific settings/target selection/FIO version
 must match on resume; planning estimates may be updated. For the full experiment,
 choose a new results directory and omit `--targets` to select all local targets.
 
+## Parse and visualize results
+
+Create normalized CSV files, a Markdown summary and a validation report from one
+or more copied host result directories. The output directory may be below the
+input tree because the parser explicitly excludes it from evidence discovery:
+
+```bash
+RUN="local-fio-full-02"
+python3 scripts/microbenchmarks/fio/parse_results.py \
+  "results/microbenchmarks/runs/$RUN" \
+  --output-dir "results/microbenchmarks/runs/$RUN/analysis"
+```
+
+Create five per-OST bandwidth figures from the normalized measurements, one for
+each access pattern. Each figure places OST IDs on the horizontal axis and measured
+bandwidth in MiB/s on the vertical axis. This requires Matplotlib:
+
+```bash
+RUN="local-fio-full-02"
+python3 scripts/microbenchmarks/fio/visualize_results.py \
+  "results/microbenchmarks/runs/$RUN/analysis/measurements.csv" \
+  --output-dir "results/microbenchmarks/runs/$RUN/analysis/plots"
+```
+
+Both commands treat the native run evidence as read-only. `parse_report.json`
+records validation errors and warnings; `plot_manifest.json` records every plot
+and its semantics. Each host result directory contains a generated `RUN.md`, and
+the parser writes `analysis/run_configuration.md` as a readable multi-host record
+of the exact configuration. Each figure keeps every OST in its own horizontal-axis
+category: small ticks show the five repetition values, whiskers show their
+min-max range and a colored bar shows the OST median.
+HDD and NVMe are distinguished by color but are never aggregated.
+Color-matched dotted lines label the mean of the per-OST medians for HDD and
+NVMe, providing explicit MiB/s reference values without pooling repetitions.
+
 ## Developer verification (no benchmark I/O)
 
 ```bash
 python3 -B -m unittest discover -s scripts/microbenchmarks/fio/tests -v
 ```
 
-Tests use `/tmp/opencode`, sparse fixture files, mocked mount/FIO operations and
-harmless Python subprocesses. They do not run FIO, findmnt, sudo or cache drops.
+Tests use system-managed temporary directories, sparse fixture files, mocked
+mount/FIO operations and harmless Python subprocesses. They do not run FIO,
+findmnt, sudo or cache drops.
 
 ## Write-safety boundary
 

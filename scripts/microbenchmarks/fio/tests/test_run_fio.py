@@ -21,7 +21,7 @@ class RunnerTests(unittest.TestCase):
 
     def setUp(self):
         """Create an isolated fake host; FIO and findmnt cannot execute."""
-        self.temporary = tempfile.TemporaryDirectory(dir="/tmp/opencode")
+        self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.base = Path(self.temporary.name)
         self.root = self.base / "results"
@@ -68,17 +68,20 @@ class RunnerTests(unittest.TestCase):
         """Simulate accounting and sparse fixture-file growth, not benchmark I/O."""
         options = configparser.ConfigParser(interpolation=None)
         options.read(argv[-1])
-        name = options.sections()[0]
-        job = options[name]
-        path = Path(job["filename"])
+        sections = options.sections()
+        name = sections[0]
+        jobs = [options[section] for section in sections]
+        path = Path(jobs[0]["filename"])
         self.assertTrue(path.is_relative_to(self.base))
         self.assertEqual(Path(cwd), Path(argv[-1]).parent)
         self.assertIn(f"--aux-path={cwd}", argv)
         self.assertEqual(path.name, "data")
-        self.assertEqual(path.parent.name, f"target-{name.removeprefix('target-')}")
+        target_id = name.removeprefix("target-").split("-job-", 1)[0]
+        self.assertEqual(path.parent.name, f"target-{target_id}")
         self.assertEqual(path.parents[2].name, ".local-fio")
-        is_prepare = "runtime" not in job
-        self.calls.append((is_prepare, path, job["rw"]))
+        self.assertTrue(all(Path(job["filename"]) == path for job in jobs))
+        is_prepare = len(jobs) == 1 and "runtime" not in jobs[0]
+        self.calls.append((is_prepare, path, jobs[0]["rw"]))
         Path(stdout).write_text("fake stdout\n")
         Path(stderr).write_text("")
         if self.fail_at == len(self.calls):
@@ -86,14 +89,21 @@ class RunnerTests(unittest.TestCase):
             raise self.failure
         if is_prepare:
             with path.open("xb") as data:
-                data.truncate(int(job["size"]))
+                data.truncate(int(jobs[0]["size"]))
         else:
-            self.assertEqual(job["allow_file_create"], "0")
-            self.assertEqual(job["overwrite"], "1")
-            self.assertEqual(path.stat().st_size, int(job["size"]))
-        operation = "write" if "write" in job["rw"] else "read"
-        payload = {"jobs": [{"jobname": name, "error": 0, operation: {
-            "io_bytes": int(job["size"]), "runtime": 1000, "total_ios": 8}}]}
+            self.assertEqual(len(jobs), 4)
+            self.assertEqual([int(job["offset"]) for job in jobs],
+                             [0, 1048576, 2097152, 3145728])
+            self.assertTrue(all(job["allow_file_create"] == "0" for job in jobs))
+            self.assertTrue(all(job["overwrite"] == "1" for job in jobs))
+            self.assertEqual(path.stat().st_size, runner.dataset_size(self.config))
+        native_jobs = []
+        for section, job in zip(sections, jobs):
+            operation = "write" if "write" in job["rw"] else "read"
+            native_jobs.append({"jobname": section, "error": 0, operation: {
+                "io_bytes": int(job["size"]),
+                "runtime": 1000 if is_prepare else 60000, "total_ios": 8}})
+        payload = {"jobs": native_jobs}
         output = next(arg.split("=", 1)[1] for arg in argv if arg.startswith("--output="))
         Path(output).write_text(json.dumps(payload))
         return 1.1
@@ -111,6 +121,9 @@ class RunnerTests(unittest.TestCase):
         """Two targets get 50 measurements, two setups and one deletion each."""
         self.assertEqual(self.invoke("--targets", "101,104"), 0)
         manifest = self.manifest()
+        description = (self.root / "RUN.md").read_text()
+        self.assertIn("Parallel jobs per OST: **4**", description)
+        self.assertIn("Prepared file per OST: **0.00390625 GiB**", description)
         self.assertEqual(len(self.calls), 52)
         self.assertEqual(sum(prepare for prepare, _, _ in self.calls), 2)
         for target in self.targets:
@@ -319,8 +332,9 @@ class RunnerTests(unittest.TestCase):
             runner.validate_result(output, expected)
         job = runner.build_job(self.config, self.targets[0], dict(self.config["workloads"][0], repetition=1),
                                self.base / "data", "measure")
-        self.assertIn("time_based=0\n", job)
-        self.assertIn("ramp_time=0\n", job)
+        self.assertEqual(job.count("[target-101-job-"), 4)
+        self.assertIn("time_based=1\n", job)
+        self.assertIn("ramp_time=5\n", job)
         self.assertIn("runtime=60\n", job)
         self.assertIn("fallocate=none\n", job)
 
@@ -335,10 +349,11 @@ class RunnerTests(unittest.TestCase):
                 job = runner.build_job(self.config, target, dict(workload, repetition=1), path, phase)
                 options = configparser.ConfigParser(interpolation=None)
                 options.read_string(job)
-                filename = options[options.sections()[0]]["filename"]
-                self.assertEqual(filename, str(path))
-                self.assertNotEqual(filename, target["device"])
-                self.assertNotIn("beegfs_storage", Path(filename).parts)
+                for section in options.sections():
+                    filename = options[section]["filename"]
+                    self.assertEqual(filename, str(path))
+                    self.assertNotEqual(filename, target["device"])
+                    self.assertNotIn("beegfs_storage", Path(filename).parts)
 
     def test_adjacent_target_files_are_never_modified(self):
         """Preparation and cleanup cannot touch BeeGFS data or unrelated siblings."""

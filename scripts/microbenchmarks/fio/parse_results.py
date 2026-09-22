@@ -15,7 +15,7 @@ import tempfile
 
 MEASUREMENT_FIELDS = [
     "run_id", "mode", "host", "target_id", "media", "device", "mount",
-    "workload", "rw", "block_size", "repetition", "session", "attempt",
+    "workload", "rw", "block_size", "jobs", "repetition", "session", "attempt",
     "completion_reason", "io_bytes", "gib", "fio_runtime_ms", "seconds",
     "bw_bytes_s", "bw_mib_s", "iops", "total_ios", "clat_mean_ns",
     "clat_p50_ns", "clat_p95_ns", "clat_p99_ns", "clat_p99_9_ns",
@@ -120,29 +120,47 @@ def latency_ns(stats):
     raise ValueError("missing completion-latency statistics")
 
 
-def parse_native(path, expected_name, operation, size, runtime):
-    """Validate one native FIO result and return normalized measurements."""
+def parse_native(path, expected_names, operation, size, runtime, time_based=False):
+    """Validate native jobs and return one aggregate target-level measurement."""
     result = json.loads(path.read_text())
     jobs = result.get("jobs", [])
-    if len(jobs) != 1 or jobs[0].get("jobname") != expected_name or jobs[0].get("error") != 0:
-        raise ValueError("expected exactly one successful named FIO job")
-    stats = jobs[0][operation]
+    expected_names = [expected_names] if isinstance(expected_names, str) else expected_names
+    if (len(jobs) != len(expected_names)
+            or [job.get("jobname") for job in jobs] != expected_names
+            or any(job.get("error") != 0 for job in jobs)):
+        raise ValueError("unexpected or failed named FIO jobs")
     opposite = "write" if operation == "read" else "read"
-    if jobs[0].get(opposite, {}).get("io_bytes", 0):
+    if any(job.get(opposite, {}).get("io_bytes", 0) for job in jobs):
         raise ValueError(f"unexpected {opposite} bytes")
-    io_bytes, elapsed, total_ios = stats["io_bytes"], stats["runtime"], stats["total_ios"]
-    if not (0 < io_bytes <= size and elapsed > 0 and total_ios > 0):
+    stats = [job[operation] for job in jobs]
+    if any(item["io_bytes"] <= 0 or item["runtime"] <= 0 or item["total_ios"] <= 0 for item in stats):
         raise ValueError("invalid byte, runtime or operation accounting")
-    reason = "byte_limit" if io_bytes == size else "time_limit"
-    if reason == "time_limit" and elapsed < runtime * 1000 - 1000:
-        raise ValueError("job reached neither byte nor runtime limit")
+    io_bytes = sum(item["io_bytes"] for item in stats)
+    elapsed = max(item["runtime"] for item in stats)
+    total_ios = sum(item["total_ios"] for item in stats)
+    if time_based:
+        if any(item["runtime"] < runtime * 1000 - 1000 for item in stats):
+            raise ValueError("job stopped before the runtime limit")
+        reason = "time_limit"
+    else:
+        if io_bytes > size:
+            raise ValueError("job exceeded byte limit")
+        reason = "byte_limit" if io_bytes == size else "time_limit"
+        if reason == "time_limit" and elapsed < runtime * 1000 - 1000:
+            raise ValueError("job reached neither byte nor runtime limit")
+    latencies = [latency_ns(item) for item in stats]
+    weighted_mean = sum(value["clat_mean_ns"] * item["total_ios"]
+                        for value, item in zip(latencies, stats)) / total_ios
     row = {
         "completion_reason": reason, "io_bytes": io_bytes, "gib": io_bytes / 2**30,
         "fio_runtime_ms": elapsed, "seconds": elapsed / 1000,
-        "bw_bytes_s": stats["bw_bytes"], "bw_mib_s": stats["bw_bytes"] / 2**20,
-        "iops": stats["iops"], "total_ios": total_ios,
+        "bw_bytes_s": sum(item["bw_bytes"] for item in stats),
+        "bw_mib_s": sum(item["bw_bytes"] for item in stats) / 2**20,
+        "iops": sum(item["iops"] for item in stats), "total_ios": total_ios,
+        "jobs": len(jobs), "clat_mean_ns": weighted_mean,
     }
-    row.update(latency_ns(stats))
+    for field in ("clat_p50_ns", "clat_p95_ns", "clat_p99_ns", "clat_p99_9_ns"):
+        row[field] = max(value[field] for value in latencies)
     return row
 
 
@@ -166,7 +184,7 @@ def parse_manifest(manifest_path, report):
             try:
                 artifact = safe_artifact(root, item["artifacts"])
                 native = parse_native(artifact / "fio.json", f"target-{target_id}", "write",
-                                      config["fio"]["size"], 0)
+                                       config["fio"]["size"] * config["fio"].get("numjobs", 1), 0)
                 preparations.append({
                     "run_id": manifest["run_id"], "host": manifest["host"],
                     "target_id": int(target_id), "media": target["media"],
@@ -191,8 +209,12 @@ def parse_manifest(manifest_path, report):
             workload = case["workload"]
             artifact = safe_artifact(root, attempt["artifacts"])
             operation = "write" if "write" in workload["rw"] else "read"
-            row = parse_native(artifact / "fio.json", f"target-{case['target_id']}", operation,
-                               config["fio"]["size"], config["fio"]["runtime"])
+            job_count = config["fio"].get("numjobs", 1)
+            names = ([f"target-{case['target_id']}-job-{index + 1}" for index in range(job_count)]
+                     if job_count > 1 else f"target-{case['target_id']}")
+            row = parse_native(artifact / "fio.json", names, operation,
+                               config["fio"]["size"] * job_count, config["fio"]["runtime"],
+                               bool(config["fio"].get("time_based", 0)))
             if row["completion_reason"] != attempt["completion_reason"] or row["io_bytes"] != attempt["io_bytes"]:
                 raise ValueError("manifest/native completion accounting differs")
             row.update({
@@ -260,6 +282,35 @@ def markdown(summary, report):
     return "\n".join(lines) + "\n"
 
 
+def configuration_markdown(manifest_paths):
+    """Describe a copied multi-host run without requiring manifest inspection."""
+    manifests = [json.loads(path.read_text()) for path in manifest_paths]
+    first = manifests[0]
+    config, fio = first["config"], first["config"]["fio"]
+    job_count = fio.get("numjobs", 1)
+    lines = ["# FIO run configuration", "",
+             "> Derived from host manifests; `manifest.json` and native FIO output remain authoritative.", "",
+             "## Hosts", "", "| Host | Run ID | Mode | Protocol | FIO |", "|---|---|---|---:|---|"]
+    lines.extend(f"| {item['host']} | `{item['run_id']}` | {item.get('mode', 'full')} | "
+                 f"{item['config'].get('protocol_version', 'unknown')} | `{item.get('fio_version', 'unknown')}` |"
+                 for item in manifests)
+    lines.extend(["", "## Measurement protocol", "",
+                  f"- Jobs per OST: **{job_count}**",
+                  f"- Per-job size/region: **{fio['size'] / 2**30:g} GiB**",
+                  f"- Prepared file per OST: **{fio['size'] * job_count / 2**30:g} GiB**",
+                  f"- Engine/direct I/O: `{fio.get('ioengine', 'unknown')}`, `direct={fio.get('direct', 'unknown')}`",
+                  f"- Queue depth: **{fio.get('iodepth', 'unknown')} per job**",
+                  f"- Timing: **{fio.get('ramp_time', 0)} s ramp + {fio['runtime']} s runtime**, "
+                  f"`time_based={fio.get('time_based', 0)}`",
+                  f"- Repetitions: **{config['repetitions']}**", "",
+                  "## Workloads", "", "| Name | Pattern | Block size |", "|---|---|---:|"])
+    lines.extend(f"| `{item['name']}` | `{item['rw']}` | `{item['bs']}` |"
+                 for item in config["workloads"])
+    lines.extend(["", "For multi-job protocol 5 runs, bandwidth and IOPS are summed across jobs. ",
+                  "Mean completion latency is operation-weighted; percentile columns use the worst per-job percentile.", ""])
+    return "\n".join(lines)
+
+
 def main(argv=None):
     """Parse all hosts, publish derived artifacts and fail if evidence is incomplete."""
     args = parse_args(argv)
@@ -278,6 +329,7 @@ def main(argv=None):
         write_csv(args.output_dir / "preparations.csv", PREPARATION_FIELDS, preparations)
         write_csv(args.output_dir / "summary.csv", SUMMARY_FIELDS, summary)
         atomic_text(args.output_dir / "summary.md", markdown(summary, report))
+        atomic_text(args.output_dir / "run_configuration.md", configuration_markdown(manifests))
         atomic_text(args.output_dir / "parse_report.json", json.dumps(report, indent=2) + "\n")
         errors = sum(len(host["errors"]) for host in report["hosts"])
         print(f"Parsed {len(measurements)} measurements from {len(manifests)} host manifest(s).")

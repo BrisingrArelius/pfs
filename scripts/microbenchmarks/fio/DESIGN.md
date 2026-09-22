@@ -41,21 +41,20 @@ host run sequentially; hosts may run in parallel with separate output directorie
 
 ## 2. Fixed protocol and interpretation
 
-Use one worker, one 10-GiB file, `ioengine=libaio`, `direct=1`, and `iodepth=32`.
-Freeze these settings after a small pilot rather than sweeping every parameter.
+Use four concurrent workers, one 40-GiB file, `ioengine=libaio`, `direct=1`, and
+`iodepth=32` per worker. Each worker owns a disjoint 10-GiB region, giving an
+aggregate queue depth of up to 128 without overlapping writes. Freeze these
+settings after a small pilot rather than sweeping every parameter.
 
-Each measurement stops after **10 GiB of I/O or 60 seconds, whichever comes
-first**: `time_based=0`, `runtime=60`, `ramp_time=0`. Random operations have the
-same byte budget; this is not a guarantee of visiting every block exactly once.
-The measured byte budget restarts at each invocation; it is not shared by runs.
-A job that transfers 10 GiB in two seconds ends after those two seconds. It does
-not wait for 60 seconds, repeat the transfer, or require a minimum duration.
+Each measurement runs for **60 measured seconds after a 5-second ramp**:
+`time_based=1`, `runtime=60`, `ramp_time=5`. Workers repeatedly traverse their
+regions until runtime expires. Retain actual bytes and duration; normal completion
+is always `time_limit`. Aggregate bandwidth and IOPS across the four jobs.
 
-This is a bounded-workload comparison. A short SSD measurement samples different
-time behavior from a 60-second HDD measurement. Always retain actual bytes,
-duration and completion reason (`byte_limit` or `time_limit`). A short write can
-fit within a device's internal cache. Direct I/O bypasses the normal data page
-cache, not controller/device caches, and does not establish write durability.
+This is a sustained aggregate-throughput comparison intended to offer enough
+parallelism to saturate an OST. Four workers do not by themselves prove an
+absolute hardware maximum. Direct I/O bypasses the normal data page cache, not
+controller/device caches, and measured writes do not establish durability.
 No system-wide cache drops, routine Darshan, or persistent-write claims.
 
 Use native bandwidth, IOPS and repeat-to-repeat variation as primary results.
@@ -68,7 +67,7 @@ targets; different devices are not interchangeable repetitions of one device.
 
 1. Verify the target mount, source device, XFS and available space.
 2. Create `<mount>/.local-fio/<run-id>/target-<id>/data`, outside `beegfs_storage`.
-3. Write the full 10 GiB once with sequential 1-MiB direct I/O and `end_fsync=1`.
+3. Write the full 40 GiB once with sequential 1-MiB direct I/O and `end_fsync=1`.
    Preparation is size-based and has no 60-second measurement cap.
 4. Verify successful full-data preparation and checkpoint the file's identity.
 5. Run all 25 measurements against that same existing file. Reads reuse its
@@ -115,23 +114,21 @@ or scheduling framework are needed.
 | Four hosts / 28 targets | 700 | 28 | 728 |
 
 These counts exclude retries and replacement of lost/incomplete prepared files.
-Normal preparation writes **280 GiB total**, not a fresh 10 GiB for every run.
-The measurement intervals total at most **2 h 55 m per host** (175 × 60 seconds);
-fast byte-completing cases take less. Preparation, startup, I/O drain and cleanup
-are additional. The 60-second FIO cap is not an exact process wall-time bound.
+Normal preparation writes **1.094 TiB total** across 28 targets, not a fresh 40
+GiB for every run. A seven-target host has 175 invocations of approximately 65
+seconds each, or about **3 h 10 m** of FIO ramp plus measured time. Preparation,
+startup, I/O drain and cleanup are additional.
 
 ```text
-measurement time ≈ min(10 GiB / workload-specific observed rate, 60 seconds)
+measurement time ≈ 5-second ramp + 60 measured seconds
 target time      ≈ one preparation + 25 measurement times + overhead
 host time        ≈ sum of its seven target times
 parallel elapsed ≈ slowest host time
 ```
 
-At 6 GB/s, 10 GiB takes about 1.79 seconds; at 6 Gbit/s, about 14.32 seconds.
-A sequential rating does not predict random-I/O performance. At 150 MiB/s,
-preparation takes about 68.27 seconds. If all seven preparations take that long
-and every measurement hits 60 seconds, a host takes about **3 h 3 m plus overhead**.
-This is an illustration, not a promised reservation duration.
+At 150 MiB/s, preparing 40 GiB takes about 273 seconds. A sequential rating does
+not predict random-I/O performance. Reservation planning must use pilot-observed
+wall time; configured estimates are not promised durations.
 
 ### Estimate, hard timeout and reservation deadline are different
 
@@ -322,10 +319,9 @@ Measurement completion does **not** wait for deletion of the shared data file.
    unlink but before cleanup checkpointing, absence of that known path completes
    cleanup; it does not trigger preparation or rerun measurements.
 
-A normal FIO stop at 60 seconds is complete even below 10 GiB. External timeout or
-reservation interruption is not. Validate duration/byte tolerances against the
-installed FIO version in the pilot; short zero-error output with neither limit
-reached is invalid. Missing/corrupt required raw evidence invalidates only the
+A normal FIO stop after the configured measured runtime is complete. External
+timeout or reservation interruption is not. Validate all four native job durations
+against the installed FIO version in the pilot. Missing/corrupt required raw evidence invalidates only the
 affected measurement. Analysis failure alone never invalidates measured evidence.
 
 Hard timeout abandons the session without an automatic retry. Retain failed
@@ -396,10 +392,10 @@ margin; otherwise use the pilot value/fallback. Record which estimate admitted
 each phase so an underestimated reservation stop can be explained.
 
 `build_job` serializes FIO options directly, avoiding an option-translation layer.
-The wrapper owns filenames, job name and output paths. Preparation removes
-`runtime`/`ramp_time`, sets `time_based=0`, enables file creation, and applies
-sequential write options with final sync. Measurement disables creation and keeps
-the size/runtime caps, overlaying only workload `rw`/`bs` and repetition seed.
+The wrapper owns filenames, job names, offsets and output paths. Preparation
+removes `runtime`/`ramp_time`, sets `time_based=0`, uses one job to create the full
+40-GiB file, and applies sequential write options with final sync. Measurement
+disables creation and emits four named jobs with disjoint 10-GiB offsets.
 Planning fields and hard timeouts are wrapper settings, never passed to FIO.
 The implementation fixes `overwrite=1` and `fallocate=none` in both phases and
 includes that policy in scientific compatibility. Native JSON uses FIO's explicit
@@ -429,7 +425,7 @@ Before the full 700-measurement experiment:
    reservations as necessary. Keep settings and monitoring consistent.
 
 Local verification uses pure checks and fake processes, never benchmark I/O:
-deterministic saved ordering, byte geometry, single-job generation, normal cap
+deterministic saved ordering, byte geometry, four-job generation, normal runtime
 completion versus hard timeout, live extension, interrupts and child cleanup.
 Exercise resume after setup, between measurements, during writes, after raw output
 but before completion, and after deletion but before cleanup checkpointing. Confirm
@@ -451,13 +447,13 @@ support this small, predefined report:
 | Level | Required presentation |
 |---|---|
 | Target × workload | All five individual values plus median and min–max range for bandwidth and IOPS. Show points, not just an aggregate bar. |
-| Measurement | Actual bytes, I/O count, FIO duration and byte/time completion reason; retain command wall time separately. |
-| Latency | Native mean and selected completion-latency percentiles, with duration/I/O count available to judge short-run tails. Do not average percentiles into a purported pooled percentile. |
+| Measurement | Aggregate bytes and I/O count, maximum native job duration and time-limit completion reason; retain command wall time separately. |
+| Latency | Operation-weighted mean across jobs and the worst per-job selected completion-latency percentiles. Do not average percentiles into a purported pooled percentile. |
 | Provenance | Host/target/device identity, scientific settings, session, saved execution order and preparation generation. |
 
 Label units explicitly. Use FIO's native bandwidth/IOPS accounting, not bytes
 divided by runner wall time. Report within-target spread separately from
 between-target differences; do not pool unlike devices into five fictional
 replicates. With five repetitions, avoid precise-looking significance claims.
-This report characterizes the fixed bounded workload; it does not require an
-SSD job that finished in two seconds to continue to sixty seconds.
+This report characterizes the fixed sustained four-job workload, not every
+possible concurrency level or a proof of the device's absolute maximum.

@@ -22,7 +22,7 @@ class ProcessTests(unittest.TestCase):
 
     def setUp(self):
         """Create a private artifact directory and a fresh deadline."""
-        temporary = tempfile.TemporaryDirectory(dir="/tmp/opencode")
+        temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.deadline = self.root / "deadline.json"

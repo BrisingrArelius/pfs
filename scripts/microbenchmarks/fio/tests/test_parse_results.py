@@ -17,13 +17,15 @@ class ParserTests(unittest.TestCase):
 
     def setUp(self):
         """Create one host with one target, preparation and two repetitions."""
-        temporary = tempfile.TemporaryDirectory(dir="/tmp/opencode")
+        temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.run = self.root / "run" / "colva1"
         self.output = self.root / "derived"
         target = {"target_id": 101, "media": "hdd", "device": "/dev/sdb1", "mount": "/mnt/hdd2"}
-        config = {"fio": {"size": 1048576, "runtime": 60}}
+        config = {"protocol_version": 4, "repetitions": 2,
+                  "fio": {"size": 1048576, "runtime": 60},
+                  "workloads": [{"name": "seq_read", "rw": "read", "bs": "1m"}]}
         preparation = self.attempt("raw/target-101/prepare-1", "byte_limit", 1048576, 1000)
         preparation["preparation_generation"] = 1
         cases = []
@@ -87,6 +89,9 @@ class ParserTests(unittest.TestCase):
         self.assertEqual((report["measurements"], report["preparations"]), (2, 1))
         self.assertEqual(report["hosts"][0]["errors"], [])
         self.assertIn("Validation: **PASS**", (self.output / "summary.md").read_text())
+        configuration = (self.output / "run_configuration.md").read_text()
+        self.assertIn("Jobs per OST: **1**", configuration)
+        self.assertIn("Per-job size/region: **0.000976562 GiB**", configuration)
 
     def test_incomplete_run_returns_two_but_keeps_valid_rows(self):
         """One pending measurement is reported without discarding valid evidence."""
@@ -127,6 +132,29 @@ class ParserTests(unittest.TestCase):
         output = self.run.parent / "derived"
         self.assertEqual(parser.main([str(self.run.parent), "--output-dir", str(output)]), 0)
         self.assertEqual(parser.main([str(self.run.parent), "--output-dir", str(output)]), 0)
+
+    def test_four_time_based_jobs_are_aggregated(self):
+        """Parallel job bandwidth/IOPS sum while latency remains device-conservative."""
+        path = self.root / "parallel.json"
+        jobs = []
+        for index in range(4):
+            stats = {"io_bytes": 2 * 1048576, "runtime": 60000,
+                     "bw_bytes": (index + 1) * 1048576, "iops": index + 1,
+                     "total_ios": index + 1,
+                     "clat_ns": {"mean": (index + 1) * 1000, "percentile": {
+                         "50.000000": 1000 + index, "95.000000": 2000 + index,
+                         "99.000000": 3000 + index, "99.900000": 4000 + index}}}
+            jobs.append({"jobname": f"target-101-job-{index + 1}", "error": 0,
+                         "read": stats, "write": {"io_bytes": 0}})
+        path.write_text(json.dumps({"jobs": jobs}))
+        row = parser.parse_native(path, [job["jobname"] for job in jobs], "read",
+                                  4 * 1048576, 60, time_based=True)
+        self.assertEqual(row["jobs"], 4)
+        self.assertEqual(row["completion_reason"], "time_limit")
+        self.assertEqual(row["bw_mib_s"], 10)
+        self.assertEqual(row["iops"], 10)
+        self.assertEqual(row["clat_mean_ns"], 3000)
+        self.assertEqual(row["clat_p99_ns"], 3003)
 
 
 if __name__ == "__main__":

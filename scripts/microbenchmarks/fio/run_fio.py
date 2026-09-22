@@ -21,7 +21,7 @@ import time
 import uuid
 
 from run_support import (
-    BudgetExpired, atomic_json, duration, make_directory, now, read_json,
+    BudgetExpired, atomic_json, atomic_text, duration, make_directory, now, read_json,
     remaining_seconds, run_command, set_deadline, sync_directory,
 )
 
@@ -69,12 +69,12 @@ def parse_args(argv=None):
 def validate_config(config):
     """Reject unsupported geometry and unsafe job overrides before any I/O."""
     fio, prep, planning = config["fio"], config["prepare"], config["planning"]
-    fixed = {"numjobs": 1, "nrfiles": 1, "direct": 1, "time_based": 0,
-             "ramp_time": 0, "allow_file_create": 0, "end_fsync": 0}
+    fixed = {"numjobs": 4, "nrfiles": 1, "direct": 1, "time_based": 1,
+             "ramp_time": 5, "allow_file_create": 0, "end_fsync": 0}
     allowed = set(fixed) | {"size", "runtime", "ioengine", "iodepth",
                             "clat_percentiles", "percentile_list"}
     if set(fio) - allowed or any(fio.get(key) != value for key, value in fixed.items()):
-        raise ValueError("unsupported FIO options: require one direct-I/O file/job")
+        raise ValueError("unsupported FIO options: require four sustained direct-I/O jobs")
     if fio["ioengine"] != "libaio" or config["repetitions"] not in (1, 5):
         raise ValueError("require libaio and either one pilot or five full repetitions")
     if set(prep) != {"rw", "bs", "end_fsync", "timeout_seconds"} or (
@@ -105,6 +105,11 @@ def validate_config(config):
         raise ValueError("require five uniquely named workloads")
 
 
+def dataset_size(config):
+    """Return the owned file size for four disjoint per-job regions."""
+    return config["fio"]["size"] * config["fio"]["numjobs"]
+
+
 def plan_cases(config, targets):
     """Make a seeded target order and position-balanced five-round schedule."""
     ordered = sorted(targets, key=lambda target: target["target_id"])
@@ -124,46 +129,68 @@ def plan_cases(config, targets):
 
 
 def build_job(config, target, workload, file_path, phase):
-    """Render one job; measured writes reuse rather than recreate the file."""
-    options = dict(config["fio"], overwrite=1, fallocate="none")
-    if phase == "prepare":
-        options.pop("runtime")
-        options.pop("ramp_time")
-        options.update({key: config["prepare"][key] for key in ("rw", "bs", "end_fsync")})
-        options["allow_file_create"] = 1
-    else:
-        options.update(rw=workload["rw"], bs=workload["bs"], randseed=workload["repetition"])
+    """Render setup or four measured jobs over disjoint regions of one file."""
+    options = dict(config["fio"], overwrite=1, fallocate="none", unique_filename=0)
     filename = str(file_path)
     if any(char in filename for char in "\n\r$\\"):
         raise ValueError("unsupported characters in FIO file path")
-    options["filename"] = filename.replace(":", r"\:")
-    return f"[target-{target['target_id']}]\n" + "".join(
-        f"{key}={value}\n" for key, value in options.items())
+    filename = filename.replace(":", r"\:")
+    if phase == "prepare":
+        options.pop("runtime")
+        options.pop("ramp_time")
+        options.update(numjobs=1, time_based=0, size=dataset_size(config))
+        options.update({key: config["prepare"][key] for key in ("rw", "bs", "end_fsync")})
+        options["allow_file_create"] = 1
+        options["filename"] = filename
+        return f"[target-{target['target_id']}]\n" + "".join(
+            f"{key}={value}\n" for key, value in options.items())
+    sections = []
+    for index in range(config["fio"]["numjobs"]):
+        job = dict(options, numjobs=1, rw=workload["rw"], bs=workload["bs"],
+                   offset=index * config["fio"]["size"],
+                   randseed=workload["repetition"] * config["fio"]["numjobs"] + index,
+                   filename=filename)
+        sections.append(f"[target-{target['target_id']}-job-{index + 1}]\n" + "".join(
+            f"{key}={value}\n" for key, value in job.items()))
+    return "\n".join(sections)
 
 
 def validate_result(path, expected):
-    """Validate native completion; runtime-cap completion is not a timeout."""
+    """Validate all native jobs and aggregate one target-level measurement."""
     result = read_json(path)
     jobs = result.get("jobs", [])
-    if len(jobs) != 1 or jobs[0].get("jobname") != expected["jobname"] or jobs[0].get("error") != 0:
+    names = expected.get("jobnames", [expected["jobname"]])
+    if (len(jobs) != len(names) or [job.get("jobname") for job in jobs] != names
+            or any(job.get("error") != 0 for job in jobs)):
         raise ValueError(f"missing, unexpected or failed FIO job in {path}")
-    stats = jobs[0][expected["operation"]]
-    transferred, elapsed = stats["io_bytes"], stats["runtime"]
-    if (type(transferred) is not int or not 0 < transferred <= expected["size"]
-            or type(elapsed) not in (int, float) or not math.isfinite(elapsed) or elapsed <= 0
-            or stats.get("total_ios", 0) <= 0):
-        raise ValueError(f"invalid I/O accounting in {path}")
-    reason = "byte_limit" if transferred == expected["size"] else "time_limit"
-    # One second tolerates FIO's runtime check/accounting granularity, not early exits.
-    if reason == "time_limit" and (not expected["runtime"] or elapsed < expected["runtime"] * 1000 - 1000):
-        raise ValueError(f"FIO stopped before either completion limit in {path}")
+    opposite = "write" if expected["operation"] == "read" else "read"
+    transferred = total_ios = 0
+    elapsed = 0
+    for job in jobs:
+        stats = job[expected["operation"]]
+        job_bytes, job_elapsed = stats["io_bytes"], stats["runtime"]
+        if (type(job_bytes) is not int or job_bytes <= 0
+                or type(job_elapsed) not in (int, float) or not math.isfinite(job_elapsed)
+                or job_elapsed <= 0 or stats.get("total_ios", 0) <= 0):
+            raise ValueError(f"invalid I/O accounting in {path}")
+        if job.get(opposite, {}).get("io_bytes", 0):
+            raise ValueError(f"unexpected {opposite} traffic in {path}")
+        if expected.get("time_based") and job_elapsed < expected["runtime"] * 1000 - 1000:
+            raise ValueError(f"FIO stopped before the runtime limit in {path}")
+        transferred += job_bytes
+        total_ios += stats["total_ios"]
+        elapsed = max(elapsed, job_elapsed)
     if elapsed > expected["hard_timeout"] * 1000:
         raise ValueError(f"FIO duration exceeds the command timeout in {path}")
-    opposite = "write" if expected["operation"] == "read" else "read"
-    if jobs[0].get(opposite, {}).get("io_bytes", 0):
-        raise ValueError(f"unexpected {opposite} traffic in {path}")
+    reason = "time_limit" if expected.get("time_based") else (
+        "byte_limit" if transferred == expected["size"] else "time_limit")
+    if not expected.get("time_based") and transferred > expected["size"]:
+        raise ValueError(f"invalid I/O byte limit in {path}")
+    if reason == "time_limit" and not expected.get("time_based") and (
+            not expected["runtime"] or elapsed < expected["runtime"] * 1000 - 1000):
+        raise ValueError(f"FIO stopped before either completion limit in {path}")
     return result, {"completion_reason": reason, "fio_runtime_ms": elapsed,
-                    "io_bytes": transferred, "total_ios": stats["total_ios"]}
+                    "io_bytes": transferred, "total_ios": total_ios}
 
 
 def completed(attempts):
@@ -201,6 +228,44 @@ def artifact_path(root, relative):
     return path
 
 
+def run_markdown(manifest):
+    """Render a readable, non-authoritative description of the exact run."""
+    config = manifest["config"]
+    fio = config["fio"]
+    total_gib = dataset_size(config) / 2**30
+    region_gib = fio["size"] / 2**30
+    lines = [
+        f"# Local FIO run on {manifest['host']}", "",
+        "> Generated from `manifest.json`; the JSON manifest and native FIO files are authoritative.", "",
+        "## Identity", "",
+        f"- Run ID: `{manifest['run_id']}`",
+        f"- Mode: `{manifest['mode']}`",
+        f"- Protocol version: `{config['protocol_version']}`",
+        f"- FIO version: `{manifest['fio_version']}`", "",
+        "## Measurement protocol", "",
+        f"- Parallel jobs per OST: **{fio['numjobs']}**",
+        f"- Per-job region: **{region_gib:g} GiB**",
+        f"- Prepared file per OST: **{total_gib:g} GiB**",
+        f"- I/O engine: `{fio['ioengine']}` with `direct={fio['direct']}`",
+        f"- Queue depth: **{fio['iodepth']} per job**, up to **{fio['iodepth'] * fio['numjobs']} aggregate**",
+        f"- Timing: **{fio['ramp_time']} s ramp + {fio['runtime']} measured s**, `time_based={fio['time_based']}`",
+        f"- Repetitions: **{config['repetitions']}** per workload",
+        "- Each job uses a separate non-overlapping region of the same prepared file.",
+        "- Reported bandwidth and IOPS are sums across jobs for one OST.", "",
+        "## Workloads", "", "| Name | Pattern | Block size |", "|---|---|---:|",
+    ]
+    lines.extend(f"| `{item['name']}` | `{item['rw']}` | `{item['bs']}` |"
+                 for item in config["workloads"])
+    lines.extend(["", "## Targets", "", "| OST ID | Media | Mount | Device |",
+                  "|---:|---|---|---|"])
+    lines.extend(f"| {target['target_id']} | {target['media']} | `{target['mount']}` | `{target['device']}` |"
+                 for target in manifest["inventory"])
+    lines.extend(["", "## Evidence", "",
+                  "Raw `job.fio`, `fio.json`, stdout and stderr are under `raw/`. ",
+                  "Session progress, completion state, file identity and device snapshots are in `manifest.json`.", ""])
+    return "\n".join(lines)
+
+
 def save(run):
     """Checkpoint the sole progress record, including the observed live deadline."""
     if run["deadline"].exists():
@@ -211,6 +276,7 @@ def save(run):
         except (OSError, ValueError):
             pass  # Still persist a failure caused by malformed deadline state.
     atomic_json(run["root"] / "manifest.json", run["manifest"])
+    atomic_text(run["root"] / "RUN.md", run_markdown(run["manifest"]))
 
 
 def load_run(args):
@@ -244,7 +310,8 @@ def load_run(args):
     scientific["prepare"] = {key: value for key, value in config["prepare"].items()
                               if key != "timeout_seconds"}
     scientific.update(host=host, inventory=targets, fio_version=version,
-                      job_policy={"overwrite": 1, "fallocate": "none"})
+                      job_policy={"overwrite": 1, "fallocate": "none", "unique_filename": 0,
+                                  "region_layout": "disjoint_offsets"})
     fingerprint = hashlib.sha256(json.dumps(scientific, sort_keys=True).encode()).hexdigest()
     if old and old["fingerprint"] != fingerprint:
         raise ValueError("resume rejected: scientific settings, targets or FIO version changed")
@@ -355,9 +422,15 @@ def execute_fio(run, target, workload, repetition, phase, attempts, estimate):
     if folder.exists():
         raise ValueError(f"refusing to overwrite existing artifacts: {folder}")
     timeout = config["prepare"]["timeout_seconds"] if phase == "prepare" else config["measurement_timeout_seconds"]
-    expected = {"jobname": f"target-{target['target_id']}", "size": config["fio"]["size"],
-                "operation": "write" if phase == "prepare" or "write" in workload["rw"] else "read",
-                "runtime": 0 if phase == "prepare" else config["fio"]["runtime"], "hard_timeout": timeout}
+    jobname = f"target-{target['target_id']}"
+    expected = {"jobname": jobname, "size": dataset_size(config),
+                 "operation": "write" if phase == "prepare" or "write" in workload["rw"] else "read",
+                 "runtime": 0 if phase == "prepare" else config["fio"]["runtime"],
+                 "time_based": phase != "prepare" and bool(config["fio"]["time_based"]),
+                 "hard_timeout": timeout}
+    if phase != "prepare":
+        expected["jobnames"] = [f"{jobname}-job-{index + 1}"
+                                for index in range(config["fio"]["numjobs"])]
     attempt = dict(estimate, id=number, state="running", phase=phase, started_at=now(),
                    session=manifest["sessions"][-1]["id"], artifacts=relative, expected=expected,
                    hard_timeout_seconds=timeout, preparation_generation=(number if phase == "prepare" else
@@ -368,7 +441,7 @@ def execute_fio(run, target, workload, repetition, phase, attempts, estimate):
     try:
         make_directory(folder)
         attempt["before"] = check_target(target)
-        required = config["free_space_reserve_bytes"] + (config["fio"]["size"] if phase == "prepare" else 0)
+        required = config["free_space_reserve_bytes"] + (dataset_size(config) if phase == "prepare" else 0)
         if attempt["before"]["free_bytes"] < required or attempt["before"]["free_inodes"] < 1:
             raise ValueError("insufficient free space/inodes on target")
         if phase == "prepare":
@@ -398,7 +471,7 @@ def execute_fio(run, target, workload, repetition, phase, attempts, estimate):
         sync_directory(folder)
         _, summary = validate_result(folder / "fio.json", expected)
         after_identity = file_identity(path)
-        if after_identity is None or after_identity["size"] != config["fio"]["size"]:
+        if after_identity is None or after_identity["size"] != dataset_size(config):
             raise ValueError("FIO did not leave a complete target file")
         if phase != "prepare" and after_identity != before_identity:
             raise ValueError("FIO recreated, truncated or lost the target file")
