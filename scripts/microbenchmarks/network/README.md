@@ -16,32 +16,20 @@ iperf3; it does not access BeeGFS files or storage targets.
 
 ## Safety gate
 
-The checked-in inventory is intentionally marked `"confirmed": false` and has
-unknown fields. The runner refuses to start until the one-time capture has been
-reviewed and all fields are confirmed. Historical addresses are evidence to
-check, not permission to infer missing routes.
+The checked-in inventory is based on the completed six-host capture at
+`$HOME/pfs-results/network/path-sot-01`. The runner still validates every live
+address, interface, route, MTU, link speed and clock before starting traffic.
 
-Run the capture once on `anjuna3`, after FIO and result transfer have finished:
+The capture completed on all six hosts at `2026-09-22T18:26:52Z`. It confirms
+synchronized clocks, MTU 1500, 2.5-Gbit/s physical links, and active TCP paths for
+all eight client-to-OSS pairs. Both addresses on each multihomed client use the
+same physical interface (`eno1` on `anjuna2`, `enp4s0` on `anjuna3`). Every OSS
+uses `enp7s0`.
 
-```bash
-cd "$HOME/pfs"
-python3 scripts/microbenchmarks/network/capture_beegfs_paths.py \
-  --output-dir "$HOME/pfs-results/network/path-sot-01"
-```
-
-Retrieve and review that evidence. Update `network_inventory.json` with:
-
-- `confirmed: true`, confirmation time, and evidence path.
-- Exact SSH host and synchronized-clock state for all six hosts.
-- Source/destination interface, address, MTU and link speed for every path; do
-  not collapse multihomed clients into one host-wide interface.
-- Confirmed clock synchronization on all six hosts.
-- Exact source and destination address for all eight client-to-OSS paths.
-- `confirmed` or `active_confirmed` evidence level for every path.
-- TCP transport and unavailable RDMA evidence.
-
-Commit the reviewed inventory before running a pilot. The runner fingerprints and
-embeds it in every manifest; resume rejects a changed inventory.
+Treat the reviewed inventory as immutable for a run. The runner fingerprints and
+embeds it in every manifest; resume rejects a changed inventory. If topology or
+link configuration changes, create a new capture and inventory rather than
+editing an active run.
 
 ## Execution model
 

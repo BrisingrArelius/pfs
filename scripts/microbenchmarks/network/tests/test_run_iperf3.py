@@ -55,8 +55,18 @@ def payload(member, config, perspective="client"):
     streams = [{"sender": {"bits_per_second": 1e9},
                 "receiver": {"bits_per_second": 0.99e9}} for _ in range(member["streams"])]
     intervals = [{"sum": {"seconds": config["interval_seconds"],
-                           "bits_per_second": 2.34e9}}
-                 for _ in range(int(config["duration_seconds"] / config["interval_seconds"]))]
+                           "bits_per_second": 2.34e9,
+                           "omitted": index < config["omit_seconds"]}}
+                 for index in range(int((config["omit_seconds"] + config["duration_seconds"])
+                                        / config["interval_seconds"]))]
+    sent = {"bits_per_second": 2.35e9, "bytes": 8_812_500_000,
+            "seconds": 30.0, "retransmits": 3}
+    received = {"bits_per_second": 2.34e9, "bytes": 8_775_000_000,
+                "seconds": 30.01}
+    if perspective == "server" and member["direction"] == "client_to_oss":
+        sent = {"bits_per_second": 0, "bytes": 0, "seconds": 30.01}
+    if perspective == "server" and member["direction"] == "oss_to_client":
+        received = {"bits_per_second": 0, "bytes": 0, "seconds": 30.01}
     return {
         "start": {"connected": connected, "test_start": {
             "protocol": "TCP", "num_streams": member["streams"],
@@ -66,10 +76,8 @@ def payload(member, config, perspective="client"):
         "intervals": intervals,
         "end": {
             "streams": streams,
-            "sum_sent": {"bits_per_second": 2.35e9, "bytes": 8_812_500_000,
-                         "seconds": 30.0, "retransmits": 3},
-            "sum_received": {"bits_per_second": 2.34e9, "bytes": 8_775_000_000,
-                             "seconds": 30.01},
+            "sum_sent": sent,
+            "sum_received": received,
             "cpu_utilization_percent": {"host_total": 12.5, "remote_total": 8.5},
         },
     }
@@ -80,8 +88,9 @@ class RunnerProtocolTests(unittest.TestCase):
         self.config = json.loads((NETWORK_DIR / "network_config.json").read_text())
         self.inventory = confirmed_inventory()
 
-    def test_checked_in_inventory_is_deliberately_unconfirmed(self):
+    def test_unconfirmed_inventory_is_rejected(self):
         inventory = json.loads((NETWORK_DIR / "network_inventory.json").read_text())
+        inventory["confirmed"] = False
         with self.assertRaisesRegex(ValueError, "not confirmed"):
             runner.validate_inventory(inventory)
 
@@ -122,6 +131,33 @@ class RunnerProtocolTests(unittest.TestCase):
         self.assertIn(member["source_address"], client)
         self.assertEqual(client[-1], "--reverse")
 
+    def test_remote_bash_script_is_shell_quoted_as_one_ssh_command(self):
+        script = "set -u; hostname -s; printf '%s\\n' safe"
+        with mock.patch.object(runner, "local_aliases", return_value={"anjuna3"}):
+            command = runner.command_for_host(
+                "anjuna2", ["bash", "-c", script], self.inventory, self.config)
+        self.assertEqual(command[-1], runner.shlex.join(["bash", "-c", script]))
+        self.assertEqual(command[-4:-1], ["-o", "ConnectTimeout=10", "anjuna2"])
+
+    def test_explicit_route_source_may_be_reported_as_from(self):
+        route = {"dst": "192.168.0.2", "from": "192.168.0.6", "dev": "eno1"}
+        self.assertTrue(runner.route_matches(route, "eno1", "192.168.0.6"))
+        self.assertFalse(runner.route_matches(route, "enp4s0", "192.168.0.6"))
+
+    def test_remote_artifact_transfer_requests_only_fixed_files(self):
+        process = {"host": "anjuna2", "remote_dir": "/tmp/fixed", "role": "client"}
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "copied"
+            completed = subprocess.CompletedProcess([], 0, "", "")
+            with (mock.patch.object(runner, "local_aliases", return_value={"anjuna3"}),
+                  mock.patch.object(runner.subprocess, "run", return_value=completed) as run):
+                runner.copy_process_artifacts(
+                    process, destination, self.inventory, self.config)
+            command = run.call_args.args[0]
+        self.assertNotIn("anjuna2:/tmp/fixed/.", command)
+        for name in runner.PROCESS_FILES:
+            self.assertIn(f"anjuna2:/tmp/fixed/{name}", command)
+
     def test_native_json_validates_forward_and_reverse(self):
         member = runner.plan_units(self.config, self.inventory, pilot=True)[0]["members"][0]
         for direction in self.config["directions"]:
@@ -132,6 +168,18 @@ class RunnerProtocolTests(unittest.TestCase):
             self.assertEqual(result["retransmits"], 3)
             runner.validate_iperf_payload(payload(current, self.config, "server"),
                                           current, self.config, "server")
+
+    def test_server_requires_only_its_direction_active_aggregate(self):
+        member = runner.plan_units(self.config, self.inventory, pilot=True)[0]["members"][0]
+        for direction, active_field in (("client_to_oss", "sum_received"),
+                                        ("oss_to_client", "sum_sent")):
+            current = copy.deepcopy(member)
+            current["direction"] = direction
+            valid = payload(current, self.config, "server")
+            runner.validate_iperf_payload(valid, current, self.config, "server")
+            valid["end"][active_field]["bytes"] = 0
+            with self.assertRaisesRegex(ValueError, "server .* throughput"):
+                runner.validate_iperf_payload(valid, current, self.config, "server")
 
     def test_native_json_rejects_wrong_endpoint_stream_and_duration(self):
         member = runner.plan_units(self.config, self.inventory, pilot=True)[0]["members"][0]
@@ -148,7 +196,7 @@ class RunnerProtocolTests(unittest.TestCase):
         member = runner.plan_units(self.config, self.inventory, pilot=True)[0]["members"][0]
         wrong = payload(member, self.config)
         wrong["intervals"] = []
-        with self.assertRaisesRegex(ValueError, "interval count"):
+        with self.assertRaisesRegex(ValueError, "interval evidence"):
             runner.validate_iperf_payload(wrong, member, self.config)
         wrong = payload(member, self.config, "server")
         wrong["end"]["cpu_utilization_percent"] = []

@@ -377,8 +377,13 @@ def host_prefix(host, inventory, config):
             inventory["hosts"][host]["ssh_host"]]
 
 
+def command_for_host(host, argv, inventory, config):
+    prefix = host_prefix(host, inventory, config)
+    return prefix + ([shlex.join(argv)] if prefix else list(argv))
+
+
 def host_command(host, argv, inventory, config, timeout=None, input_text=None):
-    command = host_prefix(host, inventory, config) + list(argv)
+    command = command_for_host(host, argv, inventory, config)
     return subprocess.run(command, input=input_text, text=True, capture_output=True,
                           timeout=timeout or config["timeouts"]["command_seconds"], check=False)
 
@@ -388,6 +393,11 @@ def tool_version(output):
     if not match:
         raise ValueError(f"not an iperf3 version: {output!r}")
     return match.group(0).strip()
+
+
+def route_matches(route, interface, source):
+    selected_source = route.get("prefsrc") or route.get("src") or route.get("from")
+    return route.get("dev") == interface and selected_source == source
 
 
 def preflight(config, inventory):
@@ -454,8 +464,7 @@ def preflight(config, inventory):
                                              "from", source], inventory, config)
                 routes = json.loads(result.stdout) if result.returncode == 0 else []
                 interface = path["source_interface" if host == client else "destination_interface"]
-                if (not routes or routes[0].get("dev") != interface
-                        or routes[0].get("prefsrc", routes[0].get("src")) != source):
+                if not routes or not route_matches(routes[0], interface, source):
                     raise ValueError(f"live route differs for {host}: {source}->{destination}")
     for server in SERVERS:
         for port in config["ports"].values():
@@ -508,11 +517,11 @@ def start_process(host, role, argv, remote_dir, artifact, inventory, config,
     make_directory(artifact)
     wrapper_stdout = (artifact / f"{role}_wrapper_stdout").open("xb")
     wrapper_stderr = (artifact / f"{role}_wrapper_stderr").open("xb")
-    command = host_prefix(host, inventory, config) + [
+    command = command_for_host(host, [
         "bash", "-s", "--", remote_dir,
         str(config["timeouts"]["remote_watchdog_seconds"]),
         str(release_epoch or 0), *argv,
-    ]
+    ], inventory, config)
     try:
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=wrapper_stdout,
                                    stderr=wrapper_stderr, text=True, start_new_session=True)
@@ -637,9 +646,10 @@ def copy_process_artifacts(process, destination, inventory, config):
                 shutil.copy2(path, destination / name)
     else:
         remote = inventory["hosts"][host]["ssh_host"]
-        result = subprocess.run(["scp", "-q", "-r", "-o", "BatchMode=yes", "-o",
+        sources = [f"{remote}:{process['remote_dir']}/{name}" for name in PROCESS_FILES]
+        result = subprocess.run(["scp", "-q", "-o", "BatchMode=yes", "-o",
                                  f"ConnectTimeout={config['timeouts']['ssh_connect_seconds']}",
-                                 f"{remote}:{process['remote_dir']}/.", str(destination)],
+                                 *sources, str(destination)],
                                 capture_output=True, text=True,
                                 timeout=config["timeouts"]["command_seconds"], check=False)
         if result.returncode:
@@ -705,10 +715,17 @@ def validate_iperf_payload(payload, member, config, perspective="client"):
     sender_seconds = numeric(sent.get("seconds"), "sender duration")
     receiver_seconds = numeric(received.get("seconds"), "receiver duration")
     tolerance = config["validation"]["duration_tolerance_seconds"]
-    if (receiver_bps <= 0 or receiver_bytes <= 0 or sender_bps <= 0 or sender_bytes <= 0
-            or abs(sender_seconds - config["duration_seconds"]) > tolerance
-            or abs(receiver_seconds - config["duration_seconds"]) > tolerance):
-        raise ValueError("iperf3 throughput, bytes or duration is invalid")
+    if perspective == "client":
+        active = (("sender", sender_bps, sender_bytes, sender_seconds),
+                  ("receiver", receiver_bps, receiver_bytes, receiver_seconds))
+    elif expected_reverse:
+        active = (("server sender", sender_bps, sender_bytes, sender_seconds),)
+    else:
+        active = (("server receiver", receiver_bps, receiver_bytes, receiver_seconds),)
+    for label, bits_per_second, byte_count, seconds in active:
+        if (bits_per_second <= 0 or byte_count <= 0
+                or abs(seconds - config["duration_seconds"]) > tolerance):
+            raise ValueError(f"iperf3 {label} throughput, bytes or duration is invalid")
     streams = end.get("streams", [])
     if len(streams) != member["streams"]:
         raise ValueError("iperf3 final stream count differs")
@@ -718,14 +735,24 @@ def validate_iperf_payload(payload, member, config, perspective="client"):
                 raise ValueError("iperf3 per-stream evidence is missing")
             numeric(stream[direction].get("bits_per_second"), "per-stream throughput")
     intervals = payload.get("intervals", [])
-    expected_intervals = math.ceil(config["duration_seconds"] / config["interval_seconds"])
-    if not isinstance(intervals, list) or abs(len(intervals) - expected_intervals) > 1:
-        raise ValueError("iperf3 interval count differs")
+    if not isinstance(intervals, list) or not intervals:
+        raise ValueError("iperf3 interval evidence is missing")
+    omitted_seconds = 0.0
+    measured_seconds = 0.0
     for interval in intervals:
         total = interval.get("sum", {})
-        if numeric(total.get("seconds"), "interval duration") <= 0:
+        seconds = numeric(total.get("seconds"), "interval duration")
+        if seconds <= 0:
             raise ValueError("iperf3 interval duration is invalid")
         numeric(total.get("bits_per_second"), "interval throughput")
+        if total.get("omitted") is True:
+            omitted_seconds += seconds
+        else:
+            measured_seconds += seconds
+    tolerance = config["validation"]["duration_tolerance_seconds"]
+    if (abs(omitted_seconds - config["omit_seconds"]) > tolerance
+            or abs(measured_seconds - config["duration_seconds"]) > tolerance):
+        raise ValueError("iperf3 interval duration coverage differs")
     cpu = end.get("cpu_utilization_percent", {})
     if not isinstance(cpu, dict):
         raise ValueError("iperf3 CPU utilization is missing")
@@ -762,10 +789,11 @@ def validate_member_artifacts(root, relative, member, config):
             raise ValueError(f"{role} argv differs from the fixed command")
         payload = json.loads((path / "output.json").read_text())
         summaries[role] = validate_iperf_payload(payload, member, config, role)
-    for field in ("sender_bytes", "receiver_bytes"):
-        left, right = summaries["client"][field], summaries["server"][field]
-        if abs(left - right) > max(left, right) * 0.01:
-            raise ValueError(f"client/server {field} evidence disagrees")
+    client_bytes = summaries["client"]["receiver_bytes"]
+    server_field = "sender_bytes" if member["direction"] == "oss_to_client" else "receiver_bytes"
+    server_bytes = summaries["server"][server_field]
+    if abs(client_bytes - server_bytes) > max(client_bytes, server_bytes) * 0.01:
+        raise ValueError("client/server delivered-byte evidence disagrees")
     return summaries["client"]
 
 
@@ -825,6 +853,43 @@ def fingerprints(config, inventory, observations):
             inventory_fingerprint)
 
 
+def revalidate_attempt_evidence(root, unit, attempt, config):
+    if len(attempt.get("members", [])) != len(unit["members"]):
+        raise ValueError("saved attempt member count differs")
+    folder = safe_artifact(root, attempt["artifacts"])
+    endpoints = {(member["client"], member["source_interface"])
+                 for member in unit["members"]}
+    endpoints |= {(member["server"], member["destination_interface"])
+                  for member in unit["members"]}
+    for host, interface in endpoints:
+        for phase in ("before", "after"):
+            telemetry = folder / f"telemetry-{phase}-{host}-{interface}.json"
+            if not telemetry.is_file() or telemetry.is_symlink():
+                raise ValueError(f"missing telemetry for {host}:{interface}")
+            payload = json.loads(telemetry.read_text())
+            if (not isinstance(payload, list) or len(payload) != 1
+                    or payload[0].get("ifname") != interface):
+                raise ValueError(f"invalid telemetry for {host}:{interface}")
+    starts, summaries = [], []
+    clocks = attempt["clock_observations"]
+    for saved, expected in zip(attempt["members"], unit["members"]):
+        if saved["member"] != expected:
+            raise ValueError("saved attempt member differs")
+        summary = validate_member_artifacts(root, saved["artifacts"], expected, config)
+        identity_path = safe_artifact(root, saved["artifacts"]) / "client" / "identity"
+        identity = parse_identity(identity_path)
+        raw_start = int(identity["launched_epoch_ns"]) / 1e9
+        starts.append(raw_start - clocks[expected["client"]]["offset_seconds"])
+        summaries.append(summary)
+    launch_skew = max(starts) - min(starts)
+    release_lateness = max(starts) - attempt["release_epoch"]
+    if launch_skew > config["validation"]["maximum_launch_skew_seconds"]:
+        raise ValueError("saved attempt launch skew exceeds limit")
+    if release_lateness > config["validation"]["maximum_release_lateness_seconds"]:
+        raise ValueError("saved attempt release lateness exceeds limit")
+    return summaries, launch_skew, release_lateness
+
+
 def load_run(args, config, inventory, observations):
     manifest_path = args.results_dir / "manifest.json"
     if manifest_path.exists() != args.resume:
@@ -859,6 +924,20 @@ def load_run(args, config, inventory, observations):
                         validate_member_artifacts(args.results_dir, item["artifacts"], item["member"], config)
                 except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
                     attempt.update(state="failed", error=f"invalid saved evidence: {error}")
+        if (unit["attempts"] and unit["attempts"][-1]["state"] == "failed"
+                and unit["attempts"][-1].get("cleanup") == "completed"):
+            attempt = unit["attempts"][-1]
+            try:
+                summaries, skew, lateness = revalidate_attempt_evidence(
+                    args.results_dir, unit, attempt, config)
+                previous_error = attempt.pop("error", None)
+                for saved, summary in zip(attempt["members"], summaries):
+                    saved["summary"] = summary
+                attempt.update(state="completed", launch_skew_seconds=skew,
+                               maximum_release_lateness_seconds=lateness,
+                               revalidated_at=now(), revalidated_from_error=previous_error)
+            except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+                pass
     for session in manifest["sessions"]:
         if session["outcome"] == "running":
             session["outcome"] = "interrupted"
@@ -1092,7 +1171,8 @@ def main(argv=None):
         validate_config(config)
         validate_inventory(inventory)
         if not args.resume and args.results_dir.exists() and any(
-                item.name != ".lock" for item in args.results_dir.iterdir()):
+                item.name not in {".lock", "deadline.json"}
+                for item in args.results_dir.iterdir()):
             raise ValueError("a new run needs an empty results directory")
         if args.resume and not args.results_dir.is_dir():
             raise ValueError("resume directory does not exist")

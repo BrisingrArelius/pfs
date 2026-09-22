@@ -8,6 +8,7 @@ before execution.
 | Location | Existing contents | Status |
 |---|---|---|
 | `fio/` | Matrix runner, JSON config, analyzer, visualizer | Available local/BeeGFS FIO tooling |
+| `metadata/` | Metadata experiment design | Runner and cluster pilot not implemented |
 | `placement/` | Configure/reset pool shell scripts | Historical hard-coded inventory; not a verified live setup |
 | `analysis/parse_ost_logs.py` | OST usage log heatmaps | Legacy input default; new run output |
 | `analysis/parse_du.py` | Capacity text parser | Explicit input path |
@@ -16,8 +17,9 @@ before execution.
 The IOR synthetic-workload adapter is in `../workloads/`; it is an
 application-workload component, not a multi-process placement runner.
 
-Dedicated runners for network transport, BeeGFS communication, end-to-end
-placement, cache effects, and metadata operations are missing.
+The network transport runner is available under `network/`. Dedicated runners for
+BeeGFS communication, end-to-end placement, cache effects, and metadata operations
+are still missing; `metadata/` currently contains the implementation design.
 Application validation belongs in `scripts/workloads/`.
 
 See [methodology](../../docs/methodology.md) and the

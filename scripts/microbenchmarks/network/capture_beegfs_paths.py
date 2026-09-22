@@ -50,7 +50,7 @@ printf '[exit_status=0]\n'
 
 capture_shell "tool versions" '
 for tool in beegfs-ctl beegfs-net ip ss rdma ethtool iperf3; do
-    printf "-- %s --\n" "$tool"
+    printf '%s\n' "-- $tool --"
     if command -v "$tool" >/dev/null 2>&1; then
         command -v "$tool"
         case "$tool" in
@@ -79,14 +79,14 @@ for config in \
     /etc/beegfs/beegfs-meta.conf \
     /etc/beegfs/beegfs-mgmtd.conf; do
     [ -e "$config" ] || continue
-    printf "-- %s --\n" "$config"
+    printf '%s\n' "-- $config --"
     if [ -r "$config" ]; then
         grep -E "^[[:space:]]*(sysMgmtdHost|connInterfacesFile|connInterfacesList|connRDMAInterfacesFile|connNetFilterFile|connTcpOnlyFilterFile|connUseRDMA|connTCPFallbackEnabled|connPortShift|connStoragePortTCP|connMetaPortTCP|connMgmtdPortTCP)[[:space:]]*=" "$config" || true
         interface_file=$(awk -F= "/^[[:space:]]*connInterfacesFile[[:space:]]*=/{sub(/^[[:space:]]*/, \"\", \$2); sub(/[[:space:]]*$/, \"\", \$2); print \$2; exit}" "$config")
         rdma_file=$(awk -F= "/^[[:space:]]*connRDMAInterfacesFile[[:space:]]*=/{sub(/^[[:space:]]*/, \"\", \$2); sub(/[[:space:]]*$/, \"\", \$2); print \$2; exit}" "$config")
         for listed_file in "$interface_file" "$rdma_file"; do
             [ -n "$listed_file" ] || continue
-            printf "-- referenced file: %s --\n" "$listed_file"
+            printf '%s\n' "-- referenced file: $listed_file --"
             if [ -r "$listed_file" ]; then
                 cat "$listed_file"
             else
@@ -111,7 +111,7 @@ capture "beegfs-net active connection report" timeout 30s beegfs-net
 capture "IP addresses" ip -details -json address show
 capture "IP routes" ip -details -json route show table all
 capture "Interface counters" ip -statistics -statistics -json link show
-capture "RDMA links" rdma -details -json link show
+capture "RDMA links" rdma -j -d link show
 
 capture_shell "Clock synchronization" '
 if command -v timedatectl >/dev/null 2>&1; then
@@ -127,7 +127,7 @@ capture_shell "Interface speed and duplex" '
 for path in /sys/class/net/*; do
     dev=${path##*/}
     [ "$dev" = lo ] && continue
-    printf "-- %s --\n" "$dev"
+    printf '%s\n' "-- $dev --"
     for property in operstate speed duplex mtu; do
         printf "%s=" "$property"
         cat "$path/$property" 2>/dev/null || printf "unavailable\n"
@@ -141,7 +141,7 @@ capture_shell "Routes to known cluster addresses" '
 for destination in \
     10.1.19.73 10.1.19.74 10.1.19.76 10.1.19.77 \
     192.168.0.2 192.168.0.3 192.168.0.4 192.168.0.5 192.168.0.7; do
-    printf "-- %s --\n" "$destination"
+    printf '%s\n' "-- $destination --"
     ip -details -json route get "$destination" 2>&1 || true
 done'
 
