@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-09-21T21:44:37.786591+00:00",
+  "hosts": [
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-smoke-01/colva1/manifest.json",
+      "host": "colva1",
+      "expected_cases": 10,
+      "parsed_cases": 10,
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "manifests": [
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-smoke-01/colva1/manifest.json"
+  ],
+  "measurements": 10,
+  "preparations": 2,
+  "summary_rows": 10
+}

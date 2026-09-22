@@ -1,0 +1,108 @@
+{
+  "generated_at": "2026-09-22T12:11:17.158403+00:00",
+  "errors": [
+    "colva2: scientific configuration differs from colva1 (protocol 4 vs 5)",
+    "colva3: scientific configuration differs from colva1 (protocol 4 vs 5)",
+    "colva4: scientific configuration differs from colva1 (protocol 4 vs 5)"
+  ],
+  "hosts": [
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva1/manifest.json",
+      "host": "colva1",
+      "expected_cases": 175,
+      "parsed_cases": 125,
+      "errors": [
+        "target 102: cleanup is pending",
+        "target 102: no completed preparation",
+        "target 107: cleanup is pending",
+        "target 107: no completed preparation",
+        "102__rand_read_128k__r1: latest attempt is not completed",
+        "102__rand_read_4k__r1: latest attempt is not completed",
+        "102__rand_write_4k__r1: latest attempt is not completed",
+        "102__seq_read__r1: latest attempt is not completed",
+        "102__seq_write__r1: latest attempt is not completed",
+        "102__rand_read_4k__r2: latest attempt is not completed",
+        "102__rand_write_4k__r2: latest attempt is not completed",
+        "102__seq_read__r2: latest attempt is not completed",
+        "102__seq_write__r2: latest attempt is not completed",
+        "102__rand_read_128k__r2: latest attempt is not completed",
+        "102__rand_write_4k__r3: latest attempt is not completed",
+        "102__seq_read__r3: latest attempt is not completed",
+        "102__seq_write__r3: latest attempt is not completed",
+        "102__rand_read_128k__r3: latest attempt is not completed",
+        "102__rand_read_4k__r3: latest attempt is not completed",
+        "102__seq_read__r4: latest attempt is not completed",
+        "102__seq_write__r4: latest attempt is not completed",
+        "102__rand_read_128k__r4: latest attempt is not completed",
+        "102__rand_read_4k__r4: latest attempt is not completed",
+        "102__rand_write_4k__r4: latest attempt is not completed",
+        "102__seq_write__r5: latest attempt is not completed",
+        "102__rand_read_128k__r5: latest attempt is not completed",
+        "102__rand_read_4k__r5: latest attempt is not completed",
+        "102__rand_write_4k__r5: latest attempt is not completed",
+        "102__seq_read__r5: latest attempt is not completed",
+        "107__rand_read_128k__r1: latest attempt is not completed",
+        "107__rand_read_4k__r1: latest attempt is not completed",
+        "107__rand_write_4k__r1: latest attempt is not completed",
+        "107__seq_read__r1: latest attempt is not completed",
+        "107__seq_write__r1: latest attempt is not completed",
+        "107__rand_read_4k__r2: latest attempt is not completed",
+        "107__rand_write_4k__r2: latest attempt is not completed",
+        "107__seq_read__r2: latest attempt is not completed",
+        "107__seq_write__r2: latest attempt is not completed",
+        "107__rand_read_128k__r2: latest attempt is not completed",
+        "107__rand_write_4k__r3: latest attempt is not completed",
+        "107__seq_read__r3: latest attempt is not completed",
+        "107__seq_write__r3: latest attempt is not completed",
+        "107__rand_read_128k__r3: latest attempt is not completed",
+        "107__rand_read_4k__r3: latest attempt is not completed",
+        "107__seq_read__r4: latest attempt is not completed",
+        "107__seq_write__r4: latest attempt is not completed",
+        "107__rand_read_128k__r4: latest attempt is not completed",
+        "107__rand_read_4k__r4: latest attempt is not completed",
+        "107__rand_write_4k__r4: latest attempt is not completed",
+        "107__seq_write__r5: latest attempt is not completed",
+        "107__rand_read_128k__r5: latest attempt is not completed",
+        "107__rand_read_4k__r5: latest attempt is not completed",
+        "107__rand_write_4k__r5: latest attempt is not completed",
+        "107__seq_read__r5: latest attempt is not completed"
+      ],
+      "warnings": [
+        "latest session outcome is failed"
+      ]
+    },
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva2/manifest.json",
+      "host": "colva2",
+      "expected_cases": 175,
+      "parsed_cases": 175,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva3/manifest.json",
+      "host": "colva3",
+      "expected_cases": 175,
+      "parsed_cases": 175,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva4/manifest.json",
+      "host": "colva4",
+      "expected_cases": 175,
+      "parsed_cases": 175,
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "manifests": [
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva1/manifest.json",
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva2/manifest.json",
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva3/manifest.json",
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-02/colva4/manifest.json"
+  ],
+  "measurements": 650,
+  "preparations": 26,
+  "summary_rows": 130
+}

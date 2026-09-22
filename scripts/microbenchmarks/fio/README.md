@@ -110,7 +110,7 @@ cd "$REPO"
 printf 'Host: %s\nRevision: %s\n' "$HOST" "$(git rev-parse HEAD)"
 fio --version
 python3 scripts/microbenchmarks/fio/run_fio.py \
-  --results-dir "$HOME/fio-results/$RUN/$HOST" \
+  --results-dir "$HOME/pfs-results/fio/$RUN/$HOST" \
   --time-limit 5h
 ```
 
@@ -125,7 +125,7 @@ RUN="local-fio-full-02"
 HOST="$(hostname -s)"
 cd "$REPO"
 python3 scripts/microbenchmarks/fio/run_fio.py \
-  --results-dir "$HOME/fio-results/$RUN/$HOST" \
+  --results-dir "$HOME/pfs-results/fio/$RUN/$HOST" \
   --resume --time-limit 5h
 ```
 
@@ -138,11 +138,11 @@ set -euo pipefail
 RUN="local-fio-full-02"
 HOST="$(hostname -s)"
 ARCHIVE="$RUN-$HOST.tar.gz"
-ssh pfs@anjuna3 "mkdir -p ~/fio-results-staging/$RUN"
-tar -C "$HOME/fio-results/$RUN" -czf "$HOME/fio-results/$ARCHIVE" "$HOST"
-(cd "$HOME/fio-results" && sha256sum "$ARCHIVE" > "$ARCHIVE.sha256")
-scp "$HOME/fio-results/$ARCHIVE" "$HOME/fio-results/$ARCHIVE.sha256" \
-  "pfs@anjuna3:~/fio-results-staging/$RUN/"
+ssh pfs@anjuna3 "mkdir -p ~/pfs-results/fio-staging/$RUN"
+tar -C "$HOME/pfs-results/fio/$RUN" -czf "$HOME/pfs-results/fio/$ARCHIVE" "$HOST"
+(cd "$HOME/pfs-results/fio" && sha256sum "$ARCHIVE" > "$ARCHIVE.sha256")
+scp "$HOME/pfs-results/fio/$ARCHIVE" "$HOME/pfs-results/fio/$ARCHIVE.sha256" \
+  "pfs@anjuna3:~/pfs-results/fio-staging/$RUN/"
 ```
 
 After staging all four hosts, paste this block on the PC from the repository root.
@@ -151,25 +151,40 @@ directories, validates and normalizes all native evidence, and creates the five
 per-access-pattern plots:
 
 ```bash
-set -euo pipefail
-RUN="local-fio-full-02"
-DOWNLOAD="$HOME/fio-result-downloads/$RUN"
-DEST="results/microbenchmarks/runs/$RUN"
-mkdir -p "$DOWNLOAD" "$DEST"
-scp "pfs@anjuna3:~/fio-results-staging/$RUN/*" "$DOWNLOAD/"
-(cd "$DOWNLOAD" && sha256sum -c -- *.sha256)
-for ARCHIVE in "$DOWNLOAD"/*.tar.gz; do
-  tar -xzf "$ARCHIVE" -C "$DEST"
-done
-for HOST in colva1 colva2 colva3 colva4; do
-  test -f "$DEST/$HOST/manifest.json"
-done
-python3 scripts/microbenchmarks/fio/parse_results.py \
-  "$DEST" --output-dir "$DEST/analysis"
-python3 scripts/microbenchmarks/fio/visualize_results.py \
-  "$DEST/analysis/measurements.csv" \
-  --output-dir "$DEST/analysis/plots"
+(
+  set -euo pipefail
+  RUN="local-fio-full-02"
+  JUMP="dashlab@lab.dashlab.in"
+  STAGING_HOST="pfs@anjuna3.dashlab.in"
+  DOWNLOAD="$HOME/fio-result-downloads/$RUN"
+  DEST="results/microbenchmarks/runs/$RUN"
+  mkdir -p "$DOWNLOAD" "$DEST"
+
+  for HOST in colva1 colva2 colva3 colva4; do
+    REMOTE="pfs-results/fio-staging/$RUN/$RUN-$HOST.tar.gz"
+    scp -J "$JUMP" \
+      "$STAGING_HOST:$REMOTE" "$STAGING_HOST:$REMOTE.sha256" \
+      "$DOWNLOAD/"
+  done
+
+  (cd "$DOWNLOAD" && sha256sum -c -- *.sha256)
+  for ARCHIVE in "$DOWNLOAD"/*.tar.gz; do
+    tar -xzf "$ARCHIVE" -C "$DEST"
+  done
+  for HOST in colva1 colva2 colva3 colva4; do
+    test -f "$DEST/$HOST/manifest.json"
+  done
+  python3 scripts/microbenchmarks/fio/parse_results.py \
+    "$DEST" --output-dir "$DEST/analysis"
+  python3 scripts/microbenchmarks/fio/visualize_results.py \
+    "$DEST/analysis/measurements.csv" \
+    --output-dir "$DEST/analysis/plots"
+)
 ```
+
+The parentheses run strict error handling in a child shell. If a download,
+checksum, extraction, parse or plot step fails, that child stops at the failing
+command but the interactive terminal remains open and displays the error.
 
 The parser must report 700 measurements, 28 preparations and no errors or
 warnings for a complete four-host run. Review `$DEST/analysis/parse_report.json`

@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import unittest
@@ -155,6 +156,25 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(row["iops"], 10)
         self.assertEqual(row["clat_mean_ns"], 3000)
         self.assertEqual(row["clat_p99_ns"], 3003)
+
+    def test_mixed_protocols_are_globally_incompatible(self):
+        """Hosts with different scientific settings cannot form one experiment."""
+        second = self.run.parent / "colva2"
+        shutil.copytree(self.run, second)
+        manifest_path = second / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["host"] = "colva2"
+        manifest["run_id"] = "b" * 32
+        manifest["config"]["protocol_version"] = 5
+        manifest_path.write_text(json.dumps(manifest))
+
+        result = parser.main([str(self.run.parent), "--output-dir", str(self.output)])
+        self.assertEqual(result, 2)
+        report = json.loads((self.output / "parse_report.json").read_text())
+        self.assertIn("scientific configuration differs", report["errors"][0])
+        configuration = (self.output / "run_configuration.md").read_text()
+        self.assertIn("**INCOMPATIBLE:**", configuration)
+        self.assertNotIn("## Measurement protocol", configuration)
 
 
 if __name__ == "__main__":

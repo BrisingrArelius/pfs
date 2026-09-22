@@ -1,0 +1,3 @@
+run_id,host,target_id,media,generation,io_bytes,fio_runtime_ms,fio_write_mib_s,command_wall_seconds,sync_overhead_seconds,artifact
+3acbdf3195c84442af2a224731133b7c,colva1,101,hdd,1,10737418240,62441,163.99481105804443,126.48158259876072,64.04058259876072,raw/target-101/prepare-1
+3acbdf3195c84442af2a224731133b7c,colva1,104,nvme,1,10737418240,2097,4883.166427612305,5.668801823630929,3.571801823630929,raw/target-104/prepare-1

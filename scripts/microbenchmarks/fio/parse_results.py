@@ -261,13 +261,47 @@ def summarize(rows):
     return summary
 
 
+def comparable_config(manifest):
+    """Return settings that must match before host evidence forms one experiment."""
+    config = manifest["config"]
+    prepare = {key: value for key, value in config.get("prepare", {}).items()
+               if key != "timeout_seconds"}
+    return {
+        "mode": manifest.get("mode", "full"),
+        "protocol_version": config["protocol_version"],
+        "repetitions": config["repetitions"],
+        "order_seed": config.get("order_seed"),
+        "fio": config["fio"],
+        "workloads": config["workloads"],
+        "prepare": prepare,
+    }
+
+
+def validate_compatibility(manifests, report):
+    """Reject combining hosts that used different scientific configurations."""
+    baseline = manifests[0]
+    expected = comparable_config(baseline)
+    for manifest in manifests[1:]:
+        actual = comparable_config(manifest)
+        if actual != expected:
+            report["errors"].append(
+                f"{manifest['host']}: scientific configuration differs from "
+                f"{baseline['host']} (protocol {actual['protocol_version']} vs "
+                f"{expected['protocol_version']})"
+            )
+
+
 def markdown(summary, report):
     """Render a compact human-readable summary with validation status first."""
-    errors = sum(len(host["errors"]) for host in report["hosts"])
+    errors = len(report["errors"]) + sum(len(host["errors"]) for host in report["hosts"])
     lines = ["# Local-storage FIO results", "", f"Validation: **{'PASS' if not errors else 'FAIL'}**",
-             f"Parsed measurements: **{report['measurements']}**", "",
+             f"Parsed measurements: **{report['measurements']}**"]
+    if report["errors"]:
+        lines.extend(["", "## Cross-host validation"])
+        lines.extend(f"- ERROR: {message}" for message in report["errors"])
+    lines.extend(["",
              "| Host | Target | Media | Workload | Runs | Median MiB/s | Range MiB/s | Median IOPS | Mean clat ms | p99 clat ms | Stops |",
-             "|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|"]
+             "|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|"])
     for row in summary:
         stops = f"{row['byte_limit_runs']} byte / {row['time_limit_runs']} time"
         lines.append(f"| {row['host']} | {row['target_id']} | {row['media']} | {row['workload']} | {row['runs']} | "
@@ -282,9 +316,8 @@ def markdown(summary, report):
     return "\n".join(lines) + "\n"
 
 
-def configuration_markdown(manifest_paths):
+def configuration_markdown(manifests):
     """Describe a copied multi-host run without requiring manifest inspection."""
-    manifests = [json.loads(path.read_text()) for path in manifest_paths]
     first = manifests[0]
     config, fio = first["config"], first["config"]["fio"]
     job_count = fio.get("numjobs", 1)
@@ -292,8 +325,23 @@ def configuration_markdown(manifest_paths):
              "> Derived from host manifests; `manifest.json` and native FIO output remain authoritative.", "",
              "## Hosts", "", "| Host | Run ID | Mode | Protocol | FIO |", "|---|---|---|---:|---|"]
     lines.extend(f"| {item['host']} | `{item['run_id']}` | {item.get('mode', 'full')} | "
-                 f"{item['config'].get('protocol_version', 'unknown')} | `{item.get('fio_version', 'unknown')}` |"
-                 for item in manifests)
+                  f"{item['config'].get('protocol_version', 'unknown')} | `{item.get('fio_version', 'unknown')}` |"
+                  for item in manifests)
+    if any(comparable_config(item) != comparable_config(first) for item in manifests[1:]):
+        lines.extend(["", "## Compatibility", "",
+                      "**INCOMPATIBLE:** host manifests use different scientific configurations. "
+                      "Do not interpret them as one experiment.", "",
+                      "| Host | Jobs | Size/job GiB | Ramp s | Runtime s | Time based |",
+                      "|---|---:|---:|---:|---:|---:|"])
+        for item in manifests:
+            host_fio = item["config"]["fio"]
+            lines.append(
+                f"| {item['host']} | {host_fio.get('numjobs', 1)} | "
+                f"{host_fio['size'] / 2**30:g} | {host_fio.get('ramp_time', 0)} | "
+                f"{host_fio['runtime']} | {host_fio.get('time_based', 0)} |"
+            )
+        lines.append("")
+        return "\n".join(lines)
     lines.extend(["", "## Measurement protocol", "",
                   f"- Jobs per OST: **{job_count}**",
                   f"- Per-job size/region: **{fio['size'] / 2**30:g} GiB**",
@@ -316,7 +364,10 @@ def main(argv=None):
     args = parse_args(argv)
     try:
         manifests = discover_manifests(args.inputs, args.output_dir)
-        report = {"generated_at": datetime.now(timezone.utc).isoformat(), "hosts": []}
+        loaded_manifests = [json.loads(path.read_text()) for path in manifests]
+        report = {"generated_at": datetime.now(timezone.utc).isoformat(),
+                  "errors": [], "hosts": []}
+        validate_compatibility(loaded_manifests, report)
         measurements, preparations = [], []
         for manifest in manifests:
             host_measurements, host_preparations = parse_manifest(manifest, report)
@@ -329,9 +380,9 @@ def main(argv=None):
         write_csv(args.output_dir / "preparations.csv", PREPARATION_FIELDS, preparations)
         write_csv(args.output_dir / "summary.csv", SUMMARY_FIELDS, summary)
         atomic_text(args.output_dir / "summary.md", markdown(summary, report))
-        atomic_text(args.output_dir / "run_configuration.md", configuration_markdown(manifests))
+        atomic_text(args.output_dir / "run_configuration.md", configuration_markdown(loaded_manifests))
         atomic_text(args.output_dir / "parse_report.json", json.dumps(report, indent=2) + "\n")
-        errors = sum(len(host["errors"]) for host in report["hosts"])
+        errors = len(report["errors"]) + sum(len(host["errors"]) for host in report["hosts"])
         print(f"Parsed {len(measurements)} measurements from {len(manifests)} host manifest(s).")
         print(f"Summary: {args.output_dir / 'summary.md'}")
         return 2 if errors else 0
