@@ -1,0 +1,19 @@
+{
+  "source": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/analysis/measurements.csv",
+  "measurements": 700,
+  "plots": [
+    "by_access_pattern/seq_read.png",
+    "by_access_pattern/seq_write.png",
+    "by_access_pattern/rand_read_4k.png",
+    "by_access_pattern/rand_write_4k.png",
+    "by_access_pattern/rand_read_128k.png"
+  ],
+  "semantics": {
+    "sampling_unit": "each row is one OST; OST measurements are never combined",
+    "figures": "one bandwidth figure per access pattern",
+    "marks": "bars show OST medians, ticks show repetitions, and whiskers show min-max",
+    "media": "HDD and NVMe are identified by color only, not aggregated",
+    "axes": "OSTs are horizontal; bandwidth in MiB/s is vertical",
+    "references": "dotted lines show the mean of the per-OST medians for each media type"
+  }
+}

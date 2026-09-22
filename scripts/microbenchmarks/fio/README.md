@@ -138,11 +138,23 @@ set -euo pipefail
 RUN="local-fio-full-03"
 HOST="$(hostname -s)"
 ARCHIVE="$RUN-$HOST.tar.gz"
+SOURCE="$HOME/pfs-results/fio/$RUN/$HOST"
+python3 - "$SOURCE/manifest.json" <<'PY'
+import json, sys
+
+manifest = json.load(open(sys.argv[1]))
+outcome = manifest["sessions"][-1]["outcome"]
+if outcome != "completed":
+    raise SystemExit(f"refusing to archive incomplete run: {outcome}")
+print(f"validated completed run on {manifest['host']}")
+PY
 ssh pfs@anjuna3 "mkdir -p ~/pfs-results/fio-staging/$RUN"
 tar -C "$HOME/pfs-results/fio/$RUN" -czf "$HOME/pfs-results/fio/$ARCHIVE" "$HOST"
 (cd "$HOME/pfs-results/fio" && sha256sum "$ARCHIVE" > "$ARCHIVE.sha256")
 scp "$HOME/pfs-results/fio/$ARCHIVE" "$HOME/pfs-results/fio/$ARCHIVE.sha256" \
   "pfs@anjuna3:~/pfs-results/fio-staging/$RUN/"
+ssh pfs@anjuna3 \
+  "cd ~/pfs-results/fio-staging/$RUN && sha256sum -c -- '$ARCHIVE.sha256'"
 ```
 
 After staging all four hosts, paste this block on the PC from the repository root.
@@ -156,16 +168,18 @@ per-access-pattern plots:
   RUN="local-fio-full-03"
   JUMP="dashlab@lab.dashlab.in"
   STAGING_HOST="pfs@anjuna3.dashlab.in"
-  DOWNLOAD="$HOME/fio-result-downloads/$RUN"
+  DOWNLOAD_ROOT="$HOME/fio-result-downloads"
+  DOWNLOAD="$DOWNLOAD_ROOT/$RUN"
   DEST="results/microbenchmarks/runs/$RUN"
-  mkdir -p "$DOWNLOAD" "$DEST"
+  mkdir -p "$DOWNLOAD_ROOT" "$DEST"
+  if [ -e "$DOWNLOAD" ]; then
+    echo "Refusing to merge with an existing download: $DOWNLOAD" >&2
+    exit 1
+  fi
 
-  for HOST in colva1 colva2 colva3 colva4; do
-    REMOTE="pfs-results/fio-staging/$RUN/$RUN-$HOST.tar.gz"
-    scp -J "$JUMP" \
-      "$STAGING_HOST:$REMOTE" "$STAGING_HOST:$REMOTE.sha256" \
-      "$DOWNLOAD/"
-  done
+  LC_ALL=C scp -r -J "$JUMP" \
+    "$STAGING_HOST:pfs-results/fio-staging/$RUN" \
+    "$DOWNLOAD_ROOT/"
 
   (cd "$DOWNLOAD" && sha256sum -c -- *.sha256)
   for ARCHIVE in "$DOWNLOAD"/*.tar.gz; do

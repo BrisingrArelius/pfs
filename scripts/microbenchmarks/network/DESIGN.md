@@ -159,10 +159,11 @@ supports each conclusion. If active connection information cannot be obtained,
 label the route as configured or inferred rather than confirmed.
 
 Use the captured evidence to create a reviewed `network_inventory.json` containing
-the fixed hosts, roles, addresses, interfaces, transport, link properties, and
-intended paths. The benchmark runner consumes this file; it does not rediscover
-routes or choose different addresses for later repetitions. Every case in a run
-uses the same inventory fingerprint.
+the fixed hosts, roles, transport, and intended paths. Address, interface, MTU and
+link speed are recorded separately for both endpoints of every path; they are not
+host-wide properties because a client can be multihomed. The benchmark runner
+consumes this file; it does not choose different addresses for later repetitions.
+Every case in a run uses the same inventory fingerprint.
 
 ## Execution Topology
 
@@ -172,7 +173,7 @@ Invoke the benchmark runner exactly once on `anjuna3`:
 
 ```bash
 python3 scripts/microbenchmarks/network/run_iperf3.py \
-  --results-dir "$HOME/pfs-results/network-iperf3-full-01" \
+  --results-dir "$HOME/pfs-results/network/network-iperf3-full-01" \
   --time-limit 3h
 ```
 
@@ -238,7 +239,8 @@ truth. Record at least:
 - Hostnames and resolved addresses.
 - The exact local and remote socket addresses.
 - `ip route get` output for each planned connection.
-- Interface name, state, MTU, speed, and duplex.
+- Source and destination interface name, state, MTU, speed, and duplex for every
+  planned path.
 - TCP congestion-control algorithm and relevant socket settings.
 - iperf3 version on every endpoint.
 - BeeGFS-advertised interfaces and active connection transport.
@@ -316,8 +318,9 @@ client on separate ports. This exposes shared switch limits and contention at th
 OSS links.
 
 The coordinator starts all servers first, verifies readiness, prepares all client
-commands, and releases clients through a common barrier. It records actual start
-and end timestamps and reports start skew. Excessive skew invalidates the epoch.
+commands, and releases clients at a common future timestamp using the confirmed
+synchronized endpoint clocks. It records actual process-start timestamps and
+reports start skew. Excessive skew invalidates the epoch.
 
 ## Measurement Order
 
@@ -401,7 +404,7 @@ a mixture of sessions from different attempts.
 The cluster run writes outside the Git checkout, for example:
 
 ```text
-$HOME/pfs-results/network-iperf3-full-01/
+$HOME/pfs-results/network/network-iperf3-full-01/
 ```
 
 After retrieval, preserve it under:
@@ -480,11 +483,12 @@ Example future invocation:
 
 ```bash
 python3 scripts/microbenchmarks/network/run_iperf3.py \
-  --results-dir "$HOME/pfs-results/network-iperf3-pilot-01" \
+  --results-dir "$HOME/pfs-results/network/network-iperf3-pilot-01" \
   --pilot --time-limit 30m
 ```
 
-The runner does not exist yet; these commands define its required interface.
+The runner implements this interface and refuses to execute until the reviewed
+network inventory is explicitly confirmed.
 
 ## Operational Safety
 

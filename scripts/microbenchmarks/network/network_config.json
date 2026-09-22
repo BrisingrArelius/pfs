@@ -1,0 +1,45 @@
+{
+    "protocol_version": 1,
+    "coordinator": "anjuna3",
+    "repetitions": 5,
+    "order_seed": 20260922,
+    "transport": "tcp",
+    "directions": [
+        "client_to_oss",
+        "oss_to_client"
+    ],
+    "isolated_streams": [
+        1,
+        4
+    ],
+    "concurrent_streams": 4,
+    "omit_seconds": 5,
+    "duration_seconds": 30,
+    "interval_seconds": 1,
+    "barrier_lead_seconds": 5,
+    "ports": {
+        "anjuna2": 5201,
+        "anjuna3": 5202
+    },
+    "validation": {
+        "duration_tolerance_seconds": 2,
+        "maximum_launch_skew_seconds": 2,
+        "maximum_clock_offset_seconds": 0.5,
+        "maximum_clock_uncertainty_seconds": 0.5,
+        "maximum_release_lateness_seconds": 1
+    },
+    "timeouts": {
+        "ssh_connect_seconds": 10,
+        "readiness_seconds": 15,
+        "client_seconds": 75,
+        "server_exit_seconds": 15,
+        "remote_watchdog_seconds": 90,
+        "command_seconds": 20
+    },
+    "planning": {
+        "isolated_seconds": 50,
+        "concurrent_epoch_seconds": 55,
+        "overhead_seconds": 5
+    },
+    "remote_root": "/tmp/pfs-network-bench"
+}

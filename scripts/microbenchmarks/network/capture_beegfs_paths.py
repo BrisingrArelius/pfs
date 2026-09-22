@@ -113,6 +113,16 @@ capture "IP routes" ip -details -json route show table all
 capture "Interface counters" ip -statistics -statistics -json link show
 capture "RDMA links" rdma -details -json link show
 
+capture_shell "Clock synchronization" '
+if command -v timedatectl >/dev/null 2>&1; then
+    timedatectl show --property=NTPSynchronized --property=NTP --property=Timezone
+else
+    printf "timedatectl is not installed\n"
+fi
+if command -v chronyc >/dev/null 2>&1; then
+    chronyc tracking || true
+fi'
+
 capture_shell "Interface speed and duplex" '
 for path in /sys/class/net/*; do
     dev=${path##*/}

@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-09-22T18:03:40.270091+00:00",
+  "errors": [],
+  "hosts": [
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva1/manifest.json",
+      "host": "colva1",
+      "expected_cases": 175,
+      "parsed_cases": 175,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva2/manifest.json",
+      "host": "colva2",
+      "expected_cases": 175,
+      "parsed_cases": 175,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva3/manifest.json",
+      "host": "colva3",
+      "expected_cases": 175,
+      "parsed_cases": 175,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva4/manifest.json",
+      "host": "colva4",
+      "expected_cases": 175,
+      "parsed_cases": 175,
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "manifests": [
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva1/manifest.json",
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva2/manifest.json",
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva3/manifest.json",
+    "/home/arelius/projects/pfs/results/microbenchmarks/runs/local-fio-full-03/colva4/manifest.json"
+  ],
+  "measurements": 700,
+  "preparations": 28,
+  "summary_rows": 140
+}

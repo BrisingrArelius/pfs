@@ -1,0 +1,137 @@
+{
+    "schema_version": 1,
+    "confirmed": false,
+    "confirmed_at": null,
+    "evidence": null,
+    "transport": "tcp",
+    "rdma": {
+        "available": false,
+        "evidence_level": "historical_only"
+    },
+    "hosts": {
+        "anjuna2": {
+            "role": "client",
+            "ssh_host": "anjuna2",
+            "clock_synchronized": null
+        },
+        "anjuna3": {
+            "role": "client_coordinator",
+            "ssh_host": "anjuna3",
+            "clock_synchronized": null
+        },
+        "colva1": {
+            "role": "storage",
+            "ssh_host": "colva1",
+            "clock_synchronized": null
+        },
+        "colva2": {
+            "role": "storage",
+            "ssh_host": "colva2",
+            "clock_synchronized": null
+        },
+        "colva3": {
+            "role": "storage",
+            "ssh_host": "colva3",
+            "clock_synchronized": null
+        },
+        "colva4": {
+            "role": "storage",
+            "ssh_host": "colva4",
+            "clock_synchronized": null
+        }
+    },
+    "paths": {
+        "anjuna2": {
+            "colva1": {
+                "source_address": null,
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "192.168.0.2",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "unconfirmed"
+            },
+            "colva2": {
+                "source_address": "10.1.19.73",
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "10.1.19.76",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "historical"
+            },
+            "colva3": {
+                "source_address": "10.1.19.73",
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "10.1.19.77",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "historical"
+            },
+            "colva4": {
+                "source_address": null,
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "192.168.0.5",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "unconfirmed"
+            }
+        },
+        "anjuna3": {
+            "colva1": {
+                "source_address": "192.168.0.7",
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "192.168.0.2",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "historical"
+            },
+            "colva2": {
+                "source_address": "10.1.19.74",
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "10.1.19.76",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "historical"
+            },
+            "colva3": {
+                "source_address": "10.1.19.74",
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "10.1.19.77",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "historical"
+            },
+            "colva4": {
+                "source_address": "192.168.0.7",
+                "source_interface": null,
+                "source_mtu": null,
+                "source_link_mbps": null,
+                "destination_address": "192.168.0.5",
+                "destination_interface": "enp7s0",
+                "destination_mtu": null,
+                "destination_link_mbps": 2500,
+                "evidence_level": "historical"
+            }
+        }
+    }
+}
