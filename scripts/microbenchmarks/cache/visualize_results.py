@@ -17,8 +17,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from run_cache import (RUNS, STATES, pilot_units, plan_units,
-                       preflight, validate_config, validate_measurement, build_command)
+from run_cache import (RUNS, MEDIA, STATES, pilot_units, plan_units,
+                        preflight, validate_config, validate_measurement, build_command)
 
 
 LABELS = {"client_miss_server_miss": "Backend\n(client + OSS miss)",
@@ -149,6 +149,7 @@ def load_raw(root):
     if plan.get("fingerprint") != plan_hash or manifest.get("fingerprint") != run_hash:
         raise ValueError("cache scientific fingerprint differs")
     rows = []
+    target_by_media = {target["media"]: target["id"] for target in inventory["targets"]}
     for saved, planned in zip(manifest["units"], units):
         if any(saved.get(key) != value for key, value in planned.items()):
             raise ValueError("cache unit differs from planned state")
@@ -180,6 +181,7 @@ def load_raw(root):
         state = raw["state"]
         telemetry = raw["telemetry"]
         if (not state.get("exclusive_allocation") or not state.get("writeback_settled")
+                or state.get("actual_target_id") != target_by_media[saved["media"]]
                 or state.get("file_identity_before") != state.get("file_identity_after")
                 or not state.get("file_identity_before") or state.get("client_residency")
                 != telemetry.get("client_residency")):
@@ -197,7 +199,7 @@ def load_raw(root):
                     evidence["summary_path"])):
             raise ValueError("measured cache command differs")
         logical = telemetry["logical_bytes"]
-        rows.append({"unit_id": saved["id"], "state": saved["state"],
+        rows.append({"unit_id": saved["id"], "media": saved["media"], "state": saved["state"],
                      "achieved": measured["achieved_state"],
                      "throughput": measured["mib_per_second"],
                      "network_ratio": telemetry["network_bytes"] / logical,
@@ -219,33 +221,37 @@ def plot(rows, output):
     verified = [row for row in rows if row["state"] == row["achieved"]]
     if not verified:
         raise ValueError("no verified cache states to plot")
+    # Put the same three cache paths side by side for HDD and SSD.
+    cases = [(media, state) for media in MEDIA for state in STATES]
+    ticks = [f"{media}\n{LABELS[state]}" for media, state in cases]
     output.mkdir(parents=True, exist_ok=True)
-    fig, axis = plt.subplots(figsize=(10, 6))
-    for position, state in enumerate(STATES):
-        values = [row["throughput"] for row in verified if row["state"] == state]
+    fig, axis = plt.subplots(figsize=(12, 6))
+    for position, (media, state) in enumerate(cases):
+        values = [row["throughput"] for row in verified
+                  if row["media"] == media and row["state"] == state]
         if not values:
             continue
         median = statistics.median(values)
-        axis.bar(position, median, color=COLORS[position], width=.63)
+        axis.bar(position, median, color=COLORS[position % len(STATES)], width=.63)
         axis.errorbar(position, median, yerr=[[median - min(values)], [max(values) - median]],
                       fmt="none", color="#26343D", capsize=4)
         axis.scatter([position] * len(values), values, marker="_", color="#26343D", zorder=3)
-    axis.set_xticks(range(3), [LABELS[state] for state in STATES])
+    axis.set_xticks(range(len(cases)), ticks)
     axis.set_ylabel("BeeGFS POSIX read throughput (MiB/s)")
     axis.set_title("Verified cache paths · 8-GiB sequential read")
     axis.grid(axis="y", alpha=.25)
     fig.tight_layout()
     save_figure(fig, output, "cache_throughput.png")
 
-    fig, axis = plt.subplots(figsize=(10, 6))
-    for position, state in enumerate(STATES):
-        state_rows = [row for row in rows if row["state"] == state]
+    fig, axis = plt.subplots(figsize=(12, 6))
+    for position, (media, state) in enumerate(cases):
+        state_rows = [row for row in rows if row["media"] == media and row["state"] == state]
         for offset, field, color in ((-.12, "network_ratio", "#16858C"),
                                      (.12, "backend_ratio", "#B86B25")):
             for row in state_rows:
                 axis.scatter(position + offset, row[field], color=color,
                              marker="o" if row["state"] == row["achieved"] else "x")
-    axis.set_xticks(range(3), [LABELS[state] for state in STATES])
+    axis.set_xticks(range(len(cases)), ticks)
     axis.set_ylabel("Observed bytes / IOR logical bytes")
     axis.set_title("Cache-path evidence · crosses are unverified states")
     axis.scatter([], [], color="#16858C", label="client/OSS network")

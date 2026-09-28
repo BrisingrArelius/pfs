@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Offline canonical cache-state planning and evidence contracts.
+"""Plan the HDD/SSD cache-read experiment and check its recorded evidence.
 
-Read DESIGN.md and ../IMPLEMENTATION_RULES.md before any cluster implementation.
-This CLI only writes a plan inside an explicit project results directory.
+This is not yet a cluster runner: its CLI writes a plan, never reads a file or
+changes a cache. See README.md before trying to run the experiment.
+
+Each case: select one medium -> prepare one of three cache states -> read the
+existing 8-GiB file -> compare observed network/disk/residency with the intended
+state. The state changes and actual reads still need a live executor.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ import uuid
 HERE = Path(__file__).resolve().parent
 RUNS = HERE.parents[2] / "results" / "microbenchmarks" / "runs"
 STATES = ("client_miss_server_miss", "client_miss_server_hit", "client_hit")
+MEDIA = ("HDD", "SSD")
 
 
 def load_config(path):
@@ -35,12 +40,13 @@ def positive_number(value, name):
     return value
 
 
-def shuffled_blocks(configurations, repetitions, seed, rotation=0):
-    configurations = list(configurations)
-    random.Random(seed).shuffle(configurations)
+def ordered_cases(cases, repetitions, seed):
+    """Shuffle once, then rotate the six cases across five repetitions."""
+    cases = list(cases)
+    random.Random(seed).shuffle(cases)
     for repetition in range(1, repetitions + 1):
-        offset = (repetition - 1) * rotation % len(configurations)
-        for position, case in enumerate(configurations[offset:] + configurations[:offset]):
+        offset = (repetition - 1) % len(cases)
+        for position, case in enumerate(cases[offset:] + cases[:offset]):
             yield repetition, position, case
 
 
@@ -111,7 +117,7 @@ def write_plan(path, domain, config, units):
 
 def validate_ior(native, *, operation, tasks, block_bytes, transfer_bytes,
                  file_per_process, expected_path, required_version, use_existing):
-    """Accept only the pinned single-phase IOR JSON used by cache reads."""
+    """Check that saved IOR output really describes our one complete read."""
     if not isinstance(native, dict) or native.get("Version") != required_version:
         raise ValueError("IOR version or JSON schema changed")
     tests, summary = native.get("tests"), native.get("summary")
@@ -122,19 +128,28 @@ def validate_ior(native, *, operation, tasks, block_bytes, transfer_bytes,
     if not isinstance(params, dict) or not isinstance(options, dict) or not isinstance(row, dict):
         raise ValueError("IOR native parameters missing")
     phases = options.get("Results")
-    if (not isinstance(phases, list) or len(phases) != 1 or phases[0].get("access") != operation
-            or row.get("operation") != operation or row.get("API") != "POSIX"
-            or params.get("api") != "POSIX" or options.get("tasks") != tasks
-            or row.get("numTasks") != tasks or row.get("blockSize") != block_bytes
-            or params.get("blockSize") != block_bytes or row.get("transferSize") != transfer_bytes
-            or params.get("transferSize") != transfer_bytes or row.get("segmentCount") != 1
-            or row.get("repetitions") != 1 or params.get("repetitions") != 1
-            or params.get("testFileName") != str(expected_path)
-            or row.get("filePerProc") != int(file_per_process)
-            or params.get("filePerProc") != int(file_per_process)
-            or params.get("useExistingTestFile") != int(use_existing)
-            or params.get("readFile") != int(operation == "read")
-            or params.get("writeFile") != int(operation == "write")):
+    if not isinstance(phases, list) or len(phases) != 1:
+        raise ValueError("expected exactly one IOR read phase")
+
+    # IOR repeats some fields in its Parameters, Options and summary sections.
+    # Check every copy: a positive throughput number alone is not enough.
+    expected_fields = (
+        (phases[0], "access", operation),
+        (row, "operation", operation), (row, "API", "POSIX"),
+        (params, "api", "POSIX"), (options, "tasks", tasks),
+        (row, "numTasks", tasks),
+        (row, "blockSize", block_bytes), (params, "blockSize", block_bytes),
+        (row, "transferSize", transfer_bytes), (params, "transferSize", transfer_bytes),
+        (row, "segmentCount", 1),
+        (row, "repetitions", 1), (params, "repetitions", 1),
+        (params, "testFileName", str(expected_path)),
+        (row, "filePerProc", int(file_per_process)),
+        (params, "filePerProc", int(file_per_process)),
+        (params, "useExistingTestFile", int(use_existing)),
+        (params, "readFile", int(operation == "read")),
+        (params, "writeFile", int(operation == "write")),
+    )
+    if any(source.get(name) != expected for source, name, expected in expected_fields):
         raise ValueError("IOR operation or geometry differs from cache plan")
     phase = phases[0]
     values = (phase.get("bwMiB"), phase.get("iops"), phase.get("totalTime"),
@@ -153,10 +168,11 @@ def validate_ior(native, *, operation, tasks, block_bytes, transfer_bytes,
 
 def validate_config(config):
     if (tuple(config["states"]) != STATES or config["client"] != "anjuna2"
+            or tuple(config["media"]) != MEDIA
             or config["file_bytes"] != 8 * 1024**3
             or config["safety_reserve_bytes"] != 8 * 1024**3
             or config["transfer_bytes"] != 1024**2
-            or config["stripe_count"] != 4 or config["chunk_bytes"] != 512 * 1024):
+            or config["stripe_count"] != 1 or config["chunk_bytes"] != 512 * 1024):
         raise ValueError("cache protocol differs from the reviewed design")
     if config["repetitions"] != 5:
         raise ValueError("full cache protocol requires five repetitions")
@@ -169,21 +185,29 @@ def validate_config(config):
 
 
 def plan_units(config):
+    """Five rotated blocks of the six media/cache-state combinations."""
     validate_config(config)
-    # Each state starts from a complete drop; rotation avoids identical ordering.
-    return finalized_plan({"id": f"r{repetition:02d}-{state}", "repetition": repetition,
-                           "state": state, "position": position}
-                          for repetition, position, state in shuffled_blocks(
-                              STATES, config["repetitions"], config["order_seed"], rotation=1))
+    cases = [(media, state) for media in MEDIA for state in STATES]
+    plan = []
+    for repetition, position, (media, state) in ordered_cases(
+            cases, config["repetitions"], config["order_seed"]):
+        plan.append({"id": f"r{repetition:02d}-{media.lower()}-{state}",
+                     "repetition": repetition, "media": media,
+                     "state": state, "position": position})
+    return finalized_plan(plan)
 
 
 def pilot_units(config):
-    """One measurement per state and a second independent client-hit attempt."""
+    """One of each media/state, then one more client hit on each medium."""
     validate_config(config)
-    states = (*STATES, "client_hit")
-    return finalized_plan({"id": f"pilot-{index:02d}-{state}", "state": state,
-                           "repetition": 1 if index <= 3 else 2}
-                          for index, state in enumerate(states, 1))
+    cases = [(media, state) for media in MEDIA for state in STATES]
+    cases += [(media, "client_hit") for media in MEDIA]
+    plan = []
+    for index, (media, state) in enumerate(cases, 1):
+        plan.append({"id": f"pilot-{index:02d}-{media.lower()}-{state}",
+                     "media": media, "state": state,
+                     "repetition": 1 if index <= 6 else 2})
+    return finalized_plan(plan)
 
 
 def build_command(ior, mpirun, owned_file, native_summary):
@@ -195,14 +219,14 @@ def build_command(ior, mpirun, owned_file, native_summary):
 
 
 def prepare_cache_state(state, *, evidence):
-    """Specify the complete required transition; never assume a previous warm state."""
+    """List required steps; no cache-control command runs here."""
     if state not in STATES:
         raise ValueError("unknown cache state")
     if not evidence.get("exclusive_allocation") or not evidence.get("writeback_settled"):
         raise ValueError("cache control requires exclusive allocation and settled writes")
-    steps = ["drop_client_and_all_oss", "wait_settle", "verify_client_residency"]
+    steps = ["drop_client_and_selected_oss", "wait_settle", "verify_client_residency"]
     if state != STATES[0]:
-        steps = ["drop_client_and_all_oss", "warm_complete_file", "verify_warm_traffic"]
+        steps = ["drop_client_and_selected_oss", "warm_complete_file", "verify_warm_traffic"]
         if state == STATES[1]:
             steps += ["drop_client_only", "verify_client_residency"]
         else:
@@ -211,7 +235,7 @@ def prepare_cache_state(state, *, evidence):
 
 
 def classify_achieved_state(state, evidence, thresholds):
-    """Classify saved evidence only; never infer a hit from read order."""
+    """Classify saved traffic and residency; a repeated read alone proves nothing."""
     if state not in STATES:
         raise ValueError("unknown cache state")
     logical = positive_number(evidence["logical_bytes"], "logical bytes")
@@ -228,7 +252,9 @@ def classify_achieved_state(state, evidence, thresholds):
     ratios = {"network": network, "backend": backend, "residency": residency}
     for criterion, limit in limits.items():
         name, bound = criterion.rsplit("_", 1)
-        if bound == "min" and ratios[name] < limit or bound == "max" and ratios[name] > limit:
+        outside_limit = (ratios[name] < limit if bound == "min"
+                         else ratios[name] > limit)
+        if outside_limit:
             return "cache_influenced_unverified"
     return state
 
@@ -249,17 +275,25 @@ def validate_measurement(unit, native, evidence, config, *, owned_file, ior_vers
 
 
 def preflight(inventory):
+    """Validate a *saved* inventory; this does not inspect live cluster state."""
     require_reviewed_inventory(inventory, "cache", ("client_mode", "targets", "devices",
-                                                   "mount", "restoration", "namespace"))
+                                                    "mount", "restoration", "namespace"))
     if inventory["client_mode"] != "native" or inventory.get("available_ram_bytes", 0) < 16 * 1024**3:
         raise ValueError("three-state cache study requires native mode and 16 GiB available")
+    if inventory.get("server_available_ram_bytes", 0) < 16 * 1024**3:
+        raise ValueError("one-OSS cache study requires 16 GiB available on the storage server")
     targets = inventory["targets"]
-    if (not isinstance(targets, list) or len(targets) != 4
-            or {target.get("oss") for target in targets}
-            != {"colva1", "colva2", "colva3", "colva4"}
-            or any(target.get("media") != "HDD" or target.get("state") != "Online/Good"
-                   or not target.get("device") for target in targets)):
-        raise ValueError("cache file needs one reviewed Online/Good HDD target per OSS")
+    if not isinstance(targets, list) or len(targets) != 2:
+        raise ValueError("cache study needs exactly two targets")
+    if ({target.get("media") for target in targets} != set(MEDIA)
+            or len({target.get("oss") for target in targets}) != 1
+            or targets[0].get("id") == targets[1].get("id")):
+        raise ValueError("cache study needs one reviewed HDD and one SSD target on the same OSS")
+    for target in targets:
+        if (target.get("oss") not in {"colva1", "colva2", "colva3", "colva4"}
+                or target.get("state") != "Online/Good" or not target.get("id")
+                or not target.get("device")):
+            raise ValueError("cache target identity, device or health is missing")
     if not inventory.get("watchdog_verified") or not inventory.get("privilege_verified"):
         raise ValueError("cache restoration watchdog and authorization must be verified")
     return True

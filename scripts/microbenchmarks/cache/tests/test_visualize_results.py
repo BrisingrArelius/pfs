@@ -31,9 +31,11 @@ class RawCachePlots(unittest.TestCase):
             "config": self.config, "units": units, "fingerprint": plan_hash}))
         inventory = {"domain": "cache", "reviewed": True, "client_mode": "native",
                      "available_ram_bytes": 20 * 1024**3,
-                     "targets": [{"id": 100 * index + 1, "oss": f"colva{index}",
-                                  "media": "HDD", "state": "Online/Good", "device": "/dev/test"}
-                                 for index in range(1, 5)], "devices": ["test"],
+                      "targets": [{"id": 101, "oss": "colva1", "media": "HDD",
+                                   "state": "Online/Good", "device": "/dev/hdd"},
+                                  {"id": 104, "oss": "colva1", "media": "SSD",
+                                   "state": "Online/Good", "device": "/dev/ssd"}],
+                      "devices": ["hdd", "ssd"], "server_available_ram_bytes": 20 * 1024**3,
                      "mount": "/mnt/beegfs", "namespace": "/mnt/beegfs/owned",
                      "restoration": "verified", "restoration_baseline": {"mode": "native"},
                      "watchdog_verified": True,
@@ -45,7 +47,7 @@ class RawCachePlots(unittest.TestCase):
             folder = self.root / "attempts" / unit["id"] / "attempt-1"
             folder.mkdir(parents=True)
             state = unit["state"]
-            owned = inventory["namespace"] + "/file"
+            owned = inventory["namespace"] + "/" + unit["media"].lower() + "/file"
             size = 8 * 1024**3
             rate = {runner.STATES[0]: 200, runner.STATES[1]: 400,
                     runner.STATES[2]: 800}[state]
@@ -67,7 +69,8 @@ class RawCachePlots(unittest.TestCase):
                          "quiescent": True, "netbench_off": True,
                          "telemetry_complete": True, "file_unchanged": True}
             evidence = {"exclusive_allocation": True, "writeback_settled": True,
-                        "file_identity_before": "file-1", "file_identity_after": "file-1",
+                        "actual_target_id": 101 if unit["media"] == "HDD" else 104,
+                        "file_identity_before": owned, "file_identity_after": owned,
                         "client_residency": telemetry["client_residency"]}
             evidence["steps"] = runner.prepare_cache_state(state, evidence=evidence)
             files = {"native": native, "telemetry": telemetry, "state": evidence,
@@ -97,10 +100,29 @@ class RawCachePlots(unittest.TestCase):
             "restoration_evidence": {"path": str(restoration.relative_to(self.root)),
                 "sha256": hashlib.sha256(restoration.read_bytes()).hexdigest()}}))
 
+    def test_media_matrix_and_single_server_are_required(self):
+        full = runner.plan_units(self.config)
+        pilot = runner.pilot_units(self.config)
+        self.assertEqual(len(full), 30)
+        self.assertEqual(len(pilot), 8)
+        self.assertEqual({(case["media"], case["state"]) for case in full},
+                         {(medium, state) for medium in runner.MEDIA for state in runner.STATES})
+        self.assertTrue(all(sum(case["media"] == medium and case["state"] == state
+                                for case in full) == 5
+                            for medium in runner.MEDIA for state in runner.STATES))
+        inventory = json.loads((self.root / "inventory.json").read_text())
+        inventory["targets"][1]["oss"] = "colva2"
+        with self.assertRaises(ValueError):
+            runner.preflight(inventory)
+        inventory["targets"][1]["oss"] = "colva1"
+        inventory["server_available_ram_bytes"] = 8 * 1024**3
+        with self.assertRaises(ValueError):
+            runner.preflight(inventory)
+
     def test_raw_run_yields_verified_bandwidth_and_traffic_figures(self):
         self.assertEqual(plots.main([str(self.root)]), 0)
         manifest = json.loads((self.root / "plots" / "plot_manifest.json").read_text())
-        self.assertEqual(manifest["measurements"], 4)
+        self.assertEqual(manifest["measurements"], 8)
         self.assertEqual(manifest["unverified"], 0)
         self.assertEqual(len(manifest["plots"]), 2)
         self.assertTrue(all((self.root / "plots" / name).is_file() for name in manifest["plots"]))
@@ -112,6 +134,18 @@ class RawCachePlots(unittest.TestCase):
         self.assertEqual(plots.main([str(self.root)]), 1)
         self.assertFalse((self.root / "plots" / "plot_manifest.json").exists())
         self.assertEqual(plots.main([str(self.root), "--output-dir", str(self.root.parent)]), 1)
+
+    def test_wrong_media_target_is_rejected(self):
+        unit = runner.pilot_units(self.config)[0]
+        state = self.root / "attempts" / unit["id"] / "attempt-1" / "state.json"
+        data = json.loads(state.read_text())
+        data["actual_target_id"] = 104 if unit["media"] == "HDD" else 101
+        state.write_text(json.dumps(data))
+        manifest = json.loads((self.root / "manifest.json").read_text())
+        attempt = manifest["units"][0]["attempts"][-1]
+        attempt["evidence"]["sha256"]["state"] = hashlib.sha256(state.read_bytes()).hexdigest()
+        (self.root / "manifest.json").write_text(json.dumps(manifest))
+        self.assertEqual(plots.main([str(self.root)]), 1)
 
     def test_plot_symlink_never_modifies_an_unrelated_file(self):
         victim = self.root / "unrelated"

@@ -4,6 +4,7 @@
   "captured_at": null,
   "client_mode": null,
   "available_ram_bytes": null,
+  "server_available_ram_bytes": null,
   "targets": [],
   "devices": [],
   "mount": null,
