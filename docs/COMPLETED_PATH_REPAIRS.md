@@ -65,6 +65,4 @@ See [the migration map](MIGRATION.md) for the old and new file locations.
 - [x] Confirm historical files are read-only inputs and new output goes elsewhere.
 - [x] Test checkpoint, log, and parser handoffs with small fake files.
 
-This file does not cover new IOR, mdtest, network, or DLIO runners, scientific
-changes, improved resume design, new instrumentation, or live pool inventory.
-Those tasks are in the [implementation backlog](IMPLEMENTATION_BACKLOG.md).
+This historical record covers completed repository path repairs only.

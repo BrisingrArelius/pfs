@@ -62,8 +62,8 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   communication/cache experiments, operation paths, and separate DLIO validation.
 - Specified Darshan coverage/raw evidence, durable progress across allocations,
   independent visualization recovery and pilot-based duration planning.
-- Added [implementation backlog](IMPLEMENTATION_BACKLOG.md), separate from
-  mechanical path repairs. Capacity meaning and numerical bands remain unresolved.
+- Added a work-tracking document at the time, separate from mechanical path
+  repairs. Capacity meaning and numerical bands remained unresolved.
 - Changes in this pass are documentation only.
 
 ---
@@ -211,5 +211,4 @@ meaning of `nd_strided`. Their historical discussion is recorded at:
   `gcc -O3 ...` in [CONTEXT.md](research/CONTEXT.md)) fail to compile on this machine
   without `-D_GNU_SOURCE`. This was not introduced or fixed by that change.
 
-The active versions of these missing items are in
-[IMPLEMENTATION_BACKLOG.md](IMPLEMENTATION_BACKLOG.md#workload-profiles-and-classification).
+These notes record the implementation state at the time.

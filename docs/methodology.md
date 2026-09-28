@@ -1,8 +1,7 @@
 # Experiment methodology status
 
 This document describes the methodology currently represented by repository code
-and evidence. Outstanding experiment work is summarized in the
-[implementation backlog](IMPLEMENTATION_BACKLOG.md).
+and evidence.
 
 ## Implemented tools
 
@@ -10,7 +9,8 @@ and evidence. Outstanding experiment work is summarized in the
 |---|---|
 | Local storage | Per-target FIO runner with native JSON, deadlines and measurement-level resume; protocol-5 full run completed |
 | Network transport | Six-host iperf3 runner with native endpoint JSON, synchronized concurrent epochs, telemetry, and resume; 190-unit/320-path full raw run available |
-| Microbenchmark figures | FIO and iperf3 visualizers plot their completed native runs directly; four other domains have raw-to-plot code tested only with synthetic evidence |
+| Microbenchmark figures | FIO and iperf3 visualizers plot their completed native runs directly; communication and metadata have no cluster result set |
+| Cache effects | `run_cache.py` contains one HDD/SSD IOR cache runner; no cluster run or native-output validation has been captured |
 | Placement administration | Shell helpers with historical hard-coded target inventories |
 | Application workloads | Single-process IOR wrapper, two current contiguous read-only profiles, Darshan invocation, and run-specific logs/checkpoints |
 | Darshan parsing | Aggregate POSIX/MPI-IO/STDIO rows in `global.csv` |
@@ -32,19 +32,18 @@ an intermediate CSV parser. The completed FIO run includes both FIO 3.28 and
 
 ## Missing experiment coverage
 
-All five layer-effect domains have designs under `scripts/microbenchmarks/`.
-BeeGFS communication, cache effects, and metadata operations
-have fixed offline plans, command builders, and raw-evidence visualizers, but
-**not** live benchmark runners or validated cluster pilots.
-Reviewed inventories, installed-tool output schemas, privileged-state restoration,
-owned cleanup, and remote recovery remain gates. The current workload
+Local FIO and iperf3 have documented protocols and completed cluster runs.
+BeeGFS communication and metadata have offline plans and raw-evidence
+visualizers without live runners or validated cluster pilots. The cache runner
+has not yet produced a cluster result. The current workload
 pipeline is application-level tooling, not a completed DLIO experiment.
 
 The whole-workload D/S/H, chooser, stripe, capacity, and concurrency matrix
 belongs to the separate DLIO experiment; it is not implemented. Numerical
 capacity bands are not defined. Suite-wide durable progress, allocation recovery, complete
-provenance capture, mutable allocation deadlines, clean time-budget shutdown, and
-cache-state verification are also missing.
+provenance capture, mutable allocation deadlines and clean time-budget shutdown
+across the whole suite are also missing. No live cache-state verification has
+been recorded.
 
 ## Current operation paths
 

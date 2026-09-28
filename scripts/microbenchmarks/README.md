@@ -11,9 +11,9 @@ before execution.
 |---|---|---|
 | `fio/` | Local-target FIO runner and raw-to-plot visualizer | Protocol-5 run completed |
 | `network/` | iperf3 runner and raw-to-plot visualizer | Full raw run available |
-| `communication/` | NetBench IOR plan/command and raw-to-plot visualizer | Cluster execution and pilot pending |
-| `cache/` | Controlled cache plan/command and raw-to-plot visualizer | Cluster execution and pilot pending |
-| `metadata/` | mdtest plan/command and raw-to-plot visualizer | Cluster execution and pilot pending |
+| `communication/` | NetBench IOR plan/command and raw-to-plot visualizer | No live runner or cluster results |
+| `cache/` | Single HDD/SSD cache IOR runner with raw-result capture | No cluster results |
+| `metadata/` | mdtest plan/command and raw-to-plot visualizer | No live runner or cluster results |
 | `placement/` | Historical pool-management scripts only | Retained for provenance; not live authority or a microbenchmark domain |
 | `analysis/parse_ost_logs.py` | OST usage log heatmaps | Legacy input default; new run output |
 | `analysis/parse_du.py` | Capacity text parser | Explicit input path |
@@ -22,28 +22,25 @@ before execution.
 The IOR synthetic-workload adapter is in `../workloads/`; it is an
 application-workload component, not a layer benchmark.
 
-Every storage microbenchmark domain now has a design document:
+Current domain documentation:
 
-| Domain | Design |
+| Domain | Document |
 |---|---|
 | Local storage | [`fio/DESIGN.md`](fio/DESIGN.md) |
 | Network transport | [`network/DESIGN.md`](network/DESIGN.md) |
 | BeeGFS communication | [`communication/DESIGN.md`](communication/DESIGN.md) |
-| Cache effects | [`cache/DESIGN.md`](cache/DESIGN.md) |
+| Cache effects | [`cache/README.md`](cache/README.md) |
 | Metadata operations | [`metadata/DESIGN.md`](metadata/DESIGN.md) |
 
-FIO and iperf3 runners capture native results. Every domain has a visualizer that
-consumes raw manifests and native files directly; no intermediate CSV parser is
-needed. The other three domains still require reviewed cluster inventories,
-privileged state restoration, and timed pilots before running benchmarks.
-Their plot tests use synthetic native fixtures; installed IOR/mdtest and MPI
-output schemas must be confirmed by those pilots before interpreting real figures.
+FIO and iperf3 runners capture native results, and their visualizers consume
+those raw artifacts directly. Communication and metadata have no live runners
+or cluster results; their plots have only synthetic native fixtures. The cache runner has no
+cluster execution record or observed native IOR output yet.
 Application validation, including the D/S/H whole-workload comparison, is
 specified separately in [`DL_Experiment.md`](../../docs/specs/DL_Experiment.md).
 
-See [methodology](../../docs/methodology.md) and the
-[implementation backlog](../../docs/IMPLEMENTATION_BACKLOG.md) for suite-wide
-resume, instrumentation, cache preparation and allocation-planning requirements.
+See [methodology](../../docs/methodology.md) for current implementation coverage
+and observed limitations.
 
 Historical outputs live in [results/microbenchmarks/legacy](../../results/microbenchmarks/legacy/README.md).
 The FIO and plotting tools that create files default beneath

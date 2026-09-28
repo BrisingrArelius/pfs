@@ -8,7 +8,7 @@ repository. It records the owner's requirements; it does not replace the domain
 
 - Read [`Global.md`](../../docs/specs/Global.md) and
   [`MicroBenchmarks.md`](../../docs/specs/MicroBenchmarks.md) while implementing
-  any domain, plus its own `DESIGN.md` and the applicable topology in
+  any domain, plus its current README or design and the applicable topology in
   [`CLUSTER_TOPOLOGY.md`](../../docs/CLUSTER_TOPOLOGY.md).
 - Trace each executable choice (matrix, command, dataset, validation, cleanup)
   back to the applicable spec and domain design. Record protocol deviations and

@@ -1,72 +1,163 @@
-# Cache: HDD and SSD reads
+# BeeGFS cache microbenchmark
 
-**Goal:** Read an 8-GiB file on one HDD and another 8-GiB file on one SSD,
-with both targets on the **same storage server**. For each file, compare where
-the bytes came from. This is a cache experiment, not a storage-pool sweep.
+`run_cache.py` is the single cache benchmark program. It prepares two 8-GiB
+files on BeeGFS, one on HDD target 101 and one on NVMe target 104 on `colva1`,
+then measures backend, storage-server RAM and client RAM reads from `anjuna2`.
+The full protocol is 2 media × 3 states × 5 repetitions = 30 measured reads;
+`--pilot` runs eight. Each measured read uses one IOR rank, a 1-MiB transfer,
+and an existing file. Unmeasured warm-up reads are separate from IOR results.
 
 ```text
-anjuna2 reader
-    ├─ client RAM hit ──────────────────────────────> application
-    └─ client miss -> network -> server RAM hit ───> application
-                              └─ server miss -> HDD or SSD -> application
+                       client on anjuna2
+                              │
+             ┌────────────────┴────────────────┐
+             │ client RAM hit                   │ miss
+             ▼                                  ▼
+        application                     network → colva1
+                                                │
+                                  ┌─────────────┴─────────────┐
+                                  │ server RAM hit             │ miss
+                                  ▼                            ▼
+                              application                HDD 101 / SSD 104
+                                                             │
+                                                         application
 ```
 
-| State | Before the measured read | Evidence of success |
+## Why IOR?
+
+IOR is the **measured read workload**. It performs a single sequential POSIX
+read of the existing 8-GiB BeeGFS file and reports read bandwidth. The IOR
+command uses one MPI rank and does **not** use `O_DIRECT`: direct I/O would
+bypass the client page cache whose effect this experiment is measuring. `dd`
+creates the files with direct writes and performs unmeasured warm-up reads;
+its timing is not reported as cache benchmark throughput. This measures a
+fixed synthetic read, not application performance or pure device speed.
+
+The actual measured command, with paths filled in for each case, is:
+
+```text
+/usr/bin/mpirun -np 1 /usr/local/bin/ior \
+  -a POSIX -r -E -k -g -t 1m -b 8g -s 1 -i 1 \
+  -o <existing-8-GiB-file> \
+  -O summaryFormat=JSON -O summaryFile=<case-directory>/ior.json
+```
+
+`-r` selects a read; `-E` tells IOR to use the file already prepared by the
+script; `-k` keeps that file. `-t 1m` is the transfer size, `-b 8g` the block
+per rank, `-s 1` one segment, and `-i 1` one IOR iteration. `-g` enables IOR's
+intra-test barriers. Each case is a **separate IOR invocation**; IOR's own
+iteration count does not stand for the five experiment repetitions. The native
+IOR JSON provides the reported read MiB/s, while host counters establish the
+data path. There is no `--posix.odirect` option on the measured command.
+
+## What happens when it runs
+
+1. Check the client mount, RAM, NetBench mode, and the health and HDD/NVMe
+   mapping of targets 101 and 104.
+2. Mount BeeGFS in `native` client-cache mode within a private Linux mount
+   namespace. The existing `buffered` mount stays in place.
+3. Create one run-owned directory per medium with a one-target stripe pattern.
+   Check each newly created file's actual target **before** filling it with
+   8 GiB. No cluster-wide storage-pool membership changes occur.
+4. For each case, drop client and server caches. An unmeasured read warms the
+   file for the server-RAM and client-RAM cases; the server-RAM case then drops
+   only the client cache. Run IOR once and capture client network bytes,
+   server network bytes, target-device read bytes and client page residency.
+5. Compare that traffic with the intended path. A read whose path cannot be
+   verified is recorded as `unverified`, not called a cache hit. Remove only
+   this run's BeeGFS files and the private mount on normal exit.
+
+The 8-GiB files are filled with direct `dd` writes and an fsync *before* the
+read cases. The script sets one desired stripe on each run-owned directory,
+creates empty candidate files, checks BeeGFS's **actual target ID** for each,
+and fills only a file assigned to 101 or 104. It does not move targets between
+storage pools. Normal IOR reads and buffered `dd` warm-ups use the temporary
+native-cache mount; that mount is separate from the existing `buffered` mount.
+
+### What each cache state means
+
+Every case starts with a fresh cache drop on `anjuna2` and `colva1`. Warm-ups
+are outside the measured IOR invocation.
+
+| State in `results.json` | Preparation before IOR | Data path supported by the measurements |
 |---|---|---|
-| Backend | Drop client and server caches | Network and device reads |
-| Server RAM | Drop caches, warm the file, drop client cache only | Network but few device reads |
-| Client RAM | Drop caches, warm the file, keep client cache | Very little bulk network or device reads |
+| `backend` | Drop both hosts' caches, then measure | Client and server network traffic **and** backing-device reads |
+| `server_ram` | Drop both, read the file once to warm it, drop **client only**, then measure | Client and server network traffic, few backing-device reads |
+| `client_ram` | Drop both, read the file once to warm it, leave caches intact, then measure | File resident in client RAM, little bulk network or backing-device activity |
 
-The measured command reads the existing file once with one IOR MPI rank and
-normal buffered POSIX reads. No direct I/O, NetBench or setup I/O is included in
-the reported throughput. Each case starts with its own cache preparation. The
-full experiment is **2 media × 3 states × 5 repetitions = 30 reads**; the pilot
-is eight reads (all six cases and one extra client hit per medium).
+Traffic ratios use **IOR's 8-GiB logical read** as the denominator. A verified
+backend case requires at least 80% of that amount in each of client-received,
+server-sent and device-read bytes, with at most 10% client residency. A verified
+server-RAM case requires at least 80% on both network counters, at most 20%
+device reads and at most 10% client residency. A verified client-RAM case
+requires at least 95% client residency and at most 20% on each network and
+device counter. The script also checks a one-second pre-read window for
+background traffic. These are *observed classifications*, not labels inferred
+from the order of cache-drop commands alone.
 
-## What works now
+### Functions in `run_cache.py`
 
-- `cache_config.json` defines the fixed workload and evidence thresholds.
-- `run_cache.py` **only writes a plan** to a pre-existing, marker-owned project
-  run directory (`--plan-out .../plan.json`, optionally `--pilot`). Its helper
-  functions build an IOR command and validate **saved** inventory and evidence.
-  Running this script does **not** run a cache test.
-- `probe_native_mount.py` tests **only** whether `anjuna2` can create a second,
-  `native` BeeGFS mount. It uses a private Linux mount namespace and does not
-  change the existing `buffered` mount, the system config, storage pools, or
-  caches. After the current checkout is present on `anjuna2`, run there:
+| Function | Role |
+|---|---|
+| `main` | Parse the run ID and `--pilot`, create a results directory, and start the same script with sudo in a private mount namespace. |
+| `benchmark` | Hold the run lock, set up the mounted client and two files, measure the cases, and clean up. |
+| `check_cluster` | Check BeeGFS mounting, target health/mapping, NetBench state and available RAM before preparing data. |
+| `native_mount` | Make a run-local copy of the client config with `native` caching, mount it, and check the effective mode. |
+| `targets` | Ask BeeGFS which storage target actually holds a given file. |
+| `make_file` | Select a file on target 101 or 104, fill it with direct writes, and recheck size and placement. |
+| `drop` | Clear the client's caches, and the server's too except in the server-RAM preparation step. |
+| `residency` | Use Linux `mincore` to check how much of the file is in the client's page cache without reading it. |
+| `counters` | Read client-received network bytes, server-sent network bytes and backing-device read bytes. |
+| `cases` | Return the eight-case pilot or five rotated repetitions of the six media/state combinations. |
+| `measure` | Prepare one cache state, run IOR, compare IOR and host evidence, and save the achieved label. |
+| `cleanup` | Remove only files and directories bearing this run's owner marker. |
+| `run`, `remote`, `ctl` | Execute commands locally, over SSH or through `beegfs-ctl`; capture measured-command output. |
+| `record` | Atomically publish a JSON record such as the per-case result or run summary. |
 
-  ```bash
-  python3 -B scripts/microbenchmarks/cache/probe_native_mount.py \
-    --run-id cache-native-probe-01
-  ```
+## Running it and reading the results
 
-  It saves `probe.json` in the named project run directory. An interrupted
-  namespace disappears when its process exits. Use a new run ID for each retry.
-- `visualize_results.py` reads completed raw IOR output and telemetry directly
-  and plots throughput and path evidence by medium and verified state. For an
-  existing complete run:
+Run from the project checkout on **`anjuna2` as the normal `pfs` user**. The
+script invokes non-interactive sudo for its private mount and client cache
+drop; the server cache drop uses SSH and sudo on `colva1`. A run drops host-wide
+page caches, so its measurements require exclusive use of those hosts.
 
-  ```bash
-  python3 scripts/microbenchmarks/cache/visualize_results.py \
-    results/microbenchmarks/runs/<cache-run-id>
-  ```
+Pilot (eight measured reads):
 
-The checked-in `cache_inventory.json` is **unreviewed**. Live target/layout
-verification, dataset creation, cache controls and evidence capture, IOR launch,
-checkpoint/resume, and watchdog-backed cache-mode/pool restoration are **not
-implemented**. Do not run a full cache experiment from this checkout yet. Read
-[`DESIGN.md`](DESIGN.md) and
-[`IMPLEMENTATION_RULES.md`](../IMPLEMENTATION_RULES.md) before implementing the
-cluster runner. The plots are published under `plots/generations/<id>/` and the
-active generation is selected by `plots/plot_manifest.json`.
+```bash
+python3 -B scripts/microbenchmarks/cache/run_cache.py \
+  --run-id cache-pilot-01 --pilot
+```
 
-## How long?
+Full protocol (30 measured reads, new run ID):
 
-The full run reads **240 GiB measured** plus **160 GiB of unmeasured warm-ups**;
-80 GiB of measured client hits should be local, so roughly **320 GiB** of the
-reads should cross the client network. At an ideal 2.5-Gbit/s link, that alone
-requires **at least ~18 minutes**. Add two 8-GiB file preparations, HDD/SSD
-backend reads, 30 cache preparations, telemetry, validation, restoration and
-cleanup. This is a lower bound, **not a wall-time estimate**; obtain a full-run
-estimate from the eight-case pilot, including all overhead. The pilot itself
-must fit in 20 minutes or the pilot protocol must be revised before execution.
+```bash
+python3 -B scripts/microbenchmarks/cache/run_cache.py \
+  --run-id cache-full-01
+```
+
+Each run ID is used once. The terminal prints a bandwidth and `achieved` label
+after every completed IOR read. Output is saved under
+`results/microbenchmarks/runs/<run-id>/`:
+
+```text
+owner.json                  run/user identity
+results.json                completed cases and their verified/unverified labels
+01-hdd-backend/             one example measured case
+  command.json              exact IOR argument list
+  ior.json                  native IOR summary
+  stdout.txt, stderr.txt    native IOR output
+  counters.json             before/after network and target-device counters
+  result.json               throughput, residency, ratios and achieved label
+  warmup/                   present for states with an unmeasured warm-up
+```
+
+`results.json` and completed case directories remain if a run stops early;
+missing cases do not appear as completed. On normal exit the script removes
+its run-owned BeeGFS files and private mount, while preserving these raw
+results. There is no resume command or separate plotting script in this folder.
+
+**Execution status:** the program has not been run or calibrated against the
+installed BeeGFS and IOR versions on the cluster. There are no verified cache
+results or observed full-run timings in this repository. A run stops without
+reporting a verified cache path when its layout, mount, IOR output or traffic
+evidence does not match the protocol.

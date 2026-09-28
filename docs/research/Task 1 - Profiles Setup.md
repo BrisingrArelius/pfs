@@ -1,8 +1,7 @@
 # Historical Task 1 — Profiles Setup
 
 This is a dated research brief, not an active specification. It preserves the
-questions and proposed work as they were recorded. Current missing work is listed
-in [IMPLEMENTATION_BACKLOG.md](../IMPLEMENTATION_BACKLOG.md#workload-profiles-and-classification).
+questions and proposed work as they were recorded.
 
 ## Historical goal
 

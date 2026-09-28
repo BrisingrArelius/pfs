@@ -1,317 +1,352 @@
 #!/usr/bin/env python3
-"""Plan the HDD/SSD cache-read experiment and check its recorded evidence.
-
-This is not yet a cluster runner: its CLI writes a plan, never reads a file or
-changes a cache. See README.md before trying to run the experiment.
-
-Each case: select one medium -> prepare one of three cache states -> read the
-existing 8-GiB file -> compare observed network/disk/residency with the intended
-state. The state changes and actual reads still need a live executor.
-"""
-
-from __future__ import annotations
+"""Run normal BeeGFS reads from HDD/SSD, server RAM, and client RAM on anjuna2."""
 
 import argparse
-import hashlib
+import ctypes
+import fcntl
 import json
-import math
+import mmap
 import os
 from pathlib import Path
+import pwd
 import random
+import re
+import signal
+import socket
+import subprocess
 import sys
-import uuid
-
-HERE = Path(__file__).resolve().parent
-RUNS = HERE.parents[2] / "results" / "microbenchmarks" / "runs"
-STATES = ("client_miss_server_miss", "client_miss_server_hit", "client_hit")
-MEDIA = ("HDD", "SSD")
+import time
 
 
-def load_config(path):
-    config = json.loads(Path(path).read_text(encoding="utf-8"))
-    if config.get("protocol_version") != 1:
-        raise ValueError("unknown cache protocol")
-    return config
+RUNS = Path(__file__).resolve().parents[3] / "results/microbenchmarks/runs"
+SHARED = Path("/mnt/beegfs/pfs")
+TARGETS = {"HDD": (101, "sdb1"), "SSD": (104, "nvme1n1p1")}
+STATES = ("backend", "server_ram", "client_ram")
+SIZE = 8 * 1024**3
 
 
-def positive_number(value, name):
-    if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
-        raise ValueError(f"invalid {name}")
-    return value
-
-
-def ordered_cases(cases, repetitions, seed):
-    """Shuffle once, then rotate the six cases across five repetitions."""
-    cases = list(cases)
-    random.Random(seed).shuffle(cases)
-    for repetition in range(1, repetitions + 1):
-        offset = (repetition - 1) % len(cases)
-        for position, case in enumerate(cases[offset:] + cases[:offset]):
-            yield repetition, position, case
-
-
-def finalized_plan(units):
-    units = list(units)
-    if len({unit["id"] for unit in units}) != len(units):
-        raise ValueError("duplicate unit")
-    return units
-
-
-def require_reviewed_inventory(inventory, domain, fields):
-    if inventory.get("domain") != domain or inventory.get("reviewed") is not True:
-        raise ValueError("reviewed cache inventory required")
-    if any(not inventory.get(field) for field in fields):
-        raise ValueError("cache inventory lacks required live fields")
-
-
-def open_directory_nofollow(path):
-    directory = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
+def run(argv, *, user=None, timeout=600, output=None):
+    if user:
+        argv = ["runuser", "-u", user, "--", *argv]
+    process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               start_new_session=True)
     try:
-        for component in Path(path).absolute().parts[1:]:
-            child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                            dir_fd=directory)
-            os.close(directory)
-            directory = child
-        return directory
-    except BaseException:
-        os.close(directory)
-        raise
-
-
-def write_plan(path, domain, config, units):
-    path = Path(path).absolute()
-    if (path.parent.parent != RUNS or path.name != "plan.json"
-            or path.is_symlink() or ".." in path.parts or not path.parent.is_dir()):
-        raise ValueError("plan must be inside an existing project run directory")
-    if any(component.is_symlink() for component in (path.parent, RUNS)):
-        raise ValueError("symlink in result directory")
-    record = {"domain": domain, "config": config, "units": units}
-    record["fingerprint"] = hashlib.sha256(json.dumps(record, sort_keys=True,
-        separators=(",", ":")).encode("utf-8")).hexdigest()
-    directory = open_directory_nofollow(path.parent)
-    temporary = f".plan-{uuid.uuid4().hex}"
-    try:
-        marker = os.open("owner.json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
-        with os.fdopen(marker, "r", encoding="utf-8") as source:
-            owner = json.load(source)
-        if owner != {"run_id": path.parent.name, "domain": domain}:
-            raise ValueError("run marker does not match cache protocol")
-        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                             0o600, dir_fd=directory)
-        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-            json.dump(record, output, indent=2)
-            output.write("\n")
-            output.flush()
-            os.fsync(output.fileno())
-        os.link(temporary, path.name, src_dir_fd=directory, dst_dir_fd=directory,
-                follow_symlinks=False)
-        os.fsync(directory)
-    finally:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGTERM)
         try:
-            os.unlink(temporary, dir_fd=directory)
-        except FileNotFoundError:
-            pass
-        os.close(directory)
-    return record
+            stdout, stderr = process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            stdout, stderr = process.communicate()
+        if output:
+            output.mkdir(parents=True, exist_ok=True)
+            (output / "stdout.txt").write_bytes(stdout)
+            (output / "stderr.txt").write_bytes(stderr)
+        raise RuntimeError(f"Timed out: {argv[0]}")
+    if output:
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "stdout.txt").write_bytes(stdout)
+        (output / "stderr.txt").write_bytes(stderr)
+    if process.returncode:
+        raise RuntimeError(f"{argv[0]} failed: {stderr.decode(errors='replace')[-800:]}")
+    return stdout.decode(errors="replace")
 
 
-def validate_ior(native, *, operation, tasks, block_bytes, transfer_bytes,
-                 file_per_process, expected_path, required_version, use_existing):
-    """Check that saved IOR output really describes our one complete read."""
-    if not isinstance(native, dict) or native.get("Version") != required_version:
-        raise ValueError("IOR version or JSON schema changed")
-    tests, summary = native.get("tests"), native.get("summary")
-    if not isinstance(tests, list) or len(tests) != 1 or not isinstance(summary, list) or len(summary) != 1:
-        raise ValueError("expected one IOR test and phase")
-    test, row = tests[0], summary[0]
-    params, options = test.get("Parameters"), test.get("Options")
-    if not isinstance(params, dict) or not isinstance(options, dict) or not isinstance(row, dict):
-        raise ValueError("IOR native parameters missing")
-    phases = options.get("Results")
-    if not isinstance(phases, list) or len(phases) != 1:
-        raise ValueError("expected exactly one IOR read phase")
-
-    # IOR repeats some fields in its Parameters, Options and summary sections.
-    # Check every copy: a positive throughput number alone is not enough.
-    expected_fields = (
-        (phases[0], "access", operation),
-        (row, "operation", operation), (row, "API", "POSIX"),
-        (params, "api", "POSIX"), (options, "tasks", tasks),
-        (row, "numTasks", tasks),
-        (row, "blockSize", block_bytes), (params, "blockSize", block_bytes),
-        (row, "transferSize", transfer_bytes), (params, "transferSize", transfer_bytes),
-        (row, "segmentCount", 1),
-        (row, "repetitions", 1), (params, "repetitions", 1),
-        (params, "testFileName", str(expected_path)),
-        (row, "filePerProc", int(file_per_process)),
-        (params, "filePerProc", int(file_per_process)),
-        (params, "useExistingTestFile", int(use_existing)),
-        (params, "readFile", int(operation == "read")),
-        (params, "writeFile", int(operation == "write")),
-    )
-    if any(source.get(name) != expected for source, name, expected in expected_fields):
-        raise ValueError("IOR operation or geometry differs from cache plan")
-    phase = phases[0]
-    values = (phase.get("bwMiB"), phase.get("iops"), phase.get("totalTime"),
-              phase.get("wrRdTime"), row.get("xsizeMiB"), row.get("MeanTime"), row.get("bwMeanMIB"))
-    if any(type(value) not in (int, float) or not math.isfinite(value) or value <= 0 for value in values):
-        raise ValueError("invalid native IOR performance")
-    if (abs(phase["totalTime"] - row["MeanTime"]) > 0.01
-            or abs(phase["bwMiB"] - row["bwMeanMIB"]) > max(0.1, phase["bwMiB"] * .01)
-            or abs(phase["bwMiB"] * phase["totalTime"] - row["xsizeMiB"]) > max(2, row["xsizeMiB"] * .02)
-            or abs(phase["iops"] - row["xsizeMiB"] * 1048576 /
-                   transfer_bytes / phase["wrRdTime"]) > max(1, phase["iops"] * .02)):
-        raise ValueError("IOR native bytes, duration and rate disagree")
-    return {"mib_per_second": phase["bwMiB"], "bytes_approx": row["xsizeMiB"] * 1048576,
-            "iops": phase["iops"], "seconds": phase["totalTime"]}
+def remote(host, script):
+    account = os.environ.get("SUDO_USER")
+    if not account:
+        raise RuntimeError("Cannot identify the SSH account used to launch the benchmark")
+    return run(["ssh", "-o", "BatchMode=yes", host, script],
+               user=account, timeout=90)
 
 
-def validate_config(config):
-    if (tuple(config["states"]) != STATES or config["client"] != "anjuna2"
-            or tuple(config["media"]) != MEDIA
-            or config["file_bytes"] != 8 * 1024**3
-            or config["safety_reserve_bytes"] != 8 * 1024**3
-            or config["transfer_bytes"] != 1024**2
-            or config["stripe_count"] != 1 or config["chunk_bytes"] != 512 * 1024):
-        raise ValueError("cache protocol differs from the reviewed design")
-    if config["repetitions"] != 5:
-        raise ValueError("full cache protocol requires five repetitions")
-    for state in STATES:
-        thresholds = config["thresholds"][state]
-        for name, value in thresholds.items():
-            positive_number(value, name)
-            if value > 1:
-                raise ValueError("invalid cache threshold")
+def ctl(*args):
+    return run(["/usr/sbin/beegfs-ctl", *args])
 
 
-def plan_units(config):
-    """Five rotated blocks of the six media/cache-state combinations."""
-    validate_config(config)
-    cases = [(media, state) for media in MEDIA for state in STATES]
-    plan = []
-    for repetition, position, (media, state) in ordered_cases(
-            cases, config["repetitions"], config["order_seed"]):
-        plan.append({"id": f"r{repetition:02d}-{media.lower()}-{state}",
-                     "repetition": repetition, "media": media,
-                     "state": state, "position": position})
-    return finalized_plan(plan)
+def record(path, data):
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.write_text(json.dumps(data, indent=2) + "\n")
+    temporary.replace(path)
 
 
-def pilot_units(config):
-    """One of each media/state, then one more client hit on each medium."""
-    validate_config(config)
-    cases = [(media, state) for media in MEDIA for state in STATES]
-    cases += [(media, "client_hit") for media in MEDIA]
-    plan = []
-    for index, (media, state) in enumerate(cases, 1):
-        plan.append({"id": f"pilot-{index:02d}-{media.lower()}-{state}",
-                     "media": media, "state": state,
-                     "repetition": 1 if index <= 6 else 2})
-    return finalized_plan(plan)
-
-
-def build_command(ior, mpirun, owned_file, native_summary):
-    """Single rank, normal buffered POSIX read; no O_DIRECT and no write option."""
-    return [str(mpirun), "-np", "1", str(ior), "-a", "POSIX", "-r", "-E", "-k",
-            "-g", "-t", "1m", "-b", "8g", "-s", "1", "-i", "1",
-            "-o", str(owned_file), "-O", "summaryFormat=JSON",
-            "-O", f"summaryFile={native_summary}"]
-
-
-def prepare_cache_state(state, *, evidence):
-    """List required steps; no cache-control command runs here."""
-    if state not in STATES:
-        raise ValueError("unknown cache state")
-    if not evidence.get("exclusive_allocation") or not evidence.get("writeback_settled"):
-        raise ValueError("cache control requires exclusive allocation and settled writes")
-    steps = ["drop_client_and_selected_oss", "wait_settle", "verify_client_residency"]
-    if state != STATES[0]:
-        steps = ["drop_client_and_selected_oss", "warm_complete_file", "verify_warm_traffic"]
-        if state == STATES[1]:
-            steps += ["drop_client_only", "verify_client_residency"]
+def check_cluster():
+    if socket.gethostname().split(".")[0] != "anjuna2":
+        raise RuntimeError("Run on anjuna2")
+    if run(["findmnt", "-n", "-o", "FSTYPE", "--target", str(SHARED)]).strip() != "beegfs":
+        raise RuntimeError("/mnt/beegfs/pfs is not BeeGFS")
+    states = ctl("--listtargets", "--longnodes", "--state")
+    for target, _ in TARGETS.values():
+        if not re.search(rf"(?m)^\s*{target}\s+Online\s+Good\s+.*colva1\b", states):
+            raise RuntimeError(f"Target {target} is not Online/Good on colva1")
+    numbers = remote("colva1", "sudo -n cat /mnt/hdd2/beegfs_storage/targetNumID "
+                     "/mnt/nvme0/beegfs_storage/targetNumID")
+    if numbers.split() != ["101", "104"]:
+        raise RuntimeError("Target-to-device mapping has changed")
+    for host in (None, "anjuna3"):
+        if host:
+            modes = remote(host, "for f in /proc/fs/beegfs/*/netbench_mode; do cat \"$f\"; done").split()
         else:
-            steps += ["verify_client_residency_at_least_95_percent"]
-    return steps + ["capture_zero_point", "measure_immediately"]
+            modes = [p.read_text() for p in Path("/proc/fs/beegfs").glob("*/netbench_mode")]
+        if not modes or any(str(value).strip() != "0" for value in modes):
+            raise RuntimeError(f"NetBench enabled on {host or 'anjuna2'}")
+    for host in (None, "colva1"):
+        text = remote(host, "cat /proc/meminfo") if host else Path("/proc/meminfo").read_text()
+        match = re.search(r"(?m)^MemAvailable:\s+(\d+) kB$", text)
+        if not match or int(match.group(1)) * 1024 < 16 * 1024**3:
+            raise RuntimeError(f"Insufficient RAM on {host or 'anjuna2'}")
 
 
-def classify_achieved_state(state, evidence, thresholds):
-    """Classify saved traffic and residency; a repeated read alone proves nothing."""
-    if state not in STATES:
-        raise ValueError("unknown cache state")
-    logical = positive_number(evidence["logical_bytes"], "logical bytes")
-    if (not evidence.get("quiescent") or not evidence.get("netbench_off")
-            or not evidence.get("telemetry_complete") or not evidence.get("file_unchanged")):
-        return "cache_influenced_unverified"
-    network = evidence["network_bytes"] / logical
-    backend = evidence["backend_read_bytes"] / logical
-    residency = evidence["client_residency"]
-    if any(type(value) not in (int, float) or not 0 <= value < float("inf")
-           for value in (network, backend, residency)) or residency > 1:
-        raise ValueError("invalid cache telemetry")
-    limits = thresholds[state]
-    ratios = {"network": network, "backend": backend, "residency": residency}
-    for criterion, limit in limits.items():
-        name, bound = criterion.rsplit("_", 1)
-        outside_limit = (ratios[name] < limit if bound == "min"
-                         else ratios[name] > limit)
-        if outside_limit:
-            return "cache_influenced_unverified"
-    return state
+def native_mount(results):
+    original = Path("/etc/beegfs/beegfs-client.conf").read_text()
+    regex = re.compile(r"^(\s*tuneFileCacheType\s*=\s*)buffered(\s*(?:#.*)?)$", re.MULTILINE)
+    if len(regex.findall(original)) != 1:
+        raise RuntimeError("Existing client is not explicitly configured as buffered")
+    config, mount = results / "native.conf", results / "native-mount"
+    config.write_text(regex.sub(r"\g<1>native\2", original))
+    config.chmod(0o600)
+    mount.mkdir()
+    existing = list(Path("/proc/fs/beegfs").glob("*/config"))
+    run(["mount", "-t", "beegfs", "beegfs_nodev", "-o", f"cfgFile={config}", str(mount)])
+    configs = [p.read_text() for p in Path("/proc/fs/beegfs").glob("*/config")
+               if p not in existing]
+    if (not any(re.search(r"(?m)^tuneFileCacheType\s*=\s*native\s*$", text)
+                for text in configs)
+            or not all(re.search(r"(?m)^tuneFileCacheType\s*=\s*buffered\s*$", p.read_text())
+                       for p in existing)):
+        raise RuntimeError("Private BeeGFS mount did not create a native-cache client")
+    return mount
 
 
-def validate_measurement(unit, native, evidence, config, *, owned_file, ior_version):
-    metrics = validate_ior(native, operation="read", tasks=1,
-                           block_bytes=config["file_bytes"],
-                           transfer_bytes=config["transfer_bytes"],
-                           file_per_process=False, expected_path=owned_file,
-                           use_existing=True,
-                           required_version=ior_version)
-    if abs(metrics["bytes_approx"] - config["file_bytes"]) > 1048576:
-        raise ValueError("cache read did not transfer the entire 8 GiB file")
-    if abs(evidence.get("logical_bytes", 0) - metrics["bytes_approx"]) > 1048576:
-        raise ValueError("cache telemetry logical bytes differ from IOR native bytes")
-    state = classify_achieved_state(unit["state"], evidence, config["thresholds"])
-    return {**metrics, "intended_state": unit["state"], "achieved_state": state}
+def targets(path):
+    info = ctl("--getentryinfo", "--verbose", str(path))
+    return [int(value) for value in re.findall(r"(?m)^\s*\+\s+(\d+)\s+@", info)]
 
 
-def preflight(inventory):
-    """Validate a *saved* inventory; this does not inspect live cluster state."""
-    require_reviewed_inventory(inventory, "cache", ("client_mode", "targets", "devices",
-                                                    "mount", "restoration", "namespace"))
-    if inventory["client_mode"] != "native" or inventory.get("available_ram_bytes", 0) < 16 * 1024**3:
-        raise ValueError("three-state cache study requires native mode and 16 GiB available")
-    if inventory.get("server_available_ram_bytes", 0) < 16 * 1024**3:
-        raise ValueError("one-OSS cache study requires 16 GiB available on the storage server")
-    targets = inventory["targets"]
-    if not isinstance(targets, list) or len(targets) != 2:
-        raise ValueError("cache study needs exactly two targets")
-    if ({target.get("media") for target in targets} != set(MEDIA)
-            or len({target.get("oss") for target in targets}) != 1
-            or targets[0].get("id") == targets[1].get("id")):
-        raise ValueError("cache study needs one reviewed HDD and one SSD target on the same OSS")
-    for target in targets:
-        if (target.get("oss") not in {"colva1", "colva2", "colva3", "colva4"}
-                or target.get("state") != "Online/Good" or not target.get("id")
-                or not target.get("device")):
-            raise ValueError("cache target identity, device or health is missing")
-    if not inventory.get("watchdog_verified") or not inventory.get("privilege_verified"):
-        raise ValueError("cache restoration watchdog and authorization must be verified")
-    return True
+def make_file(directory, target, user):
+    directory.mkdir()
+    os.chown(directory, user.pw_uid, user.pw_gid)
+    ctl("--setpattern", "--numtargets=1", "--chunksize=512k", str(directory))
+    for number in range(1, 513):
+        path = directory / f"candidate-{number:03d}"
+        descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        os.fchown(descriptor, user.pw_uid, user.pw_gid)
+        os.close(descriptor)
+        if targets(path) == [target]:
+            break
+        path.unlink()
+    else:
+        raise RuntimeError(f"Could not obtain one-stripe file on target {target}")
+    run(["dd", "if=/dev/zero", f"of={path}", "bs=1M", "count=8192",
+         "oflag=direct", "conv=fsync", "status=none"], user=user.pw_name)
+    if path.stat().st_size != SIZE or targets(path) != [target]:
+        raise RuntimeError(f"File on target {target} has wrong size or layout")
+    return path
+
+
+def residency(path):
+    """Percentage of this file resident in the Linux client page cache."""
+    with path.open("rb", buffering=0) as source:
+        with mmap.mmap(source.fileno(), 0, flags=mmap.MAP_PRIVATE,
+                       prot=mmap.PROT_READ | mmap.PROT_WRITE) as mapped:
+            pages = (len(mapped) + os.sysconf("SC_PAGE_SIZE") - 1) // os.sysconf("SC_PAGE_SIZE")
+            vector = (ctypes.c_ubyte * pages)()
+            address = ctypes.addressof(ctypes.c_char.from_buffer(mapped))
+            libc = ctypes.CDLL(None, use_errno=True)
+            if libc.mincore(ctypes.c_void_p(address), ctypes.c_size_t(len(mapped)), vector):
+                raise OSError(ctypes.get_errno(), "mincore failed")
+            return sum(byte & 1 for byte in vector) / pages
+
+
+def counters(interface, device):
+    net = int((Path("/sys/class/net") / interface / "statistics/rx_bytes").read_text())
+    sent = int(remote("colva1", "cat /sys/class/net/enp7s0/statistics/tx_bytes").strip())
+    disk = remote("colva1", f"cat /sys/class/block/{device}/stat").split()
+    return {"client_network": net, "server_network": sent,
+            "device_read": int(disk[2]) * 512}
+
+
+def drop(client_only=False):
+    os.sync()
+    if not client_only:
+        remote("colva1", "sudo -n sh -c 'sync && printf 3 > /proc/sys/vm/drop_caches'")
+    Path("/proc/sys/vm/drop_caches").write_text("3\n")
+
+
+def cases(pilot):
+    six = [(medium, state) for medium in TARGETS for state in STATES]
+    if pilot:
+        return six + [(medium, "client_ram") for medium in TARGETS]
+    random.Random(20260924).shuffle(six)
+    return [case for repetition in range(5) for case in six[repetition:] + six[:repetition]]
+
+
+def measure(index, medium, state, path, interface, user, results):
+    folder = results / f"{index:02d}-{medium.lower()}-{state}"
+    folder.mkdir()
+    os.chown(folder, user.pw_uid, user.pw_gid)
+    drop()
+    if state != "backend":
+        run(["dd", f"if={path}", "of=/dev/null", "bs=1M", "count=8192",
+             "iflag=fullblock", "status=none"], user=user.pw_name,
+            output=folder / "warmup")
+        if state == "server_ram":
+            drop(client_only=True)
+    cached = residency(path)
+    identity = path.stat()
+    idle = counters(interface, TARGETS[medium][1])
+    time.sleep(1)
+    before = counters(interface, TARGETS[medium][1])
+    quiet = all(0 <= before[key] - idle[key] < SIZE // 100 for key in before)
+    summary = folder / "ior.json"
+    argv = ["/usr/bin/mpirun", "-np", "1", "/usr/local/bin/ior", "-a", "POSIX",
+            "-r", "-E", "-k", "-g", "-t", "1m", "-b", "8g", "-s", "1",
+            "-i", "1", "-o", str(path), "-O", "summaryFormat=JSON",
+            "-O", f"summaryFile={summary}"]
+    record(folder / "command.json", argv)
+    started = time.time()
+    try:
+        run(argv, user=user.pw_name, output=folder)
+    finally:
+        after = counters(interface, TARGETS[medium][1])
+        record(folder / "counters.json", {"before": before, "after": after})
+    if (path.stat().st_ino, path.stat().st_size, path.stat().st_mtime_ns) != (
+            identity.st_ino, identity.st_size, identity.st_mtime_ns):
+        raise RuntimeError("IOR modified its input file")
+    data = json.loads(summary.read_text())
+    rows = data.get("summary")
+    if not isinstance(rows, list) or len(rows) != 1:
+        raise RuntimeError("Unrecognized native IOR JSON summary; raw files are preserved")
+    row = rows[0]
+    if (row.get("API") != "POSIX" or row.get("operation") != "read"
+            or row.get("numTasks") != 1 or row.get("blockSize") != SIZE
+            or row.get("transferSize") != 1024**2 or row.get("xsizeMiB") != 8192):
+        raise RuntimeError("IOR read does not match the 8-GiB POSIX protocol")
+    rate = row.get("bwMeanMIB")
+    if not isinstance(rate, (float, int)) or not 0 < rate < float("inf"):
+        raise RuntimeError("IOR did not report valid bandwidth")
+    network = (after["client_network"] - before["client_network"]) / SIZE
+    server = (after["server_network"] - before["server_network"]) / SIZE
+    backend = (after["device_read"] - before["device_read"]) / SIZE
+    verified = quiet and {
+        "backend": network >= .8 and server >= .8 and backend >= .8 and cached <= .1,
+        "server_ram": network >= .8 and server >= .8 and backend <= .2 and cached <= .1,
+        "client_ram": network <= .2 and server <= .2 and backend <= .2 and cached >= .95,
+    }[state]
+    result = {"medium": medium, "target": TARGETS[medium][0], "intended": state,
+              "achieved": state if verified else "unverified", "MiB_per_second": rate,
+              "client_residency": cached, "network_ratio": network,
+              "server_network_ratio": server, "backend_ratio": backend,
+              "quiet_before": quiet,
+              "seconds": time.time() - started}
+    record(folder / "result.json", result)
+    return result
+
+
+def cleanup(namespace, run_id):
+    marker = namespace / "owner.json"
+    if (namespace.parent != SHARED or namespace.is_symlink() or marker.is_symlink()
+            or json.loads(marker.read_text()) != {"run_id": run_id}):
+        raise RuntimeError("Refusing to clean up unowned BeeGFS files")
+    for medium in ("hdd", "ssd"):
+        directory = namespace / medium
+        if not directory.exists():
+            continue
+        if directory.is_symlink() or any(
+                not re.fullmatch(r"candidate-\d{3}", item.name)
+                or item.is_symlink() or not item.is_file() for item in directory.iterdir()):
+            raise RuntimeError("Unexpected file in benchmark directory")
+        for item in directory.iterdir():
+            item.unlink()
+        directory.rmdir()
+    marker.unlink()
+    namespace.rmdir()
+
+
+def benchmark(run_id, pilot, results):
+    if os.geteuid() != 0 or os.readlink("/proc/self/ns/mnt") == os.readlink("/proc/1/ns/mnt"):
+        raise RuntimeError("Root and a private mount namespace are required")
+    with (RUNS / ".cache.lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        check_cluster()
+        owner = json.loads((results / "owner.json").read_text())
+        if (results.parent != RUNS or owner.get("run_id") != run_id
+                or owner.get("user") != os.environ.get("SUDO_USER")):
+            raise RuntimeError("Run directory owner marker differs")
+        user = pwd.getpwnam(owner["user"])
+        namespace = SHARED / (".cache-" + run_id)
+        if namespace.exists():
+            raise RuntimeError("Benchmark namespace already exists")
+        namespace.mkdir()
+        os.chown(namespace, user.pw_uid, user.pw_gid)
+        record(namespace / "owner.json", {"run_id": run_id})
+        mount = results / "native-mount"
+        mounted = False
+        results_so_far = []
+        try:
+            try:
+                native_mount(results)
+            finally:
+                mounted = subprocess.run(["findmnt", "-n", "--mountpoint", str(mount)],
+                                         capture_output=True).returncode == 0
+            modes = [p.read_text().strip() for p in Path("/proc/fs/beegfs").glob("*/netbench_mode")]
+            if not modes or any(mode != "0" for mode in modes):
+                raise RuntimeError("NetBench enabled on a measured client")
+            path = mount / "pfs" / namespace.name
+            files = {medium: make_file(path / medium.lower(), target, user)
+                     for medium, (target, _) in TARGETS.items()}
+            route = run(["ip", "route", "get", socket.gethostbyname("colva1")])
+            interface = re.search(r"\bdev\s+(\S+)", route)
+            if interface is None:
+                raise RuntimeError("No client network interface to colva1")
+            for index, (medium, state) in enumerate(cases(pilot), 1):
+                result = measure(index, medium, state, files[medium],
+                                 interface.group(1), user, results)
+                results_so_far.append(result)
+                record(results / "results.json", results_so_far)
+                print(f"{index}/{len(cases(pilot))} {medium} {state}: "
+                      f"{result['MiB_per_second']:.1f} MiB/s ({result['achieved']})", flush=True)
+        finally:
+            try:
+                if mounted:
+                    run(["umount", str(mount)])
+                    mounted = False
+            finally:
+                if mount.is_dir() and not mounted:
+                    mount.rmdir()
+                (results / "native.conf").unlink(missing_ok=True)
+                cleanup(namespace, run_id)
+        return 0
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--plan-out", type=Path, required=True)
-    parser.add_argument("--pilot", action="store_true")
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--pilot", action="store_true", help="Run eight reads rather than thirty")
+    parser.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    config = load_config(HERE / "cache_config.json")
-    units = pilot_units(config) if args.pilot else plan_units(config)
-    root = HERE.parents[2].resolve()
-    if not args.plan_out.resolve().is_relative_to(root / "results" / "microbenchmarks" / "runs"):
-        parser.error("plan output must be below project results/microbenchmarks/runs")
-    record = write_plan(args.plan_out, "cache-pilot" if args.pilot else "cache", config, units)
-    print(json.dumps({"units": len(units), "fingerprint": record["fingerprint"]}))
+    if not re.fullmatch(r"cache-[A-Za-z0-9_-]+", args.run_id):
+        parser.error("run ID must start with cache- and contain only letters, digits, _ or -")
+    results = RUNS / args.run_id
+    try:
+        if args.inside:
+            return benchmark(args.run_id, args.pilot, results)
+        if socket.gethostname().split(".")[0] != "anjuna2" or not RUNS.is_dir():
+            parser.error("run from the project checkout on anjuna2")
+        if os.geteuid() == 0:
+            parser.error("run as your normal account; the script invokes sudo for its private mount")
+        results.mkdir(mode=0o700)
+        record(results / "owner.json", {"run_id": args.run_id,
+                                         "user": pwd.getpwuid(os.getuid()).pw_name})
+        return subprocess.run(["sudo", "-n", "unshare", "--mount", "--propagation", "private",
+                               sys.executable, "-B", str(Path(__file__).resolve()),
+                               "--run-id", args.run_id, "--inside", *( ["--pilot"] if args.pilot else [])],
+                              check=False).returncode
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        print(f"Cache benchmark stopped; saved raw results remain in {results}: {error}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
