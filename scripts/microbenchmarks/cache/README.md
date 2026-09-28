@@ -125,7 +125,7 @@ from the order of cache-drop commands alone.
 | `cases` | Return buffered (4/20) or native (8/30) pilot/full cases; full runs rotate their configuration order. |
 | `measure` | Prepare one cache state, run IOR, compare IOR and host evidence, and save the achieved label. |
 | `cleanup` | Remove only files and directories bearing this run's owner marker. |
-| `run`, `remote`, `ctl` | Execute commands locally, over SSH or through `beegfs-ctl`; capture measured-command output. |
+| `run`, `remote`, `ctl` | Execute commands locally or over SSH; `ctl` uses sudo and the installed client's configuration for all `beegfs-ctl` calls. Capture measured-command output. |
 | `record` | Atomically publish a JSON record such as the per-case result or run summary. |
 
 ## Running it and reading the results
@@ -133,8 +133,11 @@ from the order of cache-drop commands alone.
 Run from the project checkout on **`anjuna2` as the normal `pfs` user**. Select
 the mode already active on the existing mount. The script does not restart or
 restore the BeeGFS client. It invokes non-interactive sudo to set the stripe
-pattern on its own directories and drop the client cache;
-the server cache drop uses SSH and sudo on `colva1`. A run drops host-wide page
+pattern on its own directories, read BeeGFS target information through
+`beegfs-ctl`, and drop the client cache. The CLI is given
+`--cfgFile=/etc/beegfs/beegfs-client.conf`, matching the configuration that
+works on `anjuna2`; the script does not change its authentication settings.
+The server cache drop uses SSH and sudo on `colva1`. A run drops host-wide page
 caches, so its measurements require exclusive use of those hosts. Its file lock
 only prevents two copies of `run_cache.py` from running at once; it does not
 block other cluster workloads.
@@ -143,7 +146,7 @@ Buffered pilot (four measured reads) with the current `buffered` mount:
 
 ```bash
 python3 -B scripts/microbenchmarks/cache/run_cache.py \
-  --run-id cache-buffered-pilot-01 --mode buffered --pilot
+  --run-id cache-buffered-pilot-02 --mode buffered --pilot
 ```
 
 Buffered full run (20 measured reads, new run ID):

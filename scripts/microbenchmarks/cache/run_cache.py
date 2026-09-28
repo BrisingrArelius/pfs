@@ -20,6 +20,7 @@ import time
 
 RUNS = Path(__file__).resolve().parents[3] / "results/microbenchmarks/runs"
 SHARED = Path("/mnt/beegfs/pfs")
+CLIENT_CONFIG = "/etc/beegfs/beegfs-client.conf"
 TARGETS = {"HDD": (101, "sdb1"), "SSD": (104, "nvme1n1p1")}
 STATES = ("backend", "server_ram", "client_ram")
 SIZE = 8 * 1024**3
@@ -62,9 +63,13 @@ def remote(host, script):
 
 
 def ctl(*args):
-    """Run beegfs-ctl; use sudo only to set our directory stripe pattern."""
-    privilege = ["sudo", "-n"] if args[0] == "--setpattern" else []
-    return run([*privilege, "/usr/sbin/beegfs-ctl", *args])
+    """Run beegfs-ctl with the installed client's root-readable config.
+
+    This host's CLI does not load connDisableAuthentication from that config
+    by default. Use its proven --cfgFile form for reads and directory changes.
+    """
+    return run(["sudo", "-n", "/usr/sbin/beegfs-ctl",
+                f"--cfgFile={CLIENT_CONFIG}", *args])
 
 
 def record(path, data):
