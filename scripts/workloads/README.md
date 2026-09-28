@@ -4,7 +4,7 @@ This directory contains workload definitions, the IOR wrapper, the C workload
 implementation, and the workload/pipeline runners.
 
 The runners use run-specific output locations. This is an application-workload
-pipeline rather than the complete six-domain suite.
+pipeline rather than the complete five-domain layer-effects suite.
 Historical outputs live under
 [results/workloads/legacy](../../results/workloads/legacy/README.md).
 

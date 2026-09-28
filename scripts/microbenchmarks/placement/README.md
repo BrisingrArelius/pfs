@@ -1,27 +1,11 @@
-# End-to-end placement benchmark
+# Historical storage-pool helpers
 
-The end-to-end benchmark design is [`DESIGN.md`](DESIGN.md). The new
-`run_placement.py` supplies a fixed 6,480-unit baseline-capacity plan, an
-approved-band capacity extension, a six-case pilot proposal, and exact IOR argv.
-`visualize_results.py` reads saved native IOR, layouts and telemetry directly and
-creates per-workload, chooser, capacity and completion-reason figures. Run:
-
-```bash
-python3 scripts/microbenchmarks/placement/visualize_results.py \
-  results/microbenchmarks/runs/<placement-run-id>
-```
-
-`plots/plot_manifest.json` lists the complete PNG generation under
-`plots/generations/<id>/`. `placement_inventory.json` is an **unreviewed
-template**; neither the planner nor the historical shell scripts authorize live
-pool changes. Read [`IMPLEMENTATION_RULES.md`](../IMPLEMENTATION_RULES.md) and
-the [global specification](../../../docs/specs/Global.md) before execution.
-
-Helper scripts for configuring BeeGFS storage pools used by the workload pipeline.
-
-These scripts contain historical target inventories and are not verified against
-the current cluster. See [methodology](../../../docs/methodology.md) for D/S/H.
-The full experiment design is not implemented by these helpers.
+This folder retains historical BeeGFS pool-management scripts for provenance.
+They are **not** a reviewed live inventory, a reversible state transaction, or
+a benchmark runner. D/S/H comparisons belong to the separate
+[DLIO application experiment](../../../docs/specs/DL_Experiment.md); the
+[microbenchmark suite](../../../docs/specs/MicroBenchmarks.md) measures layer
+effects only.
 
 ## Files
 
@@ -30,10 +14,10 @@ The full experiment design is not implemented by these helpers.
 
 ## Historical usage
 
-Do not run these scripts as the benchmark's setup or restoration mechanism.
+Do not run these scripts as DLIO setup or restoration.
 They encode old target memberships and cannot restore the exact live baseline.
-The end-to-end design requires a reviewed inventory and reversible transaction
-with an independent coordinator-loss watchdog instead.
+DLIO needs a reviewed inventory and reversible pool transactions with verified
+restoration instead.
 
 ## Notes
 

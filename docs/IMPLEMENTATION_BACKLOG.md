@@ -9,15 +9,15 @@ experiment work. Completed repository-path repairs are recorded separately in
 - [ ] Complete the remaining [cluster topology](CLUSTER_TOPOLOGY.md) details:
   exact drive models for `colva2`-`colva4` and upstream PCIe/switch topology.
   Refresh the dated inventory before benchmark execution.
-- [ ] Execute the planned D/S/H, chooser, stripe, concurrency, and repetition
-  matrix. The placement code generates a 6,480-unit baseline-capacity plan but
-  does not execute it. Add capacity only after site bands are agreed.
+- [ ] Execute D/S/H, chooser, stripe, concurrency, and repetition comparisons
+  in the separately specified DLIO application experiment. Add capacity only
+  after its meaning and site bands are agreed.
 - [ ] Confirm the designed request sizes, datasets, concurrency, timing, setup,
   and success checks against installed tools in bounded pilots. Keep both 4-KiB
   and 128-KiB local random-read tests.
 - [ ] Record skipped or impossible matrix cases and explain why they cannot run.
 
-## Six benchmark domains
+## Five layer-effect benchmark domains
 
 - [x] Complete the per-target [FIO protocol-5 run](../scripts/microbenchmarks/fio/README.md):
   700 native measurements across four hosts. Simultaneous-target experiments
@@ -29,8 +29,6 @@ experiment work. Completed repository-path repairs are recorded separately in
 - [ ] Add RDMA transport measurements only if a reviewed active BeeGFS path uses RDMA.
 - [ ] Add IOR + NetBench tests for BeeGFS communication. Check server traffic and
   always restore NetBench mode after success, failure, or interruption.
-- [ ] Add a multi-process normal-IOR runner for the full placement matrix. Verify
-  fresh file layouts and include write synchronization in measured time.
 - [ ] Add controlled read-cache tests for client miss/server miss, client
   miss/server hit, and client hit. Verify states with network and device evidence.
 - [ ] Add mdtest coverage for selected operations, directory layouts, and process

@@ -473,7 +473,7 @@ Planned derived comparisons are:
   Label this as an observed whole-path difference, not pure network overhead.
 
 Present directory and file operations separately. Never average unlike operations
-into one metadata score. Do not subtract network, local-storage, or end-to-end
+into one metadata score. Do not subtract network, local-storage, or DLIO
 throughput results to infer metadata overhead.
 
 ## 12. Pilot and acceptance gates

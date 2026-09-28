@@ -231,7 +231,7 @@ def plot(rows, output):
                       fmt="none", color="#26343D", capsize=4)
         axis.scatter([position] * len(values), values, marker="_", color="#26343D", zorder=3)
     axis.set_xticks(range(3), [LABELS[state] for state in STATES])
-    axis.set_ylabel("Normal IOR read throughput (MiB/s)")
+    axis.set_ylabel("BeeGFS POSIX read throughput (MiB/s)")
     axis.set_title("Verified cache paths · 8-GiB sequential read")
     axis.grid(axis="y", alpha=.25)
     fig.tight_layout()

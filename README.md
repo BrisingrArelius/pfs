@@ -5,10 +5,10 @@ implementation status for BeeGFS target-placement experiments.
 
 ## Status
 
-Existing FIO, workload, Darshan-analysis, placement, and trace-analysis tools are
+Existing FIO, network, workload, Darshan-analysis, and trace-analysis tools are
 available under `scripts/`. New outputs use run-specific directories under
 `results/`; historical evidence is kept under `results/*/legacy/`. The complete
-six-domain experiment suite is not implemented yet; remaining work is listed in
+five-domain layer-effects suite is not implemented yet; remaining work is listed in
 the [implementation backlog](docs/IMPLEMENTATION_BACKLOG.md).
 
 ## Repository layout
@@ -16,8 +16,12 @@ the [implementation backlog](docs/IMPLEMENTATION_BACKLOG.md).
 ```text
 scripts/
   microbenchmarks/
-    fio/                 existing FIO runner, configuration, analysis and visualizer
-    placement/           existing pool-management helpers
+    fio/                 local-target FIO runner and raw-to-plot visualizer
+    network/             iperf3 runner and raw-to-plot visualizer
+    communication/       offline NetBench IOR plan and raw-to-plot visualizer
+    cache/               offline cache plan and raw-to-plot visualizer
+    metadata/            offline mdtest plan and raw-to-plot visualizer
+    placement/           historical pool-management helpers only
     analysis/            OST-log, capacity and placement utilities
   workloads/             synthetic workloads, profiles and orchestration
     analysis/            Darshan parsing and workload-result analysis
@@ -37,9 +41,8 @@ logs for workload-profile research; they are not BeeGFS microbenchmark runners.
 
 ## Missing functionality
 
-- The complete D/S/H placement matrix is missing.
-- Dedicated network, BeeGFS communication, cache-state, and metadata runners are
-  missing.
+- The separate DLIO whole-workload D/S/H comparison is not implemented.
+- Live BeeGFS communication, cache-state, and metadata runners are missing.
 - Durable suite-wide progress and resume support is missing.
 - Controlled capacity conditions and application-validation coverage are missing.
 

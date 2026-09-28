@@ -74,7 +74,7 @@ repository. It records the owner's requirements; it does not replace the domain
 
 ## Current scope
 
-Implement `cache/`, `communication/`, `metadata/`, and `placement/` against their
+Implement `cache/`, `communication/`, and `metadata/` against their
 own designs. Do not change FIO or iperf3 **raw-result generation**; their
 visualizers may be updated to consume their existing raw output directly. No
 cluster pilot or privileged state transition may be claimed complete without

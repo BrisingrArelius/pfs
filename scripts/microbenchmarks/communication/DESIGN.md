@@ -249,7 +249,7 @@ Primary metrics are IOR aggregate MiB/s, bytes, operation count, transfer time,
 open/close time, and rank completion skew. Also report client/OSS CPU, aggregate
 network bytes, backend-device bytes, and five-repetition variation. Preserve
 native units and state exactly how IOR computed each rate. Do not subtract
-iperf3 or normal-IOR throughput to estimate overhead.
+iperf3, local FIO, or DLIO throughput to estimate overhead.
 
 ## 10. Implementation shape
 

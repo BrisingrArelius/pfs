@@ -32,17 +32,17 @@ an intermediate CSV parser. The completed FIO run includes both FIO 3.28 and
 
 ## Missing experiment coverage
 
-All six domains have implementation designs under `scripts/microbenchmarks/`.
-BeeGFS communication, end-to-end placement, cache effects, and metadata operations
+All five layer-effect domains have designs under `scripts/microbenchmarks/`.
+BeeGFS communication, cache effects, and metadata operations
 have fixed offline plans, command builders, and raw-evidence visualizers, but
 **not** live benchmark runners or validated cluster pilots.
 Reviewed inventories, installed-tool output schemas, privileged-state restoration,
 owned cleanup, and remote recovery remain gates. The current workload
-pipeline is application-level tooling rather than the missing placement runner.
+pipeline is application-level tooling, not a completed DLIO experiment.
 
-The complete D/S/H, target-chooser, stripe-count, stripe-size, capacity,
-concurrency, and repetition matrix is not implemented. Numerical capacity bands
-are not defined. Suite-wide durable progress, allocation recovery, complete
+The whole-workload D/S/H, chooser, stripe, capacity, and concurrency matrix
+belongs to the separate DLIO experiment; it is not implemented. Numerical
+capacity bands are not defined. Suite-wide durable progress, allocation recovery, complete
 provenance capture, mutable allocation deadlines, clean time-budget shutdown, and
 cache-state verification are also missing.
 

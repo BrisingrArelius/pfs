@@ -4,6 +4,17 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-09-25 — Restrict microbenchmarks to layer effects
+
+- Removed the standalone whole-system experiment and its plan, design,
+  visualizer, inventory template, and synthetic tests. Retained the historical
+  pool-management helpers as provenance, not live authority.
+- Aligned the repository and Obsidian `MicroBenchmarks.md` specifications on five
+  layer-focused domains. D/S/H whole-workload comparisons remain in the separate
+  DLIO specification and global factor rules.
+
+---
+
 ## 2026-09-25 — Visualize microbenchmarks directly from native evidence
 
 - FIO and iperf3 visualizers now validate completed raw runs and create figures
@@ -11,22 +22,21 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   changing either raw benchmark runner. The available full runs produced ten FIO
   figures (separated by installed FIO version) and three iperf3 figures.
 - Added folder-local raw-to-plot visualizers, offline plans, and synthetic
-  evidence tests for cache, BeeGFS communication, placement, and metadata.
-  These four domains **still lack live cluster runners and reviewed pilots**.
+  evidence tests for cache, BeeGFS communication, and metadata.
+  These three domains **still lack live cluster runners and reviewed pilots**.
 - Plots are published as complete generations under each run's `plots/` directory,
   with the current paths in `plot_manifest.json`. Updated the guides and backlog
   to distinguish completed evidence from planned experiments.
 
 ---
 
-## 2026-09-23 - Complete six-domain microbenchmark designs
+## 2026-09-23 - Develop layer-effect microbenchmark designs
 
-- Added implementation-ready designs for BeeGFS NetBench communication,
-  normal end-to-end placement, and controlled cache effects.
+- Added designs for BeeGFS NetBench communication and controlled cache effects.
 - Fixed each domain's workload geometry, matrix, state transitions, native
   evidence, telemetry, validation, durable resume, cleanup, and pilot gates.
-- Added a six-domain design index and retained capacity as an explicit gated
-  extension until site bands are approved.
+- Kept capacity provisioning as a separate DLIO gate until site bands are
+  approved.
 - Changes in this entry are documentation only; no pool, cache, NetBench, IOR,
   FIO, iperf3, or mdtest operation ran.
 
@@ -46,13 +56,12 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
-## 2026-09-21 — Six-domain benchmark suite and execution requirements
+## 2026-09-21 — Layer-effects suite and execution requirements
 
-- Revised experiment specifications and repository summaries: six plainly named
-  benchmark domains, explicit communication/cache experiments,
-  operation paths, separate application validation and full placement matrix.
+- Revised experiment specifications and repository summaries for explicit
+  communication/cache experiments, operation paths, and separate DLIO validation.
 - Specified Darshan coverage/raw evidence, durable progress across allocations,
-  independent parser recovery and pilot-based full-matrix duration planning.
+  independent visualization recovery and pilot-based duration planning.
 - Added [implementation backlog](IMPLEMENTATION_BACKLOG.md), separate from
   mechanical path repairs. Capacity meaning and numerical bands remain unresolved.
 - Changes in this pass are documentation only.
