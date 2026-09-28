@@ -1,0 +1,17 @@
+{
+  "protocol_version": 1,
+  "order_seed": 20260924,
+  "repetitions": 5,
+  "client": "anjuna2",
+  "states": ["client_miss_server_miss", "client_miss_server_hit", "client_hit"],
+  "file_bytes": 8589934592,
+  "safety_reserve_bytes": 8589934592,
+  "transfer_bytes": 1048576,
+  "stripe_count": 4,
+  "chunk_bytes": 524288,
+  "thresholds": {
+    "client_miss_server_miss": {"network_min": 0.8, "backend_min": 0.8, "residency_max": 0.1},
+    "client_miss_server_hit": {"network_min": 0.8, "backend_max": 0.2, "residency_max": 0.1},
+    "client_hit": {"network_max": 0.2, "backend_max": 0.2, "residency_min": 0.95}
+  }
+}

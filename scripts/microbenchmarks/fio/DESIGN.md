@@ -1,8 +1,9 @@
 # Local-storage FIO: implementation design
 
-**Status: implemented; cluster pilot pending.** `run_fio.py` implements the
-experiment and `run_support.py` owns process/deadline handling. Recovery checks
-use fake FIO and harmless subprocesses; the previous scripts remain archived.
+**Status: implemented and executed.** `run_fio.py` implements the experiment and
+`run_support.py` owns process/deadline handling. Protocol 5 completed the
+700-measurement `local-fio-full-03` four-host run; recovery checks use fake FIO
+and harmless subprocesses, and the previous scripts remain archived.
 
 ## 1. Research question and scope
 

@@ -1,0 +1,1 @@
+iperf3 --server --one-off --json --bind 10.1.19.77 --port 5202 

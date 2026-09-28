@@ -1,7 +1,7 @@
 # Experiment implementation backlog
 
-These are the experiment features that are not implemented yet. Completed
-repository-path work is recorded separately in
+This checklist distinguishes completed benchmark coverage from outstanding
+experiment work. Completed repository-path repairs are recorded separately in
 [COMPLETED_PATH_REPAIRS.md](COMPLETED_PATH_REPAIRS.md).
 
 ## Configuration and inventory
@@ -9,20 +9,24 @@ repository-path work is recorded separately in
 - [ ] Complete the remaining [cluster topology](CLUSTER_TOPOLOGY.md) details:
   exact drive models for `colva2`-`colva4` and upstream PCIe/switch topology.
   Refresh the dated inventory before benchmark execution.
-- [ ] Build the full D/S/H, chooser, stripe, concurrency, and repetition matrix.
-  Add capacity only after its meaning and thresholds are agreed.
-- [ ] Define request sizes, dataset sizes, concurrency, run time, setup, and success
-  checks for each domain. Keep both 4-KiB and 128-KiB local random-read tests.
+- [ ] Execute the planned D/S/H, chooser, stripe, concurrency, and repetition
+  matrix. The placement code generates a 6,480-unit baseline-capacity plan but
+  does not execute it. Add capacity only after site bands are agreed.
+- [ ] Confirm the designed request sizes, datasets, concurrency, timing, setup,
+  and success checks against installed tools in bounded pilots. Keep both 4-KiB
+  and 128-KiB local random-read tests.
 - [ ] Record skipped or impossible matrix cases and explain why they cannot run.
 
 ## Six benchmark domains
 
-- [ ] Pilot the implemented [local-storage runner](../scripts/microbenchmarks/fio/README.md)
-  on one HDD and one NVMe. Verify file reuse across all 25 measurements per target,
-  size-or-time completion, native metrics and interruption/resume on the cluster.
-  Replace provisional preparation/measurement estimates with observed wall times.
-  Simultaneous-target experiments are outside this runner's scope.
-- [ ] Add TCP/RDMA tests for both directions and simultaneous network traffic.
+- [x] Complete the per-target [FIO protocol-5 run](../scripts/microbenchmarks/fio/README.md):
+  700 native measurements across four hosts. Simultaneous-target experiments
+  are outside this runner's scope. FIO 3.28 and 3.36 figures are kept separate.
+- [ ] Demonstrate and time forced FIO interruption/recovery on the live cluster;
+  fake-process tests cover resume but do not establish this live behavior.
+- [x] Capture both directions and simultaneous TCP paths in the iperf3 full run:
+  190 restartable units and 320 path sessions, with raw-to-plot visualization.
+- [ ] Add RDMA transport measurements only if a reviewed active BeeGFS path uses RDMA.
 - [ ] Add IOR + NetBench tests for BeeGFS communication. Check server traffic and
   always restore NetBench mode after success, failure, or interruption.
 - [ ] Add a multi-process normal-IOR runner for the full placement matrix. Verify
@@ -51,8 +55,8 @@ repository-path work is recorded separately in
   `interrupted` states. Record the cluster allocation and execution order.
 - [ ] Skip only runs whose required output was successfully saved and validated.
   Retry interrupted measurements after restoring their setup.
-- [ ] Track measurement, parsing, and analysis separately. A parser failure must
-  not repeat a successful benchmark.
+- [ ] Track measurement, owned cleanup, and plotting separately across all
+  domains. A visualization failure must not repeat a successful benchmark.
 - [ ] On resume, recheck topology, pool membership, chooser, stripes, capacity,
   transport, and NetBench mode. Recreate required files and cache preparation.
 - [ ] Never treat warm RAM as saved progress or resume a dependent epoch sequence
@@ -66,8 +70,8 @@ repository-path work is recorded separately in
   because they are newest, and do not delete raw logs after parsing.
 - [ ] Keep setup I/O separate from measured I/O. Use native benchmark output and
   system monitoring where Darshan cannot identify an epoch or cache state.
-- [ ] Store commands, settings, raw logs, monitoring data, and derived results in
-  each run directory. Never write into historical result directories.
+- [ ] Store commands, settings, raw logs, monitoring data, and directly generated
+  figures in each run directory. Never write into historical result directories.
 
 ## Workload profiles and classification
 

@@ -1,0 +1,11 @@
+supervisor_pid=3719381
+supervisor_start=73160201
+barrier_pid=0
+barrier_start=0
+pid=3719398
+pgid=3719398
+start=73160204
+boot=67168c84-1fb0-4f5b-b48e-cd5be0f70af0
+uid=1001
+release_epoch=0
+launched_epoch_ns=1790112945017646502

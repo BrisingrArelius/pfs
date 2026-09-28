@@ -4,6 +4,34 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-09-25 — Visualize microbenchmarks directly from native evidence
+
+- FIO and iperf3 visualizers now validate completed raw runs and create figures
+  directly; removed their standalone intermediate-result parser commands without
+  changing either raw benchmark runner. The available full runs produced ten FIO
+  figures (separated by installed FIO version) and three iperf3 figures.
+- Added folder-local raw-to-plot visualizers, offline plans, and synthetic
+  evidence tests for cache, BeeGFS communication, placement, and metadata.
+  These four domains **still lack live cluster runners and reviewed pilots**.
+- Plots are published as complete generations under each run's `plots/` directory,
+  with the current paths in `plot_manifest.json`. Updated the guides and backlog
+  to distinguish completed evidence from planned experiments.
+
+---
+
+## 2026-09-23 - Complete six-domain microbenchmark designs
+
+- Added implementation-ready designs for BeeGFS NetBench communication,
+  normal end-to-end placement, and controlled cache effects.
+- Fixed each domain's workload geometry, matrix, state transitions, native
+  evidence, telemetry, validation, durable resume, cleanup, and pilot gates.
+- Added a six-domain design index and retained capacity as an explicit gated
+  extension until site bands are approved.
+- Changes in this entry are documentation only; no pool, cache, NetBench, IOR,
+  FIO, iperf3, or mdtest operation ran.
+
+---
+
 ## 2026-09-21 — Organize analysis by owning domain
 
 - Moved Darshan parsing and workload-result analysis to

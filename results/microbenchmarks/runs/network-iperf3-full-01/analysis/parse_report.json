@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-09-23T07:50:23.498199+00:00",
+  "errors": [],
+  "manifest": "/home/arelius/projects/pfs/results/microbenchmarks/runs/network-iperf3-full-01/manifest.json",
+  "measurements": 320,
+  "epochs": 190,
+  "counter_rows": 480,
+  "summary_rows": 64,
+  "expected_units": 190,
+  "expected_measurements": 320
+}

@@ -1,0 +1,14 @@
+{
+  "domain": "metadata",
+  "reviewed": false,
+  "captured_at": null,
+  "clients": {},
+  "meta_target": null,
+  "mount": null,
+  "restoration_baseline": null,
+  "tools": {},
+  "namespace": null,
+  "allowed_cores": {},
+  "netbench_off": false,
+  "shared_mount_verified": false
+}

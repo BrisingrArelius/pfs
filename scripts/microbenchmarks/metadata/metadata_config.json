@@ -1,0 +1,12 @@
+{
+  "protocol_version": 1,
+  "order_seed": 20260924,
+  "repetitions": 5,
+  "placements": ["anjuna2", "anjuna3", "dual"],
+  "ranks_per_client": [1, 4, 16],
+  "layouts": ["flat", "per_rank"],
+  "items_per_rank": 100000,
+  "bytes_written_per_file": 0,
+  "bytes_read_per_file": 0,
+  "rotation": 7
+}

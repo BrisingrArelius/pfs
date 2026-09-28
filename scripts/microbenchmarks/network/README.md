@@ -12,7 +12,7 @@ iperf3; it does not access BeeGFS files or storage targets.
 | `network_inventory.json` | Reviewed immutable hosts, interfaces, addresses and paths |
 | `network_config.json` | Protocol, matrix, timing, ports, validation and operational limits |
 | `run_iperf3.py` | Single-coordinator pilot/full runner with durable resume |
-| `parse_results.py` | Read-only native-JSON validation and CSV/Markdown reporting |
+| `visualize_results.py` | Validate native iperf3 evidence and plot isolated paths and concurrent epochs directly |
 
 ## Safety gate
 
@@ -94,12 +94,11 @@ python3 scripts/microbenchmarks/network/run_iperf3.py \
   --resume --time-limit 30m
 ```
 
-Parse on `anjuna3` or after retrieval:
+Visualize the raw pilot on `anjuna3` or after retrieval:
 
 ```bash
-python3 scripts/microbenchmarks/network/parse_results.py \
-  "$HOME/pfs-results/network/network-iperf3-pilot-01" \
-  --output-dir "$HOME/pfs-results/network/network-iperf3-pilot-01/analysis"
+python3 scripts/microbenchmarks/network/visualize_results.py \
+  "$HOME/pfs-results/network/network-iperf3-pilot-01"
 ```
 
 The pilot must report four units, four path sessions, no validation errors, and
@@ -140,22 +139,20 @@ python3 scripts/microbenchmarks/network/run_iperf3.py \
   --extend-deadline 1h
 ```
 
-## Analysis
+## Visualize raw results
 
 ```bash
-python3 scripts/microbenchmarks/network/parse_results.py \
-  "$HOME/pfs-results/network/network-iperf3-full-01" \
-  --output-dir "$HOME/pfs-results/network/network-iperf3-full-01/analysis"
+python3 scripts/microbenchmarks/network/visualize_results.py \
+  "$HOME/pfs-results/network/network-iperf3-full-01"
 ```
 
-Analysis produces:
-
-- `measurements.csv`: one row per path session.
-- `epochs.csv`: aggregate receiver throughput per restartable unit.
-- `interface_counters.csv`: per-host/interface counter deltas per unit.
-- `summary.csv` and `summary.md`: repeated per-path results.
-- `run_configuration.md`: readable fixed paths and tool versions.
-- `parse_report.json`: completeness and validation status.
+The visualizer validates the native JSON, canonical plan, and cleanup directly
+before plotting. It generates isolated per-path throughput, concurrent aggregate epoch
+throughput, and concurrent per-session distributions. Isolated and simultaneous
+modes are deliberately never combined. A four-case isolated pilot yields one
+figure; a complete full run yields all three. `plots/plot_manifest.json` lists
+the current PNGs under `plots/generations/<id>/`; older generations are removed
+only after the new set has been published.
 
 Receiver `end.sum_received.bits_per_second` is the principal delivered-bandwidth
 metric. Sender throughput, bytes, retransmissions, endpoint CPU utilization and

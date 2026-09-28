@@ -1,0 +1,14 @@
+{
+  "protocol_version": 1,
+  "order_seed": 20260924,
+  "repetitions": 5,
+  "capacity_states": ["baseline"],
+  "storage_configurations": ["D", "S", "H"],
+  "choosers": ["randomized", "roundrobin"],
+  "stripe_counts": [1, 2, 4],
+  "stripe_sizes_bytes": [262144, 524288, 1048576],
+  "workloads": ["seq_read_fpp", "seq_write_fpp", "rand_read_fpp", "rand_write_fpp", "seq_read_shared", "seq_write_shared"],
+  "concurrency": ["a2_r1", "a2_r4", "dual_r1", "dual_r4"],
+  "block_bytes": 17179869184,
+  "stonewall_seconds": 60
+}

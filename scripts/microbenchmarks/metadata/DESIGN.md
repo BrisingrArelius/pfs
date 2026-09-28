@@ -1,6 +1,7 @@
 # BeeGFS Metadata Benchmark Design
 
-**Status: design complete; runner and cluster pilot not implemented.**
+**Status: offline plan and raw-to-plot visualizer implemented; live mdtest
+runner, reviewed inventory, remote recovery, and cluster pilot not implemented.**
 
 ## 1. Research question and scope
 
@@ -329,7 +330,7 @@ Success requires all of the following:
 
 Do not infer success from exit status alone. Preserve unfamiliar native output and
 mark the attempt failed validation; never guess columns or silently emit partial
-derived rows. A parser failure after validated measurement evidence changes only
+   derived rows. A visualizer failure after validated measurement evidence changes only
 analysis state and must not repeat mdtest.
 
 ## 8. Telemetry
@@ -403,7 +404,25 @@ One mdtest invocation is the maximum restartable measurement duration. It cannot
 be paused or resumed between phases because create/stat/read/remove depend on one
 another and cache/namespace state is not durable benchmark progress.
 
-## 10. Result layout and analysis
+## 10. Implementation shape
+
+```text
+metadata/
+  run_mdtest.py             canonical plan, MPI/mdtest lifecycle, resume
+  metadata_config.json      fixed matrix, validation, and planning estimates
+  metadata_inventory.json   clients, metadata target, mount, paths, tools
+  visualize_results.py      validate native phases and plot performance directly
+  tests/                    fake native mdtest/visualization fixtures
+```
+
+The current code has pure `plan_units()` and `build_command()` functions,
+saved-inventory checks, a static owned-cleanup prototype, and `validate_mdtest()`
+for a pilot-supplied schema. Live `preflight()`, `prepare_namespace()`,
+`execute_unit()`, and safe cleanup/recovery still need implementation. The
+visualizer consumes saved raw evidence only and never starts MPI or deletes
+namespaces.
+
+## 11. Proposed raw result layout and visualization
 
 ```text
 <results-dir>/
@@ -414,34 +433,34 @@ another and cache/namespace state is not durable benchmark progress.
   environment/
   attempts/<case-id>/attempt-<number>/
     command.json
-    rank_map.txt
-    stdout.txt
-    stderr.txt
-    exit.json
-    telemetry_before.json
-    telemetry_after.json
+     rank_map.json
+     rank_report.txt
+     stdout.txt
+     stderr.txt
+     exit.json
+     telemetry.json
+     telemetry_before.json
+     telemetry_after.json
     validation.json
     cleanup.json
-  analysis/
-    phases.csv
-    attempts.csv
-    telemetry.csv
-    summary.md
-    parse_report.json
+  plots/
+    plot_manifest.json
+    generations/<id>/directory_create.png ... file_remove.png
 ```
 
-`phases.csv` contains one row per validated phase with placement, participating
-clients, ranks per client, total ranks, layout, repetition, attempt, object type,
-operation, requested and reported operation counts, elapsed seconds, native
-operations/second, command wall time, and provenance paths.
+The visualizer derives one row per validated native phase in memory with placement,
+participating clients, ranks per client, total ranks, layout, repetition, attempt,
+operation counts, elapsed seconds and native operations/second. It plots directly
+without publishing an intermediate CSV.
 
-Primary reporting uses native aggregate operations/second and phase elapsed time.
-For every placement/layout/rank/phase report all five values, median, mean,
-standard deviation, coefficient of variation, minimum, and maximum. Five runs are
-too few to characterize extreme tails; do not manufacture per-operation latency
-percentiles from aggregate phase timing.
+The current figures show native aggregate operations/second, all observed
+repetition marks, the median, and the min/max range at each
+placement/layout/rank/phase. Mean, standard deviation, coefficient of variation,
+and the derived ratios below remain analysis requirements, not implemented plot
+outputs. Five runs are too few to characterize extreme tails; do not manufacture
+per-operation latency percentiles from aggregate phase timing.
 
-Derived comparisons are:
+Planned derived comparisons are:
 
 - **Within-placement scaling efficiency:** `rate_N / (N * rate_1)`, calculated
   separately for each layout and phase.
@@ -457,7 +476,7 @@ Present directory and file operations separately. Never average unlike operation
 into one metadata score. Do not subtract network, local-storage, or end-to-end
 throughput results to infer metadata overhead.
 
-## 11. Pilot and acceptance gates
+## 12. Pilot and acceptance gates
 
 Run a separate four-case pilot with one repetition and the production 100,000-item
 count:
@@ -482,14 +501,14 @@ Before the full run, the pilot must establish:
 - Complete process cleanup after success, interruption, and forced launch failure.
 - Safe namespace cleanup and successful retry with a new attempt ID.
 - Complete required telemetry and plausible counter ordering.
-- Parser rejection of truncated output, wrong task counts, missing phases, nonfinite
+- Visualizer rejection of truncated output, wrong task counts, missing phases, nonfinite
   rates, stale artifacts, and incomplete cleanup.
 
 Pilot results remain labelled pilot evidence and are not inserted into the five
 full repetitions. Replace provisional admission and hard-timeout values with
 pilot-observed values before full execution.
 
-## 12. Deferred extensions
+## 13. Deferred extensions
 
 Add these only as separate protocols with their own fingerprints and analysis:
 

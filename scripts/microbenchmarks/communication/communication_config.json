@@ -1,0 +1,17 @@
+{
+  "protocol_version": 1,
+  "order_seed": 20260924,
+  "repetitions": 5,
+  "placements": ["anjuna2", "anjuna3", "dual"],
+  "ranks_per_client": [1, 4],
+  "directions": ["write", "read"],
+  "organizations": ["fpp", "shared"],
+  "stripe_counts": [1, 4],
+  "chunk_bytes": 524288,
+  "transfer_bytes": 1048576,
+  "block_bytes": 17179869184,
+  "stonewall_seconds": 30,
+  "chooser": "roundrobin",
+  "backend_data_ratio_max": null,
+  "calibrated_from": null
+}

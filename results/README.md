@@ -12,7 +12,10 @@ not retroactively establish missing transport, capacity, placement or cache meta
 - [`cluster-inventory/20260921/`](cluster-inventory/20260921/): normalized
   read-only storage-node inventory output referenced by the cluster topology.
 
-Current tools place new outputs under `microbenchmarks/runs/<run-id>/` or
-`workloads/runs/<run-id>/` (or `trace_analysis/runs/<run-id>/` for trace characterization),
-with exact commands/configuration, raw output, derived metrics/plots and
-provenance. Tools default to these run-specific areas.
+Imported microbenchmark raw runs and their plots belong under
+`microbenchmarks/runs/<run-id>/`. The current FIO and iperf3 full runs contain
+`plots/plot_manifest.json`, which lists the PNGs in their current complete plot
+generation. The existing cluster runners retain their documented host-side raw
+result paths before retrieval. Workload and trace outputs use
+`workloads/runs/<run-id>/` and `trace_analysis/runs/<run-id>/`, respectively.
+Cache, communication, placement, and metadata have no live raw runs yet.

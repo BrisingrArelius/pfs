@@ -1,0 +1,31 @@
+{
+  "server": [
+    "iperf3",
+    "--server",
+    "--one-off",
+    "--json",
+    "--bind",
+    "192.168.0.2",
+    "--port",
+    "5202"
+  ],
+  "client": [
+    "iperf3",
+    "--client",
+    "192.168.0.2",
+    "--bind",
+    "192.168.0.7",
+    "--port",
+    "5202",
+    "--parallel",
+    "4",
+    "--omit",
+    "5",
+    "--time",
+    "30",
+    "--interval",
+    "1",
+    "--json",
+    "--reverse"
+  ]
+}

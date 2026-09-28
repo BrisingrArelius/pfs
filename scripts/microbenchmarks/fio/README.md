@@ -1,8 +1,8 @@
 # Local-storage FIO test
 
-Implemented in `run_fio.py` and `run_support.py`. The earlier single-job protocol
-completed a cluster pilot and four-host run; protocol 5 changes the measurement
-to four sustained parallel jobs and therefore requires a new pilot. Previous scripts remain
+Implemented in `run_fio.py` and `run_support.py`. Protocol 5 uses four sustained
+parallel jobs and completed the 700-measurement `local-fio-full-03` four-host
+run. Previous scripts remain
 [archived](../../../archive/legacy-code/fio-abandoned/README.md).
 
 - [DESIGN.md](DESIGN.md): standalone requirements, function contracts,
@@ -14,7 +14,8 @@ to four sustained parallel jobs and therefore requires a new pilot. Previous scr
 The design incorporates `Obsidian/DaSH/BeeGFS/Specs/MicroBenchmarks.md` and
 `Global.md` from the Obsidian vault, with the user-directed per-target-only scope
 and shared-file preparation policy. It covers five workloads and five repetitions.
-The old pilot does not validate protocol 5's larger dataset or timing estimates.
+The completed protocol-5 run provides observed timing and native evidence; a new
+scientific protocol would require its own pilot and run directory.
 
 Each measured invocation runs four jobs concurrently for **60 measured seconds
 after a 5-second ramp**. Every job owns a disjoint 10-GiB region of one 40-GiB
@@ -188,21 +189,18 @@ per-access-pattern plots:
   for HOST in colva1 colva2 colva3 colva4; do
     test -f "$DEST/$HOST/manifest.json"
   done
-  python3 scripts/microbenchmarks/fio/parse_results.py \
-    "$DEST" --output-dir "$DEST/analysis"
   python3 scripts/microbenchmarks/fio/visualize_results.py \
-    "$DEST/analysis/measurements.csv" \
-    --output-dir "$DEST/analysis/plots"
+    "$DEST"
 )
 ```
 
 The parentheses run strict error handling in a child shell. If a download,
-checksum, extraction, parse or plot step fails, that child stops at the failing
+checksum, extraction or plot step fails, that child stops at the failing
 command but the interactive terminal remains open and displays the error.
 
-The parser must report 700 measurements, 28 preparations and no errors or
-warnings for a complete four-host run. Review `$DEST/analysis/parse_report.json`
-before interpreting the CSV summaries or figures.
+The visualizer validates the native FIO measurements and should report 700
+measurements for a complete four-host run. It refuses incomplete or incompatible
+host manifests before creating performance figures.
 
 ## Evidence and pilot checks
 
@@ -218,35 +216,24 @@ statistics for performance. Scientific settings/target selection/FIO version
 must match on resume; planning estimates may be updated. For the full experiment,
 choose a new results directory and omit `--targets` to select all local targets.
 
-## Parse and visualize results
+## Visualize raw results
 
-Create normalized CSV files, a Markdown summary and a validation report from one
-or more copied host result directories. The output directory may be below the
-input tree because the parser explicitly excludes it from evidence discovery:
-
-```bash
-RUN="local-fio-full-03"
-python3 scripts/microbenchmarks/fio/parse_results.py \
-  "results/microbenchmarks/runs/$RUN" \
-  --output-dir "results/microbenchmarks/runs/$RUN/analysis"
-```
-
-Create five per-OST bandwidth figures from the normalized measurements, one for
-each access pattern. Each figure places OST IDs on the horizontal axis and measured
+Create per-OST bandwidth figures directly from the host manifests and native
+`fio.json` files, one for each access pattern **and installed FIO version**.
+The completed four-host run used both FIO 3.28 and 3.36, so it produces ten
+figures and never averages results across those versions. Each figure places OST IDs on the horizontal axis and measured
 bandwidth in MiB/s on the vertical axis. This requires Matplotlib:
 
 ```bash
 RUN="local-fio-full-03"
 python3 scripts/microbenchmarks/fio/visualize_results.py \
-  "results/microbenchmarks/runs/$RUN/analysis/measurements.csv" \
-  --output-dir "results/microbenchmarks/runs/$RUN/analysis/plots"
+  "results/microbenchmarks/runs/$RUN"
 ```
 
-Both commands treat the native run evidence as read-only. `parse_report.json`
-records validation errors and warnings; `plot_manifest.json` records every plot
-and its semantics. Each host result directory contains a generated `RUN.md`, and
-the parser writes `analysis/run_configuration.md` as a readable multi-host record
-of the exact configuration. Each figure keeps every OST in its own horizontal-axis
+The visualizer treats native run evidence as read-only. `plot_manifest.json`
+lists the current PNG paths under `plots/generations/<id>/`, so an interrupted
+replot cannot expose a partial replacement figure set. Each host result directory contains a
+generated `RUN.md` with the exact configuration. Each figure keeps every OST in its own horizontal-axis
 category: small ticks show the five repetition values, whiskers show their
 min-max range and a colored bar shows the OST median.
 HDD and NVMe are distinguished by color but are never aggregated.
