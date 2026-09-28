@@ -103,11 +103,15 @@ def check_cluster(mode):
         raise RuntimeError("Target-to-device mapping has changed")
     for host in (None, "anjuna3"):
         if host:
-            modes = remote(host, "for f in /proc/fs/beegfs/*/netbench_mode; do cat \"$f\"; done").split()
+            modes = remote(host,
+                           'for f in /proc/fs/beegfs/*/netbench_mode; do '
+                           'test -r "$f" || exit 1; '
+                           'IFS= read -r mode < "$f"; printf "%s\\n" "$mode"; done').splitlines()
         else:
-            modes = [p.read_text() for p in Path("/proc/fs/beegfs").glob("*/netbench_mode")]
-        if not modes or any(str(value).strip() != "0" for value in modes):
-            raise RuntimeError(f"NetBench enabled on {host or 'anjuna2'}")
+            modes = [p.read_text().partition("\n")[0] for p in
+                     Path("/proc/fs/beegfs").glob("*/netbench_mode")]
+        if not modes or any(value.strip() != "0" for value in modes):
+            raise RuntimeError(f"NetBench status missing or enabled on {host or 'anjuna2'}: {modes!r}")
     for host in (None, "colva1"):
         text = remote(host, "cat /proc/meminfo") if host else Path("/proc/meminfo").read_text()
         match = re.search(r"(?m)^MemAvailable:\s+(\d+) kB$", text)
