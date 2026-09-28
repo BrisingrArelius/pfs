@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run normal BeeGFS reads from HDD/SSD, server RAM, and client RAM on anjuna2."""
+"""Measure HDD/SSD cache paths through anjuna2's existing BeeGFS mount."""
 
 import argparse
 import ctypes
@@ -25,9 +25,12 @@ STATES = ("backend", "server_ram", "client_ram")
 SIZE = 8 * 1024**3
 
 
-def run(argv, *, user=None, timeout=600, output=None):
-    if user:
-        argv = ["runuser", "-u", user, "--", *argv]
+def run(argv, *, timeout=600, output=None):
+    """Execute argv as the current user and return stdout text.
+
+    If output is set, save both streams there. Kill the process group and raise
+    RuntimeError on timeout; raise RuntimeError on a nonzero exit.
+    """
     process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                start_new_session=True)
     try:
@@ -54,28 +57,37 @@ def run(argv, *, user=None, timeout=600, output=None):
 
 
 def remote(host, script):
-    account = os.environ.get("SUDO_USER")
-    if not account:
-        raise RuntimeError("Cannot identify the SSH account used to launch the benchmark")
-    return run(["ssh", "-o", "BatchMode=yes", host, script],
-               user=account, timeout=90)
+    """Run a command over non-interactive SSH and return its stdout text."""
+    return run(["ssh", "-o", "BatchMode=yes", host, script], timeout=90)
 
 
 def ctl(*args):
-    return run(["/usr/sbin/beegfs-ctl", *args])
+    """Run beegfs-ctl; use sudo only to set our directory stripe pattern."""
+    privilege = ["sudo", "-n"] if args[0] == "--setpattern" else []
+    return run([*privilege, "/usr/sbin/beegfs-ctl", *args])
 
 
 def record(path, data):
+    """Replace path with JSON data via a sibling temporary file; return None."""
     temporary = path.with_name(f".{path.name}.tmp")
     temporary.write_text(json.dumps(data, indent=2) + "\n")
     temporary.replace(path)
 
 
-def check_cluster():
+def check_cluster(mode):
+    """Require the selected active mode and the expected cluster inventory.
+
+    Return None when host, mount, targets, NetBench, RAM and sudo checks pass;
+    raise on a mismatch before creating BeeGFS benchmark data.
+    """
     if socket.gethostname().split(".")[0] != "anjuna2":
         raise RuntimeError("Run on anjuna2")
     if run(["findmnt", "-n", "-o", "FSTYPE", "--target", str(SHARED)]).strip() != "beegfs":
         raise RuntimeError("/mnt/beegfs/pfs is not BeeGFS")
+    configs = list(Path("/proc/fs/beegfs").glob("*/config"))
+    if (not configs or any(not re.search(rf"(?m)^tuneFileCacheType\s*=\s*{mode}\s*$",
+                               config.read_text()) for config in configs)):
+        raise RuntimeError(f"The active anjuna2 BeeGFS client must be configured as {mode}")
     states = ctl("--listtargets", "--longnodes", "--state")
     for target, _ in TARGETS.values():
         if not re.search(rf"(?m)^\s*{target}\s+Online\s+Good\s+.*colva1\b", states):
@@ -96,42 +108,27 @@ def check_cluster():
         match = re.search(r"(?m)^MemAvailable:\s+(\d+) kB$", text)
         if not match or int(match.group(1)) * 1024 < 16 * 1024**3:
             raise RuntimeError(f"Insufficient RAM on {host or 'anjuna2'}")
-
-
-def native_mount(results):
-    original = Path("/etc/beegfs/beegfs-client.conf").read_text()
-    regex = re.compile(r"^(\s*tuneFileCacheType\s*=\s*)buffered(\s*(?:#.*)?)$", re.MULTILINE)
-    if len(regex.findall(original)) != 1:
-        raise RuntimeError("Existing client is not explicitly configured as buffered")
-    config, mount = results / "native.conf", results / "native-mount"
-    config.write_text(regex.sub(r"\g<1>native\2", original))
-    config.chmod(0o600)
-    mount.mkdir()
-    existing = list(Path("/proc/fs/beegfs").glob("*/config"))
-    run(["mount", "-t", "beegfs", "beegfs_nodev", "-o", f"cfgFile={config}", str(mount)])
-    configs = [p.read_text() for p in Path("/proc/fs/beegfs").glob("*/config")
-               if p not in existing]
-    if (not any(re.search(r"(?m)^tuneFileCacheType\s*=\s*native\s*$", text)
-                for text in configs)
-            or not all(re.search(r"(?m)^tuneFileCacheType\s*=\s*buffered\s*$", p.read_text())
-                       for p in existing)):
-        raise RuntimeError("Private BeeGFS mount did not create a native-cache client")
-    return mount
+    run(["sudo", "-n", "true"])
+    remote("colva1", "sudo -n true")
 
 
 def targets(path):
+    """Return integer storage target IDs from BeeGFS entry information for path."""
     info = ctl("--getentryinfo", "--verbose", str(path))
     return [int(value) for value in re.findall(r"(?m)^\s*\+\s+(\d+)\s+@", info)]
 
 
-def make_file(directory, target, user):
+def make_file(directory, target):
+    """Create and return one 8-GiB file actually assigned to target.
+
+    directory must be a new run-owned path. Set its one-target pattern, discard
+    wrong-target empty candidates, then fill and verify the selected file.
+    """
     directory.mkdir()
-    os.chown(directory, user.pw_uid, user.pw_gid)
     ctl("--setpattern", "--numtargets=1", "--chunksize=512k", str(directory))
     for number in range(1, 513):
         path = directory / f"candidate-{number:03d}"
         descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        os.fchown(descriptor, user.pw_uid, user.pw_gid)
         os.close(descriptor)
         if targets(path) == [target]:
             break
@@ -139,14 +136,17 @@ def make_file(directory, target, user):
     else:
         raise RuntimeError(f"Could not obtain one-stripe file on target {target}")
     run(["dd", "if=/dev/zero", f"of={path}", "bs=1M", "count=8192",
-         "oflag=direct", "conv=fsync", "status=none"], user=user.pw_name)
+         "oflag=direct", "conv=fsync", "status=none"])
     if path.stat().st_size != SIZE or targets(path) != [target]:
         raise RuntimeError(f"File on target {target} has wrong size or layout")
     return path
 
 
 def residency(path):
-    """Percentage of this file resident in the Linux client page cache."""
+    """Return the fraction (0..1) of path's pages resident in client page cache.
+
+    Used only in native mode; mmap + Linux mincore checks pages without reading data.
+    """
     with path.open("rb", buffering=0) as source:
         with mmap.mmap(source.fileno(), 0, flags=mmap.MAP_PRIVATE,
                        prot=mmap.PROT_READ | mmap.PROT_WRITE) as mapped:
@@ -160,6 +160,10 @@ def residency(path):
 
 
 def counters(interface, device):
+    """Return cumulative host-wide network and device-read byte counters.
+
+    Call before and after IOR; subtract corresponding values for measured traffic.
+    """
     net = int((Path("/sys/class/net") / interface / "statistics/rx_bytes").read_text())
     sent = int(remote("colva1", "cat /sys/class/net/enp7s0/statistics/tx_bytes").strip())
     disk = remote("colva1", f"cat /sys/class/block/{device}/stat").split()
@@ -167,33 +171,51 @@ def counters(interface, device):
             "device_read": int(disk[2]) * 512}
 
 
-def drop(client_only=False):
-    os.sync()
+def drop(client_only=False, server_only=False):
+    """Sync and drop caches on both hosts, or only the selected host.
+
+    Requires non-interactive sudo on anjuna2/colva1. Affects the whole host,
+    not just our file. Never set both selector flags.
+    """
+    if client_only and server_only:
+        raise ValueError("Cannot drop both client-only and server-only")
+    if not server_only:
+        os.sync()
     if not client_only:
         remote("colva1", "sudo -n sh -c 'sync && printf 3 > /proc/sys/vm/drop_caches'")
-    Path("/proc/sys/vm/drop_caches").write_text("3\n")
+    if not server_only:
+        run(["sudo", "-n", "sh", "-c", "printf 3 > /proc/sys/vm/drop_caches"])
 
 
-def cases(pilot):
-    six = [(medium, state) for medium in TARGETS for state in STATES]
+def cases(pilot, mode):
+    """Return ordered (medium, state) pairs: 4/20 buffered or 8/30 native."""
+    states = STATES if mode == "native" else STATES[:2]
+    combinations = [(medium, state) for medium in TARGETS for state in states]
     if pilot:
-        return six + [(medium, "client_ram") for medium in TARGETS]
-    random.Random(20260924).shuffle(six)
-    return [case for repetition in range(5) for case in six[repetition:] + six[:repetition]]
+        return (combinations + [(medium, "client_ram") for medium in TARGETS]
+                if mode == "native" else combinations)
+    random.Random(20260924).shuffle(combinations)
+    return [case for repetition in range(5)
+            for case in combinations[repetition:] + combinations[:repetition]]
 
 
-def measure(index, medium, state, path, interface, user, results):
+def measure(index, medium, state, path, interface, mode, results):
+    """Prepare one cache state, run one IOR read, and return its result dict.
+
+    path is an existing verified 8-GiB file. Save native IOR output, counters,
+    warm-up evidence and the achieved/unverified label below results.
+    """
     folder = results / f"{index:02d}-{medium.lower()}-{state}"
     folder.mkdir()
-    os.chown(folder, user.pw_uid, user.pw_gid)
     drop()
     if state != "backend":
         run(["dd", f"if={path}", "of=/dev/null", "bs=1M", "count=8192",
-             "iflag=fullblock", "status=none"], user=user.pw_name,
-            output=folder / "warmup")
+             "iflag=fullblock", "status=none"], output=folder / "warmup")
         if state == "server_ram":
             drop(client_only=True)
-    cached = residency(path)
+        else:
+            drop(server_only=True)
+    cached = residency(path) if mode == "native" else None
     identity = path.stat()
     idle = counters(interface, TARGETS[medium][1])
     time.sleep(1)
@@ -207,7 +229,7 @@ def measure(index, medium, state, path, interface, user, results):
     record(folder / "command.json", argv)
     started = time.time()
     try:
-        run(argv, user=user.pw_name, output=folder)
+        run(argv, output=folder)
     finally:
         after = counters(interface, TARGETS[medium][1])
         record(folder / "counters.json", {"before": before, "after": after})
@@ -229,12 +251,20 @@ def measure(index, medium, state, path, interface, user, results):
     network = (after["client_network"] - before["client_network"]) / SIZE
     server = (after["server_network"] - before["server_network"]) / SIZE
     backend = (after["device_read"] - before["device_read"]) / SIZE
-    verified = quiet and {
-        "backend": network >= .8 and server >= .8 and backend >= .8 and cached <= .1,
-        "server_ram": network >= .8 and server >= .8 and backend <= .2 and cached <= .1,
-        "client_ram": network <= .2 and server <= .2 and backend <= .2 and cached >= .95,
-    }[state]
-    result = {"medium": medium, "target": TARGETS[medium][0], "intended": state,
+    if mode == "buffered":
+        # BeeGFS buffered mode has its own small buffers: mincore is not a
+        # measurement of their residency. Require traffic evidence instead.
+        verified = quiet and {
+            "backend": network >= .8 and server >= .8 and backend >= .8,
+            "server_ram": network >= .8 and server >= .8 and backend <= .2,
+        }[state]
+    else:
+        verified = quiet and {
+            "backend": network >= .8 and server >= .8 and backend >= .8 and cached <= .1,
+            "server_ram": network >= .8 and server >= .8 and backend <= .2 and cached <= .1,
+            "client_ram": network <= .2 and server <= .2 and backend <= .2 and cached >= .95,
+        }[state]
+    result = {"mode": mode, "medium": medium, "target": TARGETS[medium][0], "intended": state,
               "achieved": state if verified else "unverified", "MiB_per_second": rate,
               "client_residency": cached, "network_ratio": network,
               "server_network_ratio": server, "backend_ratio": backend,
@@ -245,6 +275,10 @@ def measure(index, medium, state, path, interface, user, results):
 
 
 def cleanup(namespace, run_id):
+    """Remove only run_id's marker-owned BeeGFS files and directories.
+
+    Reject symlinks, an unexpected marker or unexpected directory contents.
+    """
     marker = namespace / "owner.json"
     if (namespace.parent != SHARED or namespace.is_symlink() or marker.is_symlink()
             or json.loads(marker.read_text()) != {"run_id": run_id}):
@@ -264,85 +298,71 @@ def cleanup(namespace, run_id):
     namespace.rmdir()
 
 
-def benchmark(run_id, pilot, results):
-    if os.geteuid() != 0 or os.readlink("/proc/self/ns/mnt") == os.readlink("/proc/1/ns/mnt"):
-        raise RuntimeError("Root and a private mount namespace are required")
+def benchmark(run_id, pilot, mode, results):
+    """Check, prepare, measure sequential cases, and clean up; return 0.
+
+    The local file lock excludes another copy of this script, not other workloads.
+    Individual results may still be 'unverified'; command failures raise.
+    """
     with (RUNS / ".cache.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        check_cluster()
+        check_cluster(mode)
         owner = json.loads((results / "owner.json").read_text())
         if (results.parent != RUNS or owner.get("run_id") != run_id
-                or owner.get("user") != os.environ.get("SUDO_USER")):
+                or owner.get("user") != pwd.getpwuid(os.getuid()).pw_name
+                or owner.get("mode") != mode or owner.get("pilot") != pilot):
             raise RuntimeError("Run directory owner marker differs")
-        user = pwd.getpwnam(owner["user"])
         namespace = SHARED / (".cache-" + run_id)
         if namespace.exists():
             raise RuntimeError("Benchmark namespace already exists")
         namespace.mkdir()
-        os.chown(namespace, user.pw_uid, user.pw_gid)
         record(namespace / "owner.json", {"run_id": run_id})
-        mount = results / "native-mount"
-        mounted = False
         results_so_far = []
         try:
-            try:
-                native_mount(results)
-            finally:
-                mounted = subprocess.run(["findmnt", "-n", "--mountpoint", str(mount)],
-                                         capture_output=True).returncode == 0
-            modes = [p.read_text().strip() for p in Path("/proc/fs/beegfs").glob("*/netbench_mode")]
-            if not modes or any(mode != "0" for mode in modes):
-                raise RuntimeError("NetBench enabled on a measured client")
-            path = mount / "pfs" / namespace.name
-            files = {medium: make_file(path / medium.lower(), target, user)
+            files = {medium: make_file(namespace / medium.lower(), target)
                      for medium, (target, _) in TARGETS.items()}
             route = run(["ip", "route", "get", socket.gethostbyname("colva1")])
             interface = re.search(r"\bdev\s+(\S+)", route)
             if interface is None:
                 raise RuntimeError("No client network interface to colva1")
-            for index, (medium, state) in enumerate(cases(pilot), 1):
+            planned = cases(pilot, mode)
+            for index, (medium, state) in enumerate(planned, 1):
                 result = measure(index, medium, state, files[medium],
-                                 interface.group(1), user, results)
+                                 interface.group(1), mode, results)
                 results_so_far.append(result)
                 record(results / "results.json", results_so_far)
-                print(f"{index}/{len(cases(pilot))} {medium} {state}: "
+                print(f"{index}/{len(planned)} {mode} {medium} {state}: "
                       f"{result['MiB_per_second']:.1f} MiB/s ({result['achieved']})", flush=True)
         finally:
-            try:
-                if mounted:
-                    run(["umount", str(mount)])
-                    mounted = False
-            finally:
-                if mount.is_dir() and not mounted:
-                    mount.rmdir()
-                (results / "native.conf").unlink(missing_ok=True)
-                cleanup(namespace, run_id)
+            cleanup(namespace, run_id)
         return 0
 
 
 def main(argv=None):
+    """Parse CLI, create a unique run directory and return an exit status.
+
+    Run as a normal user on anjuna2. --mode must match its existing BeeGFS mount;
+    the script never changes that mode.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
-    parser.add_argument("--pilot", action="store_true", help="Run eight reads rather than thirty")
-    parser.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--mode", choices=("buffered", "native"), required=True,
+                        help="Must match the existing BeeGFS client's effective mode")
+    parser.add_argument("--pilot", action="store_true", help="Four buffered or eight native reads")
     args = parser.parse_args(argv)
     if not re.fullmatch(r"cache-[A-Za-z0-9_-]+", args.run_id):
         parser.error("run ID must start with cache- and contain only letters, digits, _ or -")
     results = RUNS / args.run_id
     try:
-        if args.inside:
-            return benchmark(args.run_id, args.pilot, results)
         if socket.gethostname().split(".")[0] != "anjuna2" or not RUNS.is_dir():
             parser.error("run from the project checkout on anjuna2")
         if os.geteuid() == 0:
-            parser.error("run as your normal account; the script invokes sudo for its private mount")
+            parser.error("run as your normal account; sudo is used only to drop caches")
         results.mkdir(mode=0o700)
         record(results / "owner.json", {"run_id": args.run_id,
-                                         "user": pwd.getpwuid(os.getuid()).pw_name})
-        return subprocess.run(["sudo", "-n", "unshare", "--mount", "--propagation", "private",
-                               sys.executable, "-B", str(Path(__file__).resolve()),
-                               "--run-id", args.run_id, "--inside", *( ["--pilot"] if args.pilot else [])],
-                              check=False).returncode
+                                         "user": pwd.getpwuid(os.getuid()).pw_name,
+                                         "mode": args.mode, "pilot": args.pilot})
+        return benchmark(args.run_id, args.pilot, args.mode, results)
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         print(f"Cache benchmark stopped; saved raw results remain in {results}: {error}", file=sys.stderr)
         return 1
