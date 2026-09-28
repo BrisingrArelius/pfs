@@ -5,7 +5,6 @@ import argparse
 import ctypes
 import fcntl
 import json
-import mmap
 import os
 from pathlib import Path
 import pwd
@@ -154,18 +153,31 @@ def make_file(directory, target):
 def residency(path):
     """Return the fraction (0..1) of path's pages resident in client page cache.
 
-    Used only in native mode; mmap + Linux mincore checks pages without reading data.
+    Used only in native mode; Linux mincore reports page state without reading data.
+
+    The mapping must be read-only. A writable MAP_PRIVATE mapping makes the BeeGFS
+    client drop the file's cached pages, which emptied the cache this measures and
+    forced every client-RAM case to unverified. mincore needs the raw address, which
+    the mmap module cannot expose for a read-only buffer, so mmap(2) is called
+    directly.
     """
+    length = path.stat().st_size
+    pages = (length + os.sysconf("SC_PAGE_SIZE") - 1) // os.sysconf("SC_PAGE_SIZE")
+    libc = ctypes.CDLL(None, use_errno=True)
+    libc.mmap.restype = ctypes.c_void_p
+    libc.mmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int,
+                          ctypes.c_int, ctypes.c_int, ctypes.c_long]
     with path.open("rb", buffering=0) as source:
-        with mmap.mmap(source.fileno(), 0, flags=mmap.MAP_PRIVATE,
-                       prot=mmap.PROT_READ | mmap.PROT_WRITE) as mapped:
-            pages = (len(mapped) + os.sysconf("SC_PAGE_SIZE") - 1) // os.sysconf("SC_PAGE_SIZE")
-            vector = (ctypes.c_ubyte * pages)()
-            address = ctypes.addressof(ctypes.c_char.from_buffer(mapped))
-            libc = ctypes.CDLL(None, use_errno=True)
-            if libc.mincore(ctypes.c_void_p(address), ctypes.c_size_t(len(mapped)), vector):
-                raise OSError(ctypes.get_errno(), "mincore failed")
-            return sum(byte & 1 for byte in vector) / pages
+        address = libc.mmap(None, length, 0x1, 0x2, source.fileno(), 0)
+    if address is None or address == ctypes.c_void_p(-1).value:
+        raise OSError(ctypes.get_errno(), "mmap failed")
+    try:
+        vector = (ctypes.c_ubyte * pages)()
+        if libc.mincore(ctypes.c_void_p(address), ctypes.c_size_t(length), vector):
+            raise OSError(ctypes.get_errno(), "mincore failed")
+        return sum(byte & 1 for byte in vector) / pages
+    finally:
+        libc.munmap(ctypes.c_void_p(address), ctypes.c_size_t(length))
 
 
 def counters(interface, device):

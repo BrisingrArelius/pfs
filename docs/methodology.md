@@ -10,7 +10,7 @@ and evidence.
 | Local storage | Per-target FIO runner with native JSON, deadlines and measurement-level resume; protocol-5 full run completed |
 | Network transport | Six-host iperf3 runner with native endpoint JSON, synchronized concurrent epochs, telemetry, and resume; 190-unit/320-path full raw run available |
 | Microbenchmark figures | FIO and iperf3 visualizers plot their completed native runs directly; communication and metadata have no cluster result set |
-| Cache effects | `run_cache.py` contains one HDD/SSD IOR cache runner; no cluster run or native-output validation has been captured |
+| Cache effects | `run_cache.py` contains one HDD/SSD IOR cache runner and `visualize_results.py`; buffered pilot and full runs completed with every case achieving its intended path |
 | Placement administration | Shell helpers with historical hard-coded target inventories |
 | Application workloads | Single-process IOR wrapper, two current contiguous read-only profiles, Darshan invocation, and run-specific logs/checkpoints |
 | Darshan parsing | Aggregate POSIX/MPI-IO/STDIO rows in `global.csv` |
@@ -34,8 +34,8 @@ an intermediate CSV parser. The completed FIO run includes both FIO 3.28 and
 
 Local FIO and iperf3 have documented protocols and completed cluster runs.
 BeeGFS communication and metadata have offline plans and raw-evidence
-visualizers without live runners or validated cluster pilots. The cache runner
-has not yet produced a cluster result. The current workload
+visualizers without live runners or validated cluster pilots. The cache domain
+has a completed buffered full run, but no native-mode run yet. The current workload
 pipeline is application-level tooling, not a completed DLIO experiment.
 
 The whole-workload D/S/H, chooser, stripe, capacity, and concurrency matrix

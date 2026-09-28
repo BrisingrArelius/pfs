@@ -4,6 +4,8 @@
 files on BeeGFS, one on HDD target 101 and one on NVMe target 104 on `colva1`,
 then measures reads from `anjuna2` through its existing BeeGFS mount. `--mode`
 must match that mount's effective cache mode; the script does not change it.
+`visualize_results.py` reads a completed run's raw artifacts and writes its
+plots; it never touches the cluster.
 
 | Client mode | Measured states on each medium | Pilot | Full run |
 |---|---|---:|---:|
@@ -186,13 +188,41 @@ results.json                completed cases and their verified/unverified labels
 `results.json` and completed case directories remain if a run stops early;
 missing cases do not appear as completed. On normal exit the script removes
 its run-owned BeeGFS files while preserving these raw results. There is no
-resume command or separate plotting script in this folder.
+resume command.
 
-**Execution status:** the program has not been run or calibrated against the
-installed BeeGFS and IOR versions on the cluster. There are no verified cache
-results or observed full-run timings in this repository. A run stops without
-reporting a verified cache path when its layout, mount, IOR output or traffic
-evidence does not match the protocol.
+## Visualizing a completed run
+
+`visualize_results.py` needs only the copied run directory and matplotlib; it
+runs on any machine and starts no MPI or BeeGFS command:
+
+```bash
+python3 scripts/microbenchmarks/cache/visualize_results.py \
+  results/microbenchmarks/runs/<run-id>
+```
+
+It revalidates every case before plotting: the native IOR summary must be one
+POSIX read of the whole 8-GiB file by one rank with 1-MiB transfers, its rate
+must match the recorded result, the recorded command must be the documented
+one without `O_DIRECT`, and the traffic ratios in `result.json` must be
+recomputable from the raw `counters.json`. It then re-derives each case's
+`achieved` label from the same thresholds the runner applied and refuses to
+plot if the recorded label disagrees with its own evidence. `client_residency`
+is `null` in buffered results, so a native run adds a third figure.
+
+| Output | Contents |
+|---|---|
+| `plots/throughput.png` | One dot per measured read, grouped by medium and cache state, with each group's min-to-max span and median bar |
+| `plots/traffic_evidence.png` | One panel per configuration: client-received, server-sent and device-read ratios for each case against the 0.8 and 0.2 thresholds |
+| `plots/client_residency.png` | Sampled client page residency (native runs only) |
+| `plots/plot_manifest.json` | The complete figure set this visualizer owns for the run |
+
+The program also prints one line per group with its count, minimum, median and
+maximum rate, plus the run's verified and `unverified` totals.
+
+**Execution status:** the buffered pilot and buffered full run have completed on
+`anjuna2` with every case `achieved`. Native-mode runs have not been executed.
+A run stops without reporting a verified cache path when its layout, mount,
+IOR output or traffic evidence does not match the protocol.
 
 This cache runner does not load Darshan. Its results come from native IOR JSON
 and client/server Linux counters; Darshan cannot identify which cache level

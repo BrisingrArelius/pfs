@@ -12,7 +12,7 @@ before execution.
 | `fio/` | Local-target FIO runner and raw-to-plot visualizer | Protocol-5 run completed |
 | `network/` | iperf3 runner and raw-to-plot visualizer | Full raw run available |
 | `communication/` | NetBench IOR plan/command and raw-to-plot visualizer | No live runner or cluster results |
-| `cache/` | Single HDD/SSD cache IOR runner with raw-result capture | No cluster results |
+| `cache/` | Single HDD/SSD cache IOR runner with raw-result capture and raw-to-plot visualizer | Buffered pilot and full run completed; native not run |
 | `metadata/` | mdtest plan/command and raw-to-plot visualizer | No live runner or cluster results |
 | `placement/` | Historical pool-management scripts only | Retained for provenance; not live authority or a microbenchmark domain |
 | `analysis/parse_ost_logs.py` | OST usage log heatmaps | Legacy input default; new run output |
@@ -34,8 +34,8 @@ Current domain documentation:
 
 FIO and iperf3 runners capture native results, and their visualizers consume
 those raw artifacts directly. Communication and metadata have no live runners
-or cluster results; their plots have only synthetic native fixtures. The cache runner has no
-cluster execution record or observed native IOR output yet.
+or cluster results; their plots have only synthetic native fixtures. The cache
+runner has completed buffered pilot and full runs on `anjuna2`.
 Application validation, including the D/S/H whole-workload comparison, is
 specified separately in [`DL_Experiment.md`](../../docs/specs/DL_Experiment.md).
 

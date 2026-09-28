@@ -1,0 +1,7 @@
+{
+  "run_id": "cache-buffered-full-01",
+  "plots": [
+    "throughput.png",
+    "traffic_evidence.png"
+  ]
+}
