@@ -24,7 +24,7 @@ NAMESPACE = MOUNT / "pfs/.metadata-mdtest"
 MPIRUN = Path("/mnt/nfs_shared/mpich-install/bin/mpirun")
 MDTEST = Path("/home/pfs/ior-main/src/mdtest")
 PILOT_ITEMS_PER_RANK = 1000
-FULL_ITEMS_PER_RANK = None  # Set only after reviewing pilot phase times.
+FULL_ITEMS_PER_RANK = 10000  # Pilot phases were too short at 1,000 for full runs.
 PILOT_CASE_TIMEOUT = 300
 FULL_CASE_TIMEOUT = 3600  # Revisit with the pilot-derived full item count.
 CLIENTS = ("anjuna2", "anjuna3")
@@ -288,7 +288,7 @@ def benchmark(run_id, pilot):
         raise ValueError(f"run ID must start with metadata-{mode}-")
     items = PILOT_ITEMS_PER_RANK if pilot else FULL_ITEMS_PER_RANK
     if type(items) is not int or items < 1:
-        raise ValueError("set FULL_ITEMS_PER_RANK from pilot timings before --full")
+        raise ValueError("FULL_ITEMS_PER_RANK must be a positive integer before --full")
     if not RUNS.is_dir() or RUNS.is_symlink():
         raise ValueError("project results/microbenchmarks/runs directory missing")
     no_symlinks(RUNS)
@@ -333,7 +333,7 @@ def benchmark(run_id, pilot):
             measure(unit, raw, shared, owner, items,
                     PILOT_CASE_TIMEOUT if pilot else FULL_CASE_TIMEOUT, baseline)
         print(f"{mode}: {len(plan['units'])}/{len(plan['units'])} mdtest exits and cleanups; "
-              f"native phase validation pending; raw results: {raw}")
+              f"native phase summaries are preserved, not parsed; raw results: {raw}")
 
 
 def main(argv=None):
