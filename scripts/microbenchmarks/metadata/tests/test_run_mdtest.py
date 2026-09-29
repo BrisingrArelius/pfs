@@ -26,7 +26,8 @@ class MetadataTest(unittest.TestCase):
         self.assertEqual(len({row["id"] for row in full}), 90)
         self.assertEqual({row["ranks"] for row in full}, {1, 4, 16})
         argv = md.command(md.units(True)[-1], "/work", 1000)
-        self.assertEqual(argv[1:5], ["-np", "8", "-hosts", "anjuna2:4,anjuna3:4"])
+        self.assertEqual(argv[1:7], ["-wdir", "/work", "-np", "8", "-hosts",
+                                     "anjuna2:4,anjuna3:4"])
         self.assertEqual(argv[argv.index("-n") + 1], "1000")
         self.assertIn("-u", md.command(md.units(True)[2], "/work", 1000))
 
@@ -90,7 +91,9 @@ class MetadataTest(unittest.TestCase):
 
         with patch.object(md.subprocess, "run", return_value=Result()) as called:
             md.remote_probe(self.root / "owner.json", "mdtest-hash")
-        script = called.call_args.args[0][7]
+        argv = called.call_args.args[0]
+        self.assertEqual(argv[1:3], ["-wdir", str(self.root)])
+        script = argv[9]
         self.assertEqual(subprocess.run(["/bin/sh", "-n", "-c", script]).returncode, 0)
 
 

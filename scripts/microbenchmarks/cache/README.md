@@ -1,11 +1,13 @@
 # BeeGFS cache microbenchmark
 
-`run_cache.py` is the single cache benchmark program. It prepares two 8-GiB
+`run_cache.py` is the cache **read** runner. It prepares two 8-GiB
 files on BeeGFS, one on HDD target 101 and one on NVMe target 104 on `colva1`,
 then measures reads from `anjuna2` through its existing BeeGFS mount. `--mode`
 must match that mount's effective cache mode; the script does not change it.
-`visualize_results.py` reads a completed run's raw artifacts and writes its
-plots; it never touches the cluster.
+`run_cache_write.py` separately measures writes. Both import
+`cache_common.py` for the same preflight, target selection, cache drops, lock,
+run ownership and cleanup. `visualize_results.py` handles **read** runs only;
+it never touches the cluster.
 
 | Client mode | Measured states on each medium | Pilot | Full run |
 |---|---|---:|---:|
@@ -111,23 +113,22 @@ device, so unrelated traffic can make a real hit `unverified`; they do not
 measure the exact number of resident client pages. New results identify this
 rule as `traffic_counters_v1` and contain no `client_residency` field.
 
-### Functions in `run_cache.py`
+### Functions and call chain
 
 | Function | Role |
 |---|---|
-| `main` | Parse the run ID, `--mode` and `--pilot`, create a results directory, and call `benchmark`. |
-| `benchmark` | Hold the run lock, prepare two files on the existing mount, measure the cases, and clean up. |
-| `check_cluster` | Check the selected mode and native threshold on the existing mount, target health/mapping, NetBench state, sudo access and available RAM before preparing data. |
-| `cache_config_matches` | Check the effective cache mode and native I/O threshold from the mounted client's procfs configuration. |
-| `targets` | Ask BeeGFS which storage target actually holds a given file. |
+| `run_cache.main` | Parse read arguments and call `benchmark`. |
+| `run_cache.benchmark` | Prepare two files, measure read cases, and save results. |
+| `cache_common.new_run/prepared_run` | Create the run, lock out both cache runners, preflight, verify ownership, prepare the BeeGFS namespace, and clean up. |
+| `cache_common.check_cluster/cache_config_matches` | Check the existing mount's mode/native threshold, target health/mapping, NetBench, sudo and RAM. |
+| `cache_common.target_file/targets` | Select and verify one storage target for a new file. |
 | `make_file` | Select a file on target 101 or 104, fill it with direct writes, and recheck size and placement. |
-| `drop` | Clear both hosts' caches at the start of a case, then optionally clear only one host after warm-up. |
+| `cache_common.drop` | Clear both hosts' caches at the start of a case, then optionally clear only one host after warm-up. |
 | `counters` | Read client-received network bytes, server-sent network bytes and backing-device read bytes. |
 | `cases` | Return buffered (4/20) or native (8/30) pilot/full cases; full runs rotate their configuration order. |
 | `measure` | Prepare one cache state, run IOR, compare IOR and host evidence, and save the achieved label. |
-| `cleanup` | Remove only files and directories bearing this run's owner marker. |
-| `run`, `remote`, `ctl` | Execute commands locally or over SSH; `ctl` uses sudo and the installed client's configuration for all `beegfs-ctl` calls. Capture measured-command output. |
-| `record` | Atomically publish a JSON record such as the per-case result or run summary. |
+| `cache_common.cleanup` | Remove only files and directories bearing this run's owner marker. |
+| `cache_common.run/remote/ctl/record` | Run commands and save native output or JSON. |
 
 ## Running it and reading the results
 
@@ -140,7 +141,7 @@ pattern on its own directories, read BeeGFS target information through
 works on `anjuna2`; the script does not change its authentication settings.
 The server cache drop uses SSH and sudo on `colva1`. A run drops host-wide page
 caches, so its measurements require exclusive use of those hosts. Its file lock
-only prevents two copies of `run_cache.py` from running at once; it does not
+only prevents these two cache runners from running at once; it does not
 block other cluster workloads.
 
 For another buffered pilot (four measured reads), use an unused run ID with
@@ -194,6 +195,7 @@ after every completed IOR read. Output is saved under
 
 ```text
 owner.json                  run/user identity, selected mode and pilot flag
+live_config.json            effective mode, threshold and fsync policy at preflight
 results.json                completed cases and their verified/unverified labels
 01-hdd-backend/             one example measured case
   command.json              exact IOR argument list
@@ -333,6 +335,84 @@ copy another full or pilot run, including the early investigation artifacts.
 These commands copy raw files; run `visualize_results.py` on the laptop
 afterward.
 
-This cache runner does not load Darshan. Its results come from native IOR JSON
+The read runner does not load Darshan. Its results come from native IOR JSON
 and client/server Linux counters; Darshan cannot identify which cache level
 served the read.
+
+## Write benchmark (implemented, not yet run)
+
+`run_cache_write.py` uses the same anjuna2/colva1 preflight, cache drops,
+one-target placement, exclusive lock and run-owned cleanup as the read runner.
+It does **not** edit or remount BeeGFS. Check the live client configuration
+first and pass its actual `tuneRemoteFSync` value:
+
+```bash
+sudo grep -E 'tuneFileCacheType|tuneFileCacheBufSize|tuneRemoteFSync' /proc/fs/beegfs/*/config
+python3 -B scripts/microbenchmarks/cache/run_cache_write.py \
+  --run-id cache-write-buffered-false-pilot-01 \
+  --mode buffered --remote-fsync false --pilot
+```
+
+Use a fresh run ID for each invocation. The script refuses a mismatched live
+mode, native threshold or fsync policy. Run only after arranging exclusive
+host use: each case drops caches on anjuna2 and colva1. The four live
+configurations and matrix sizes are:
+
+| Client mode | `tuneRemoteFSync` | Measured states per medium | Pilot | Full |
+|---|---|---|---:|---:|
+| buffered | false | server-cache acknowledgement | 2 | 10 |
+| buffered | true | server-disk fsync completion | 2 | 10 |
+| native | false | server-cache acknowledgement | 2 | 10 |
+| native | true | server-disk fsync completion; client write acceptance | 4 | 20 |
+
+Across the four configurations this is a 10-case pilot and 50-case full
+matrix, not a single run of either size. The native client case is run only
+with remote fsync enabled so its post-timing fsync has the disk-completion
+policy. Do not compare results across configurations without recording how
+the mount was changed externally; this runner never changes it.
+
+For the server cases, the runner creates a new empty, verified one-target
+file, drops caches, then invokes one IOR rank with:
+
+```text
+/usr/bin/mpirun -np 1 /usr/local/bin/ior -a POSIX \
+  -w -E -k -g -e -t 1m -b 8g -s 1 -i 1 \
+  -o <new-empty-file> -O summaryFormat=JSON \
+  -O summaryFile=<case-directory>/ior.json
+```
+
+The reported IOR MiB/s is the whole write workload, including the requested
+final fsync; it is **not** an isolated RAM, network or device bandwidth
+([IOR timing and `-e`](https://ior.readthedocs.io/en/latest/userDoc/tutorial.html)).
+`tuneRemoteFSync=false` makes fsync acknowledge server-side cache, while
+`true` requires server-side disk completion
+([BeeGFS client tuning](https://doc.beegfs.io/7.4.4/advanced_topics/client_tuning.html)).
+The `server_ram` result label
+therefore denotes the *acknowledgement policy*, not proof that no data hit
+disk during the run. In particular, false does not prevent concurrent
+writeback. The `server_disk` label means that fsync returned under the disk
+policy; target-device sectors written corroborate traffic but cannot time the
+exact commit of this particular file.
+
+The native-only `client_ram` case instead writes 1 GiB with 1-MiB POSIX
+`write()` calls and times only those calls while the descriptor stays open.
+It records client-transmitted bytes across that interval; then it calls
+`fsync()` and closes **outside** the timer. It is application write-acceptance
+throughput, not pure memory bandwidth. The case is marked `unverified` if
+more than 20% of the logical data crossed the client interface during the
+timed region, or if post-fsync client/server traffic and target-device
+write counters do not support transfer. Host-wide counters can include
+unrelated traffic, so a mismatch is diagnostic rather than proof of a
+specific BeeGFS internal behavior.
+
+Both runners save `live_config.json` at preflight; it is a start-of-run
+snapshot, not proof that a mount could not change later. The call chain is
+`main → cache_common.new_run → benchmark →
+cache_common.prepared_run → measure → ior_write/client_write`. Each case
+saves its exact command or POSIX workload description, native IOR output
+where applicable, idle and measurement counters, and a `result.json`
+with intended/achieved state. A failed run preserves completed raw results.
+`visualize_results.py` does not accept write runs; inspect their
+`results.json` and raw case directories until a write-specific validator
+is implemented. No cluster write pilot or full run has yet been executed
+with this runner.

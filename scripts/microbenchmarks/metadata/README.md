@@ -27,8 +27,9 @@ timing check, not a replicated performance result.
 Each case is one MPI invocation of the installed
 `/home/pfs/ior-main/src/mdtest` with `-d <owned-workdir> -n <items> -i 1
 -w 0 -e 0 -N 0 -P`, plus `-u` for the per-rank layout. MPICH is fixed at
-`/mnt/nfs_shared/mpich-install/bin/mpirun` and launches with explicit host
-slots and core binding. The workload includes directory create/stat/remove
+`/mnt/nfs_shared/mpich-install/bin/mpirun` and launches with an explicit
+shared BeeGFS working directory, host slots and core binding. The workload
+includes directory create/stat/remove
 and zero-byte file create/stat/read/remove; exact phase labels and rates will
 be checked against the pilot's native output later. Do not treat a zero exit
 alone as a validated performance result.

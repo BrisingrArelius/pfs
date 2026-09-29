@@ -89,7 +89,7 @@ def command(unit, work, items):
     """Return one fixed MPICH → mdtest argv; no shell interprets its paths."""
     hosts = CLIENTS if unit["placement"] == "dual" else (unit["placement"],)
     ranks = unit["ranks"]
-    argv = [str(MPIRUN), "-np", str(len(hosts) * ranks), "-hosts",
+    argv = [str(MPIRUN), "-wdir", str(work), "-np", str(len(hosts) * ranks), "-hosts",
             ",".join(f"{host}:{ranks}" for host in hosts), "-bind-to", "core",
             str(MDTEST), "-d", str(work), "-n", str(items), "-i", "1",
             "-w", "0", "-e", "0", "-N", "0", "-P"]
@@ -128,7 +128,7 @@ def preflight():
     state = mount_state()
     tools = {}
     for name, path, help_flag, required in (
-            ("mpirun", MPIRUN, "-help", ("-hosts", "-bind-to")),
+            ("mpirun", MPIRUN, "-help", ("-wdir", "-hosts", "-bind-to")),
             ("mdtest", MDTEST, "-h", ("-d", "-n", "-i", "-w", "-e", "-N", "-P", "-u"))):
         if not path.is_file() or not os.access(path, os.X_OK):
             raise ValueError(f"{name} missing or not executable: {path}")
@@ -153,7 +153,8 @@ def remote_probe(marker, mdtest_hash):
               '&& test "$#" -eq 1 && test -r "$1" '
               '&& hash=$(sha256sum "$1") '
               '&& printf "%s %s\\n" "$(hostname)" "${hash%% *}"')
-    argv = [str(MPIRUN), "-np", "2", "-hosts", "anjuna2:1,anjuna3:1",
+    argv = [str(MPIRUN), "-wdir", str(marker.parent), "-np", "2",
+            "-hosts", "anjuna2:1,anjuna3:1",
             "/bin/sh", "-c", script, "sh", str(marker), str(MDTEST), mdtest_hash]
     probe = subprocess.run(argv, capture_output=True, text=True, timeout=30)
     rows = [line.split() for line in probe.stdout.splitlines()]

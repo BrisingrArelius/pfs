@@ -10,7 +10,7 @@ and evidence.
 | Local storage | Per-target FIO runner with native JSON, deadlines and measurement-level resume; protocol-5 full run completed |
 | Network transport | Six-host iperf3 runner with native endpoint JSON, synchronized concurrent epochs, telemetry, and resume; 190-unit/320-path full raw run available |
 | Microbenchmark figures | FIO, iperf3, and cache visualizers plot completed native run artifacts directly; communication and metadata have no cluster result set |
-| Cache effects | `run_cache.py` contains one HDD/SSD IOR cache runner and `visualize_results.py`; buffered and native full runs achieved every intended path; early native pilots remain investigation data |
+| Cache effects | Separate read (`run_cache.py`) and write (`run_cache_write.py`) runners share `cache_common.py` preparation; the read visualizer and buffered/native full read evidence are complete, while the write runner has no cluster run yet |
 | Metadata operations | `run_mdtest.py` launches a four-case, 1,000-item-per-rank pilot from anjuna3 and contains a 90-case full mdtest plan; full execution awaits a pilot-derived item count, and no cluster result exists yet |
 | Placement administration | Shell helpers with historical hard-coded target inventories |
 | Application workloads | Single-process IOR wrapper, two current contiguous read-only profiles, Darshan invocation, and run-specific logs/checkpoints |
@@ -37,8 +37,10 @@ Local FIO and iperf3 have documented protocols and completed cluster runs.
 BeeGFS communication remains offline-only. Metadata now has a runnable pilot
 and a defined full raw-evidence path, but no cluster pilot, validated
 native-output schema, plots, or pilot-derived full item count. The cache domain
-has completed buffered and native full runs, with three early native
-investigation pilots preserved separately. The current workload
+has completed buffered and native full **read** runs, with three early native
+investigation pilots preserved separately. The write runner implements
+server-cache/disk fsync-policy cases and native client write acceptance, but
+has not been piloted or validated on the cluster. The current workload
 pipeline is application-level tooling, not a completed DLIO experiment.
 At the owner's request, the metadata runner is narrowly scoped: it has fixed
 per-case timeouts and skips intact completed cases on rerun, but no
