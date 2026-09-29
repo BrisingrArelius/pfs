@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot one completed run_cache.py run from its own raw artifacts.
+"""Plot one completed run_cache_read.py run from its own raw artifacts.
 
 Read-only with respect to the measurement: this program opens results.json and
 each case directory, revalidates the native IOR summary and the recorded
@@ -234,7 +234,7 @@ def plot_evidence(cases, path, manifest_path, owned):
 
     One panel per medium/state group keeps each case's three ratios adjacent,
     which a single 20-case axis cannot do. The 0.8 and 0.2 lines are the
-    thresholds run_cache.py applies before it accepts a path.
+    thresholds run_cache_read.py applies before it accepts a path.
     """
     layout = groups(cases)
     columns = 2 if len(layout) > 1 else 1

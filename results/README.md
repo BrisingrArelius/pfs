@@ -18,4 +18,6 @@ Imported microbenchmark raw runs and their plots belong under
 generation. The existing cluster runners retain their documented host-side raw
 result paths before retrieval. Workload and trace outputs use
 `workloads/runs/<run-id>/` and `trace_analysis/runs/<run-id>/`, respectively.
-Cache, communication, placement, and metadata have no live raw runs yet.
+Buffered and native cache read pilots/full runs are present under
+`microbenchmarks/runs/`. Cache write, communication, placement, and metadata
+have no live raw runs yet.

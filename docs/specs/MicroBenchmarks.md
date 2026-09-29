@@ -271,8 +271,10 @@ are evaluated by DLIO, not inferred from layer throughput.
 | April-2/16 BeeGFS FIO | Preliminary application-path HDD/SSD context, not a layer measurement | Missing workload/layout and cache provenance limits DLIO comparison reuse |
 | OST logs/plots | Historical allocation/capacity observations | Complete run association and traffic/state verification |
 
-No verified dedicated NetBench, controlled three-state cache or mdtest result set
-has been identified in the preserved results. Existing synthetic-workload Darshan
+Controlled three-state native cache **read** results are now documented in
+the [cache README](../../scripts/microbenchmarks/cache/README.md). No verified
+dedicated NetBench, cache write, or mdtest result set has been identified.
+Existing synthetic-workload Darshan
 results belong to the application evidence, not a completed DLIO experiment.
 Historical BeeGFS FIO captures real filesystem traffic, but is neither a layer
 isolation test nor a completed DLIO workload run. Its reuse is limited by

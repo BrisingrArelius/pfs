@@ -1,13 +1,18 @@
 # BeeGFS cache microbenchmark
 
-`run_cache.py` is the cache **read** runner. It prepares two 8-GiB
-files on BeeGFS, one on HDD target 101 and one on NVMe target 104 on `colva1`,
-then measures reads from `anjuna2` through its existing BeeGFS mount. `--mode`
-must match that mount's effective cache mode; the script does not change it.
-`run_cache_write.py` separately measures writes. Both import
-`cache_common.py` for the same preflight, target selection, cache drops, lock,
-run ownership and cleanup. `visualize_results.py` handles **read** runs only;
-it never touches the cluster.
+This benchmark measures how BeeGFS caching affects **reads and writes** through
+the existing mount on `anjuna2`. It has two narrowly scoped runners:
+`run_cache_read.py` measures reads from prepared 8-GiB files on HDD target
+101 and NVMe target 104 on `colva1`; `run_cache_write.py` measures write
+completion under the existing fsync policy and, in native mode, client-side
+write acceptance. Neither runner changes the mount or its configuration.
+Both import `cache_common.py` for the same preflight, target selection,
+cache drops, lock, run ownership and cleanup. `visualize_results.py` handles
+completed **read** runs only; it never touches the cluster.
+Buffered and native read pilots/full runs are complete; the write runner is
+implemented but has not yet had a cluster pilot.
+
+## Read benchmark
 
 | Client mode | Measured states on each medium | Pilot | Full run |
 |---|---|---:|---:|
@@ -117,8 +122,8 @@ rule as `traffic_counters_v1` and contain no `client_residency` field.
 
 | Function | Role |
 |---|---|
-| `run_cache.main` | Parse read arguments and call `benchmark`. |
-| `run_cache.benchmark` | Prepare two files, measure read cases, and save results. |
+| `run_cache_read.main` | Parse read arguments and call `benchmark`. |
+| `run_cache_read.benchmark` | Prepare two files, measure read cases, and save results. |
 | `cache_common.new_run/prepared_run` | Create the run, lock out both cache runners, preflight, verify ownership, prepare the BeeGFS namespace, and clean up. |
 | `cache_common.check_cluster/cache_config_matches` | Check the existing mount's mode/native threshold, target health/mapping, NetBench, sudo and RAM. |
 | `cache_common.target_file/targets` | Select and verify one storage target for a new file. |
@@ -130,7 +135,7 @@ rule as `traffic_counters_v1` and contain no `client_residency` field.
 | `cache_common.cleanup` | Remove only files and directories bearing this run's owner marker. |
 | `cache_common.run/remote/ctl/record` | Run commands and save native output or JSON. |
 
-## Running it and reading the results
+## Running the read benchmark and interpreting results
 
 Run from the project checkout on **`anjuna2` as the normal `pfs` user**. Select
 the mode already active on the existing mount. The script does not restart or
@@ -148,14 +153,14 @@ For another buffered pilot (four measured reads), use an unused run ID with
 an active `buffered` mount:
 
 ```bash
-python3 -B scripts/microbenchmarks/cache/run_cache.py \
+python3 -B scripts/microbenchmarks/cache/run_cache_read.py \
   --run-id cache-buffered-pilot-05 --mode buffered --pilot
 ```
 
 For another buffered full run (20 measured reads), use a new run ID:
 
 ```bash
-python3 -B scripts/microbenchmarks/cache/run_cache.py \
+python3 -B scripts/microbenchmarks/cache/run_cache_read.py \
   --run-id cache-buffered-full-02 --mode buffered
 ```
 
@@ -176,7 +181,7 @@ runner checks the effective value and stops if it is too small. To repeat the
 pilot, use a fresh ID, for example:
 
 ```bash
-python3 -B scripts/microbenchmarks/cache/run_cache.py \
+python3 -B scripts/microbenchmarks/cache/run_cache_read.py \
   --run-id cache-native-pilot-07 --mode native --pilot
 ```
 
@@ -185,7 +190,7 @@ whether a native full run is valid. Only after a pilot verifies both media and
 all intended states, use a fresh full-run ID, for example:
 
 ```bash
-python3 -B scripts/microbenchmarks/cache/run_cache.py \
+python3 -B scripts/microbenchmarks/cache/run_cache_read.py \
   --run-id cache-native-full-02 --mode native
 ```
 
