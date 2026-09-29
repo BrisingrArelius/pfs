@@ -1,0 +1,45 @@
+{
+  "logs": [
+    "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_022922.darshanlogs/pfs_mkdir_id141492-141492_9-28-9064-17410855958217380256_1.darshan",
+    "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_022922.darshanlogs/pfs_python3_id140062-140062_9-28-8978-4600271251769026822_1.darshan",
+    "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_022922.darshanlogs/pfs_python3_id140112-140112_9-28-8980-1864084702568118099_1.darshan",
+    "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_022922.darshanlogs/pfs_python3_id140113-140113_9-28-8980-18235871823061033008_1.darshan"
+  ],
+  "processes": [
+    "140062",
+    "140112",
+    "140113",
+    "141492"
+  ],
+  "dxt": true,
+  "job": {
+    "darshan log version": "3.41",
+    "exe": "mkdir -p /mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_022922.darshanlogs",
+    "jobid": "141492",
+    "start_time": "1790542864",
+    "nprocs": "1",
+    "run time": "0.0034"
+  },
+  "files_touched": 676,
+  "files_never_opened": [
+    "__0_0.distcp",
+    "__1_0.distcp",
+    "__2_0.distcp",
+    "__3_0.distcp",
+    "__4_0.distcp",
+    "__5_0.distcp",
+    "__6_0.distcp",
+    "__7_0.distcp"
+  ],
+  "never_opened_bytes": 80306042740,
+  "read_ops": 6153,
+  "bytes_read": 41198386,
+  "distinct_bytes": 12001379,
+  "amplification": 3.4328043469004688,
+  "logical_bytes": 16062275096,
+  "pid_to_rank": {},
+  "warnings": [
+    "DXT TRUNCATED: 5,969 traced vs 6,153 counted (97.0%). Raise the DXT buffer or treat per-offset results as a sample.",
+    "TRACE INCOMPLETE: Darshan 0.04 GB is BELOW DCP's logical 16.06 GB (0.00x). Darshan should exceed it by the zip framing."
+  ]
+}

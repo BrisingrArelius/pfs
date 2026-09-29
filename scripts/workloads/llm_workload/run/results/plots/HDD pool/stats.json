@@ -1,0 +1,227 @@
+{
+  "tag": "eval_llama31_8b_adam_per-rank_pool3_TP2_load_202401",
+  "ranks": 2,
+  "files": 9,
+  "read_ops": 5558,
+  "bytes_read": 18025712710,
+  "size": {
+    "ops": 5558,
+    "min": 143139,
+    "max": 262144448,
+    "mean": 3243201.279237136,
+    "p50": 524288.0,
+    "p95": 28836288.0,
+    "p99": 28836288.0
+  },
+  "_figures": {
+    "P1_request_size": "read-size histogram and CDF",
+    "P2_count_vs_byte_weighted": "count- vs byte-weighted size distribution",
+    "P3_offset_vs_time": "access-pattern fingerprint",
+    "P4_pattern_class": "transition classification",
+    "P5_gap_distribution": "signed seek gaps",
+    "P6_access_matrix": "which rank read which file",
+    "P7_sharing_pattern": "FPP / SSF / PSF",
+    "P8_throughput": "IOPS and MB/s over time",
+    "P9_file_gantt": "per-file activity windows",
+    "P10_interarrival": "inter-arrival CDF",
+    "P11_file_table": "per-file summary",
+    "P12_reread_map": "re-read localisation",
+    "P13_targets": "per-target load",
+    "P14_latency": "service-time distribution",
+    "P15_latency_vs_size": "latency vs size"
+  },
+  "size_weighting": {
+    "threshold_bytes": 524288,
+    "ops_at_or_below": 4654,
+    "frac_of_ops": 0.8373515653112631,
+    "frac_of_bytes": 0.1353219200396321
+  },
+  "p3_files_shown": 9,
+  "p3_files_total": 9,
+  "spatial": {
+    "contiguous": 906,
+    "strided": 1,
+    "forward-jump": 1496,
+    "backward-seek": 3139,
+    "contiguous_frac": 0.1634788884879105
+  },
+  "gaps": {
+    "zero": 906,
+    "negative": 3139,
+    "positive": 1497,
+    "negative_bytes": 59572174748
+  },
+  "sharing": {
+    "label": "SSF",
+    "nranks": 2,
+    "files_by_class": {
+      "full": 7,
+      "private": 2
+    },
+    "bytes_by_class": {
+      "full": 13536657606,
+      "private": 4489055104
+    }
+  },
+  "throughput": {
+    "wall_s": 65.07379999999999,
+    "mean_MBps": 277.004150825678,
+    "clock_aligned": true
+  },
+  "concurrency": {
+    "files": 9,
+    "peak_files_active": 6
+  },
+  "interarrival_us": {
+    "p50": 5299.9999999983065,
+    "p95": 173474.99999999983,
+    "max": 1975699.9999999963
+  },
+  "per_file": [
+    {
+      "file": "__1_0.distcp",
+      "reads": 700,
+      "bytes_read": 2256061888,
+      "readers": 2,
+      "mean_req": 3222945.5542857144,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10038383280,
+      "read_frac": 0.2001,
+      "amplif": 1.123
+    },
+    {
+      "file": "__7_0.distcp",
+      "reads": 700,
+      "bytes_read": 2256061888,
+      "readers": 2,
+      "mean_req": 3222945.5542857144,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10038383280,
+      "read_frac": 0.2001,
+      "amplif": 1.123
+    },
+    {
+      "file": "__2_0.distcp",
+      "reads": 700,
+      "bytes_read": 2256061888,
+      "readers": 2,
+      "mean_req": 3222945.5542857144,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10038383280,
+      "read_frac": 0.2001,
+      "amplif": 1.123
+    },
+    {
+      "file": "__6_0.distcp",
+      "reads": 700,
+      "bytes_read": 2256061888,
+      "readers": 2,
+      "mean_req": 3222945.5542857144,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10038383280,
+      "read_frac": 0.2001,
+      "amplif": 1.123
+    },
+    {
+      "file": "__5_0.distcp",
+      "reads": 700,
+      "bytes_read": 2256061888,
+      "readers": 2,
+      "mean_req": 3222945.5542857144,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10038383280,
+      "read_frac": 0.2001,
+      "amplif": 1.123
+    },
+    {
+      "file": "__3_0.distcp",
+      "reads": 698,
+      "bytes_read": 2255013312,
+      "readers": 2,
+      "mean_req": 3230678.0974212033,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10038338780,
+      "read_frac": 0.2001,
+      "amplif": 1.123
+    },
+    {
+      "file": "__0_0.distcp",
+      "reads": 678,
+      "bytes_read": 2244527552,
+      "readers": 1,
+      "mean_req": 3310512.6135693216,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10037893780,
+      "read_frac": 0.2001,
+      "amplif": 1.118
+    },
+    {
+      "file": "__4_0.distcp",
+      "reads": 678,
+      "bytes_read": 2244527552,
+      "readers": 1,
+      "mean_req": 3310512.6135693216,
+      "p95_req": 28836288.0,
+      "kind": "mixed",
+      "bytes_on_disk": 10037893780,
+      "read_frac": 0.2001,
+      "amplif": 1.118
+    },
+    {
+      "file": ".metadata",
+      "reads": 4,
+      "bytes_read": 1334854,
+      "readers": 2,
+      "mean_req": 333713.5,
+      "p95_req": 524288.0,
+      "kind": "index",
+      "bytes_on_disk": 667427,
+      "read_frac": 1.0,
+      "amplif": 2.0
+    }
+  ],
+  "reread": {
+    "block_bytes": 524288,
+    "blocks_read_once": 28806,
+    "blocks_read_multiple": 1844,
+    "bytes_in_multiread_blocks_UPPER_BOUND": 966787072,
+    "max_read_count": 8,
+    "block_accesses": 39912,
+    "repeat_accesses": 9262,
+    "reuse_distance_blocks": {
+      "p50": 1,
+      "p90": 114,
+      "max": 25924
+    },
+    "capture_50pct_GB": 0.000524288,
+    "capture_90pct_GB": 0.059768832,
+    "capture_99pct_GB": 3.477602304
+  },
+  "targets": {
+    "label": "stripe slot",
+    "resolved": false,
+    "bytes": {
+      "1": 4992492194,
+      "0": 4815737152,
+      "2": 4203513604,
+      "3": 4013969760
+    },
+    "imbalance": 1.2437792241862828
+  },
+  "latency": {
+    "p50_us": 5200.000000002092,
+    "p95_us": 165014.99999999854,
+    "p99_us": 200342.999999999,
+    "ops": 5558,
+    "frac_under_10us": 0.0,
+    "total_service_s": 123.47760000000022
+  },
+  "effective_bw_MBps_large_ops": 162.2547915241797
+}

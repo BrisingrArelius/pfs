@@ -1,0 +1,94 @@
+{
+  "model": "llama31_8b",
+  "num_hidden_layers": 32,
+  "save_config": "TP4/PP2/DP1",
+  "world_size": 8,
+  "dtype": "bfloat16",
+  "optimizer": "adam",
+  "layout": "per-rank",
+  "thread_count": 1,
+  "parameters": 8030261248,
+  "tensors": 873,
+  "shards": 2907,
+  "shard_files": 8,
+  "metadata_bytes": 643715,
+  "payload_bytes": 80302612480,
+  "optimizer_bytes": 64242089984,
+  "apparent_bytes": 80306686455,
+  "fill": "random",
+  "elapsed_s": 409.3,
+  "files": [
+    {
+      "file": "__0_0.distcp",
+      "shards": 339,
+      "bytes": 10037893780,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    },
+    {
+      "file": "__1_0.distcp",
+      "shards": 372,
+      "bytes": 10038383280,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    },
+    {
+      "file": "__2_0.distcp",
+      "shards": 372,
+      "bytes": 10038383280,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    },
+    {
+      "file": "__3_0.distcp",
+      "shards": 369,
+      "bytes": 10038338780,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    },
+    {
+      "file": "__4_0.distcp",
+      "shards": 339,
+      "bytes": 10037893780,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    },
+    {
+      "file": "__5_0.distcp",
+      "shards": 372,
+      "bytes": 10038383280,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    },
+    {
+      "file": "__6_0.distcp",
+      "shards": 372,
+      "bytes": 10038383280,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    },
+    {
+      "file": "__7_0.distcp",
+      "shards": 372,
+      "bytes": 10038383280,
+      "kinds": [
+        "model",
+        "optim"
+      ]
+    }
+  ]
+}

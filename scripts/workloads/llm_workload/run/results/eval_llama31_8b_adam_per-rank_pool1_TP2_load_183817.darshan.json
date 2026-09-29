@@ -1,0 +1,34 @@
+{
+  "logs": [
+    "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_183817.darshanlogs/pfs_python3_id1038661-1038661_9-28-67105-16570425395306122462_1.darshan",
+    "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_183817.darshanlogs/pfs_python3_id1038709-1038709_9-28-67106-9438962341702509229_1.darshan",
+    "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_183817.darshanlogs/pfs_python3_id1038710-1038710_9-28-67106-15187965153084719961_1.darshan"
+  ],
+  "processes": [
+    "1038661",
+    "1038709",
+    "1038710"
+  ],
+  "dxt": true,
+  "job": {
+    "darshan log version": "3.41",
+    "exe": "/usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --master_port=29570 /home/pfs/advay/pfs/scripts/workloads/llm_workload/eval_load.py --ckpt /mnt/beegfs/pfs/ckpt_experiment/llama31_8b_adam_per-rank_pool1 --model llama31_8b --load-config TP2 --read-set eval --optimizer adam --mode load --device cpu --only-layers 32 --summary /mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_183817.summary.json --emit-reads /mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_183817.reads.csv",
+    "jobid": "1038661",
+    "start_time": "1790600905",
+    "nprocs": "1",
+    "run time": "85.2456"
+  },
+  "files_touched": 9,
+  "files_never_opened": [],
+  "never_opened_bytes": 0,
+  "read_ops": 5558,
+  "bytes_read": 18025665286,
+  "distinct_bytes": 16066460615,
+  "amplification": 1.1219437633432994,
+  "logical_bytes": 16062275096,
+  "pid_to_rank": {
+    "1038709": "0",
+    "1038710": "1"
+  },
+  "warnings": []
+}

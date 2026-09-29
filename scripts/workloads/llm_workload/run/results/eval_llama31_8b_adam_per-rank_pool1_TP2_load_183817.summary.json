@@ -1,0 +1,84 @@
+{
+  "model": "llama31_8b",
+  "layers": 32,
+  "load_config": "TP2/PP1/DP1",
+  "mode": "load",
+  "read_set": "eval",
+  "metadata_bytes": 643715,
+  "metadata_fanout_bytes": 1287430,
+  "shard_files_present": 8,
+  "shard_files_opened": 8,
+  "shard_files_never_opened": [],
+  "total_requests": 1034,
+  "total_bytes": 16062275096,
+  "per_rank": [
+    {
+      "rank": 0,
+      "world_size": 2,
+      "load_config": "TP2/PP1/DP1",
+      "mode": "load",
+      "requests": 517,
+      "bytes": 8031137548,
+      "files_opened": 8,
+      "metadata_bytes_read": 643715,
+      "build_s": 0.169,
+      "io_s": 63.803,
+      "checksum": 1023897600392
+    },
+    {
+      "rank": 1,
+      "world_size": 2,
+      "load_config": "TP2/PP1/DP1",
+      "mode": "load",
+      "requests": 517,
+      "bytes": 8031137548,
+      "files_opened": 6,
+      "metadata_bytes_read": 643715,
+      "build_s": 0.17,
+      "io_s": 63.803,
+      "checksum": 1023895440772
+    }
+  ],
+  "per_file": {
+    "__0_0.distcp": {
+      "readers": 1,
+      "reqs": 113,
+      "bytes": 2007632092
+    },
+    "__1_0.distcp": {
+      "readers": 2,
+      "reqs": 135,
+      "bytes": 2007838276
+    },
+    "__2_0.distcp": {
+      "readers": 2,
+      "reqs": 135,
+      "bytes": 2007838276
+    },
+    "__3_0.distcp": {
+      "readers": 2,
+      "reqs": 133,
+      "bytes": 2007819532
+    },
+    "__4_0.distcp": {
+      "readers": 1,
+      "reqs": 113,
+      "bytes": 2007632092
+    },
+    "__5_0.distcp": {
+      "readers": 2,
+      "reqs": 135,
+      "bytes": 2007838276
+    },
+    "__6_0.distcp": {
+      "readers": 2,
+      "reqs": 135,
+      "bytes": 2007838276
+    },
+    "__7_0.distcp": {
+      "readers": 2,
+      "reqs": 135,
+      "bytes": 2007838276
+    }
+  }
+}
