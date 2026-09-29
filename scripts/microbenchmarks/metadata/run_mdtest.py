@@ -1,331 +1,358 @@
 #!/usr/bin/env python3
-"""Offline mdtest plan, command and namespace safety contracts.
-
-No MPI launch or BeeGFS mutation is performed here. Read DESIGN.md and
-../IMPLEMENTATION_RULES.md before implementing cluster execution.
-"""
-
-from __future__ import annotations
+"""Run the BeeGFS metadata pilot or its 90-case full matrix on anjuna3."""
 
 import argparse
+import fcntl
 import hashlib
 from itertools import product
 import json
-import math
 import os
 from pathlib import Path
 import random
 import re
-import stat
+import shutil
+import signal
+import socket
+import subprocess
 import sys
-import uuid
+import time
 
-HERE = Path(__file__).resolve().parent
-RUNS = HERE.parents[2] / "results" / "microbenchmarks" / "runs"
+
+RUNS = Path(__file__).resolve().parents[3] / "results/microbenchmarks/runs"
+MOUNT = Path("/mnt/beegfs")
+NAMESPACE = MOUNT / "pfs/.metadata-mdtest"
+MPIRUN = Path("/mnt/nfs_shared/mpich-install/bin/mpirun")
+MDTEST = Path("/home/pfs/ior-main/src/mdtest")
+PILOT_ITEMS_PER_RANK = 1000
+FULL_ITEMS_PER_RANK = None  # Set only after reviewing pilot phase times.
+PILOT_CASE_TIMEOUT = 300
+FULL_CASE_TIMEOUT = 3600  # Revisit with the pilot-derived full item count.
 CLIENTS = ("anjuna2", "anjuna3")
-PHASES = ("directory_create", "directory_stat", "directory_remove",
-          "file_create", "file_stat", "file_read", "file_remove")
+PILOT = (("anjuna2", 1, "flat"), ("anjuna3", 1, "flat"),
+         ("dual", 1, "per_rank"), ("dual", 4, "flat"))
 
 
-def load_config(path):
-    config = json.loads(Path(path).read_text(encoding="utf-8"))
-    if config.get("protocol_version") != 1:
-        raise ValueError("unknown metadata protocol")
-    return config
+def sha256(path):
+    """Hash one binary or raw artifact for run identity and resume checks."""
+    value = hashlib.sha256()
+    with Path(path).open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            value.update(block)
+    return value.hexdigest()
 
 
-def shuffled_blocks(configurations, repetitions, seed, rotation=0):
-    configurations = list(configurations)
-    random.Random(seed).shuffle(configurations)
-    for repetition in range(1, repetitions + 1):
-        offset = (repetition - 1) * rotation % len(configurations)
-        for position, case in enumerate(configurations[offset:] + configurations[:offset]):
-            yield repetition, position, case
-
-
-def finalized_plan(units):
-    units = list(units)
-    if len({unit["id"] for unit in units}) != len(units):
-        raise ValueError("duplicate unit")
-    return units
-
-
-def require_reviewed_inventory(inventory, domain, fields):
-    if inventory.get("domain") != domain or inventory.get("reviewed") is not True:
-        raise ValueError("reviewed metadata inventory required")
-    if any(not inventory.get(field) for field in fields):
-        raise ValueError("metadata inventory lacks required live fields")
-
-
-def write_plan(path, domain, config, units):
-    path = Path(path).absolute()
-    if (path.parent.parent != RUNS or path.name != "plan.json"
-            or path.is_symlink() or ".." in path.parts or not path.parent.is_dir()):
-        raise ValueError("plan must be inside an existing project run directory")
-    if any(component.is_symlink() for component in (path.parent, RUNS)):
-        raise ValueError("symlink in result directory")
-    record = {"domain": domain, "config": config, "units": units}
-    record["fingerprint"] = hashlib.sha256(json.dumps(record, sort_keys=True,
-        separators=(",", ":")).encode("utf-8")).hexdigest()
-    directory = open_directory_nofollow(path.parent)
-    temporary = f".plan-{uuid.uuid4().hex}"
+def save(path, data):
+    """Atomically replace a runner-owned JSON record in its existing directory."""
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    if path.is_symlink() or temporary.exists() or temporary.is_symlink():
+        raise ValueError(f"refusing symlink: {path}")
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+        json.dump(data, output, indent=2, sort_keys=True)
+        output.write("\n")
+        output.flush()
+        os.fsync(output.fileno())
+    temporary.replace(path)
+    directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
     try:
-        marker = os.open("owner.json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
-        with os.fdopen(marker, "r", encoding="utf-8") as source:
-            owner = json.load(source)
-        if owner != {"run_id": path.parent.name, "domain": domain}:
-            raise ValueError("run marker does not match metadata protocol")
-        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                             0o600, dir_fd=directory)
-        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-            json.dump(record, output, indent=2)
-            output.write("\n")
-            output.flush()
-            os.fsync(output.fileno())
-        os.link(temporary, path.name, src_dir_fd=directory, dst_dir_fd=directory,
-                follow_symlinks=False)
         os.fsync(directory)
     finally:
-        try:
-            os.unlink(temporary, dir_fd=directory)
-        except FileNotFoundError:
-            pass
         os.close(directory)
-    return record
 
 
-def open_directory_nofollow(path):
-    path = Path(path).absolute()
-    if ".." in path.parts:
-        raise ValueError("directory traversal")
-    descriptor = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        for part in path.parts[1:]:
-            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                            dir_fd=descriptor)
-            os.close(descriptor)
-            descriptor = child
-        return descriptor
-    except BaseException:
-        os.close(descriptor)
-        raise
+def load(path):
+    """Read a JSON record previously written by this runner."""
+    if path.is_symlink():
+        raise ValueError(f"refusing symlink: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
-def admit_pilot(observed_step_seconds, cleanup_reserve_seconds):
-    required = {"preparation", "measurement", "validation", "restoration", "cleanup"}
-    if not isinstance(observed_step_seconds, dict) or set(observed_step_seconds) != required:
-        raise ValueError("pilot requires measured timing for every step")
-    values = (*observed_step_seconds.values(), cleanup_reserve_seconds)
-    if any(type(value) not in (int, float) or not math.isfinite(value) or value <= 0
-           for value in values) or sum(values) >= 1200:
-        raise ValueError("pilot plus cleanup must fit under 20 minutes")
-    return True
+def units(pilot):
+    """Return four unreplicated pilot cases or the fixed 90-case full plan."""
+    if pilot:
+        return [{"id": f"pilot-{i:02d}", "placement": place, "ranks": ranks,
+                 "layout": layout, "repetition": 1}
+                for i, (place, ranks, layout) in enumerate(PILOT, 1)]
+    cases = list(product((*CLIENTS, "dual"), (1, 4, 16), ("flat", "per_rank")))
+    random.Random(20260924).shuffle(cases)
+    result = []
+    for repetition in range(1, 6):
+        shift = (repetition - 1) * 7 % len(cases)
+        for place, ranks, layout in cases[shift:] + cases[:shift]:
+            result.append({"id": f"r{repetition:02d}-{place}-n{ranks}-{layout}",
+                           "placement": place, "ranks": ranks, "layout": layout,
+                           "repetition": repetition})
+    return result
 
 
-def validate_mdtest(stdout, *, schema, tasks, items_per_rank, workdir):
-    """Accept seven phase rows only under the pilot-pinned native output schema."""
-    if (not isinstance(stdout, str) or len(stdout) > 4 * 1024 * 1024
-            or not isinstance(schema, dict) or set(schema.get("phases", {})) != set(PHASES)
-            or not all(schema.get(key) for key in ("version_signature", "task_signature",
-                                                    "item_signature", "path_signature"))):
-        raise ValueError("missing pinned mdtest native output schema")
-    for key, value in (("version_signature", None), ("task_signature", tasks),
-                       ("item_signature", items_per_rank), ("path_signature", workdir)):
-        signature = schema[key] if value is None else schema[key].format(value=re.escape(str(value)))
-        if not re.search(signature, stdout, re.MULTILINE):
-            raise ValueError(f"mdtest {key} missing")
-    results = {}
-    for phase in PHASES:
-        pattern = schema["phases"][phase]
-        if not isinstance(pattern, str) or not pattern.startswith("^") or not pattern.endswith("$"):
-            raise ValueError("mdtest phase expression must cover a whole line")
-        matches = list(re.finditer(pattern, stdout, re.MULTILINE))
-        if len(matches) != 1 or set(matches[0].groupdict()) != {"rate", "elapsed", "operations"}:
-            raise ValueError(f"mdtest {phase} missing, duplicated or unknown")
-        groups = matches[0].groupdict()
-        rate, elapsed, operations = float(groups["rate"]), float(groups["elapsed"]), int(groups["operations"])
-        if (not math.isfinite(rate) or not math.isfinite(elapsed) or rate <= 0 or elapsed <= 0
-                or operations != tasks * items_per_rank
-                or abs(rate - operations / elapsed) > max(1, rate * .02)):
-            raise ValueError(f"invalid mdtest {phase} native metrics")
-        results[phase] = {"rate": rate, "seconds": elapsed, "operations": operations}
-    if re.search(r"(?im)^\s*(?:error|fatal|failed|stonewall)\b", stdout):
-        raise ValueError("mdtest reported failure")
-    return results
-
-
-def validate_config(config):
-    fixed = {"placements": ["anjuna2", "anjuna3", "dual"],
-             "ranks_per_client": [1, 4, 16], "layouts": ["flat", "per_rank"],
-             "items_per_rank": 100000, "bytes_written_per_file": 0,
-             "bytes_read_per_file": 0, "rotation": 7, "repetitions": 5}
-    if any(config.get(key) != value for key, value in fixed.items()):
-        raise ValueError("mdtest settings differ from the reviewed protocol")
-
-
-def plan_units(config):
-    validate_config(config)
-    configurations = [{"placement": placement, "ranks_per_client": ranks, "layout": layout}
-                      for placement, ranks, layout in product(config["placements"],
-                                                               config["ranks_per_client"],
-                                                               config["layouts"])]
-    return finalized_plan({"id": f"r{rep:02d}-{case['placement']}-"
-                                 f"n{case['ranks_per_client']}-{case['layout']}",
-                           "repetition": rep, "position": position, **case}
-                          for rep, position, case in shuffled_blocks(
-                              configurations, config["repetitions"], config["order_seed"], rotation=7))
-
-
-def build_command(unit, mpirun, mdtest, owned_workdir):
-    clients = CLIENTS if unit["placement"] == "dual" else (unit["placement"],)
-    ranks = unit["ranks_per_client"]
-    if any(client not in CLIENTS for client in clients) or ranks not in (1, 4, 16):
-        raise ValueError("invalid MPI placement")
-    if unit["layout"] not in ("flat", "per_rank"):
-        raise ValueError("invalid directory layout")
-    command = [str(mpirun), "-np", str(len(clients) * ranks), "--host",
-               ",".join(f"{client}:{ranks}" for client in clients),
-               "--map-by", f"ppr:{ranks}:node", "--bind-to", "core", str(mdtest),
-               "-d", str(owned_workdir), "-n", "100000", "-i", "1", "-w", "0",
-               "-e", "0", "-N", "0", "-P"]
+def command(unit, work, items):
+    """Return one fixed MPICH → mdtest argv; no shell interprets its paths."""
+    hosts = CLIENTS if unit["placement"] == "dual" else (unit["placement"],)
+    ranks = unit["ranks"]
+    argv = [str(MPIRUN), "-np", str(len(hosts) * ranks), "-hosts",
+            ",".join(f"{host}:{ranks}" for host in hosts), "-bind-to", "core",
+            str(MDTEST), "-d", str(work), "-n", str(items), "-i", "1",
+            "-w", "0", "-e", "0", "-N", "0", "-P"]
     if unit["layout"] == "per_rank":
-        command.append("-u")
-    return command
+        argv.append("-u")
+    return argv
 
 
-def pilot_units(config):
-    """Bounded four-case production-geometry pilot; time admission needs live estimates."""
-    plan_units(config)
-    cases = (("anjuna2", 1, "flat"), ("anjuna3", 1, "flat"),
-             ("dual", 1, "per_rank"), ("dual", 16, "flat"))
-    return finalized_plan({"id": f"pilot-{index:02d}", "placement": placement,
-                           "ranks_per_client": ranks, "layout": layout, "repetition": 1}
-                          for index, (placement, ranks, layout) in enumerate(cases, 1))
+def no_symlinks(path):
+    """Reject links in an owned path before creating or deleting beneath it."""
+    for part in (path, *path.parents):
+        if part.is_symlink():
+            raise ValueError(f"symlink in benchmark path: {part}")
 
 
-def owned_attempt_path(base, run_id, unit_id, attempt_number):
-    """Construct a non-traversing relative namespace path from canonical IDs."""
-    for value in (run_id, unit_id):
-        if not value or not all(character.isalnum() or character in "_-" for character in value):
-            raise ValueError("unsafe run or unit identifier")
-    if type(attempt_number) is not int or attempt_number < 1:
-        raise ValueError("invalid attempt number")
-    base = Path(base)
-    if base.is_symlink() or any(part.is_symlink() for part in base.parents):
-        raise ValueError("symlink in namespace root")
-    path = base / run_id / "attempts" / unit_id / f"attempt-{attempt_number}"
-    if path.exists() or path.is_symlink():
-        raise FileExistsError("attempt path already exists")
-    if not path.resolve().is_relative_to(base.resolve()):
-        raise ValueError("attempt path escapes reviewed base")
-    return path
+def mount_state():
+    """Read the current BeeGFS mount and client configuration identity."""
+    no_symlinks(NAMESPACE.parent)
+    mount = subprocess.run(["findmnt", "-n", "-o", "FSTYPE,SOURCE,TARGET,OPTIONS",
+                            "--target", str(MOUNT)], capture_output=True, text=True,
+                           check=True, timeout=10).stdout.strip()
+    parts = mount.split(maxsplit=3)
+    if len(parts) != 4 or parts[0] != "beegfs" or parts[2] != str(MOUNT):
+        raise ValueError(f"expected BeeGFS at {MOUNT}: {mount}")
+    configs = list(Path("/proc/fs/beegfs").glob("*/config"))
+    if len(configs) != 1:
+        raise ValueError("expected one live BeeGFS client config")
+    return {"mount": mount, "mount_device": MOUNT.stat().st_dev,
+            "client_config_sha256": sha256(configs[0])}
 
 
-def cleanup_attempt(path, *, base, run_id, unit_id, attempt_number,
-                    fingerprint, lock_held, mount_verified, owned_entries):
-    """Remove exactly one owned BeeGFS attempt, never a sibling or run root."""
-    if not lock_held or not mount_verified:
-        raise ValueError("cleanup needs held lock and verified BeeGFS mount")
-    path, base = Path(path), Path(base)
-    expected = base / run_id / "attempts" / unit_id / f"attempt-{attempt_number}"
-    if path != expected or not path.is_dir():
-        raise ValueError("not the exact generated attempt path")
-    if any(part.is_symlink() for part in (path, *path.parents)):
-        raise ValueError("symlink in attempt path")
-    if not path.resolve().is_relative_to(base.resolve()):
-        raise ValueError("attempt path escapes reviewed namespace")
-    if not isinstance(owned_entries, dict) or not owned_entries:
-        raise ValueError("cleanup requires a saved inventory of owned entries")
-    descriptor = open_directory_nofollow(path)
-    try:
-        marker_fd = os.open("owner.json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=descriptor)
-        with os.fdopen(marker_fd, "r", encoding="utf-8") as source:
-            owner = json.load(source)
-        expected_owner = {"run_id": run_id, "unit_id": unit_id,
-                          "attempt_id": f"attempt-{attempt_number}", "fingerprint": fingerprint}
-        if any(owner.get(key) != value for key, value in expected_owner.items()):
-            raise ValueError("attempt marker does not match the manifest")
-        seen = {}
+def preflight():
+    """Require anjuna3, the expected mount and installed MPICH/mdtest flags."""
+    if socket.gethostname().split(".")[0] != "anjuna3":
+        raise ValueError("run this script on anjuna3")
+    state = mount_state()
+    tools = {}
+    for name, path, help_flag, required in (
+            ("mpirun", MPIRUN, "-help", ("-hosts", "-bind-to")),
+            ("mdtest", MDTEST, "-h", ("-d", "-n", "-i", "-w", "-e", "-N", "-P", "-u"))):
+        if not path.is_file() or not os.access(path, os.X_OK):
+            raise ValueError(f"{name} missing or not executable: {path}")
+        help_text = subprocess.run([str(path), help_flag], capture_output=True,
+                                   text=True, timeout=20)
+        output = help_text.stdout + help_text.stderr
+        if any(flag not in output for flag in required):
+            raise ValueError(f"{name} help lacks required options")
+        tools[name] = {"path": str(path), "sha256": sha256(path), "help": output}
+    return {**state, "tools": tools}
 
-        def walk(current, prefix, *, remove):
-            for name in os.listdir(current):
-                relative = f"{prefix}/{name}" if prefix else name
-                identity = os.stat(name, dir_fd=current, follow_symlinks=False)
-                if (not (stat.S_ISDIR(identity.st_mode) or stat.S_ISREG(identity.st_mode))
-                        or identity.st_dev != os.fstat(descriptor).st_dev
-                        or owned_entries.get(relative) != (identity.st_dev, identity.st_ino)):
-                    raise ValueError("attempt contains a foreign or changed entry")
-                seen[relative] = (identity.st_dev, identity.st_ino)
-                if stat.S_ISDIR(identity.st_mode):
-                    child = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                                    dir_fd=current)
-                    try:
-                        if os.fstat(child).st_ino != identity.st_ino:
-                            raise ValueError("attempt directory changed during cleanup")
-                        walk(child, relative, remove=remove)
-                    finally:
-                        os.close(child)
-                    if remove:
-                        again = os.stat(name, dir_fd=current, follow_symlinks=False)
-                        if (again.st_dev, again.st_ino) != (identity.st_dev, identity.st_ino):
-                            raise ValueError("attempt directory changed during cleanup")
-                        os.rmdir(name, dir_fd=current)
-                elif remove:
-                    again = os.stat(name, dir_fd=current, follow_symlinks=False)
-                    if (again.st_dev, again.st_ino) != (identity.st_dev, identity.st_ino):
-                        raise ValueError("attempt file changed during cleanup")
-                    os.unlink(name, dir_fd=current)
 
-        walk(descriptor, "", remove=False)
-        if seen != owned_entries:
-            raise ValueError("attempt inventory has missing or unknown entries")
-        seen.clear()
-        walk(descriptor, "", remove=True)
-        parent = open_directory_nofollow(path.parent)
+def remote_probe(marker, mdtest_hash):
+    """Verify both MPI clients see the marker, NetBench off and the same mdtest."""
+    script = ('test "$(findmnt -n -o FSTYPE --target /mnt/beegfs)" = beegfs '
+              '&& test -f "$1" && test -x "$2" '
+              '&& hash=$(sha256sum "$2") && test "${hash%% *}" = "$3" '
+              '&& set -- /proc/fs/beegfs/*/netbench_mode '
+              '&& test -r "$1" '
+              '&& for f; do test "$(cat "$f")" = 0 || exit 1; done '
+              '&& set -- /proc/fs/beegfs/*/config '
+              '&& test "$#" -eq 1 && test -r "$1" '
+              '&& hash=$(sha256sum "$1") '
+              '&& printf "%s %s\\n" "$(hostname)" "${hash%% *}"')
+    argv = [str(MPIRUN), "-np", "2", "-hosts", "anjuna2:1,anjuna3:1",
+            "/bin/sh", "-c", script, "sh", str(marker), str(MDTEST), mdtest_hash]
+    probe = subprocess.run(argv, capture_output=True, text=True, timeout=30)
+    rows = [line.split() for line in probe.stdout.splitlines()]
+    clients = {row[0].split(".")[0]: row[1] for row in rows if len(row) == 2}
+    if probe.returncode or len(rows) != 2 or set(clients) != set(CLIENTS):
+        raise ValueError(f"MPI/BeeGFS preflight failed: {probe.stdout} {probe.stderr}")
+    return {"argv": argv, "stdout": probe.stdout, "stderr": probe.stderr,
+            "client_config_sha256": clients}
+
+
+def owned_run(run_id, plan):
+    """Create or verify the local raw directory and marker-owned BeeGFS root."""
+    raw = RUNS / run_id
+    shared = NAMESPACE / run_id
+    no_symlinks(RUNS)
+    no_symlinks(NAMESPACE.parent)
+    raw.mkdir(mode=0o700, exist_ok=True)
+    NAMESPACE.mkdir(mode=0o700, exist_ok=True)
+    no_symlinks(raw)
+    no_symlinks(NAMESPACE)
+    owner = {"run_id": run_id, "plan_sha256": hashlib.sha256(
+        json.dumps(plan, sort_keys=True).encode()).hexdigest()}
+    for root in (raw, shared):
+        if root.exists():
+            no_symlinks(root)
+            marker = root / "owner.json"
+            if marker.exists():
+                if marker.is_symlink() or load(marker) != owner:
+                    raise ValueError(f"run marker differs: {root}")
+            elif list(root.iterdir()):
+                raise ValueError(f"unowned nonempty run directory: {root}")
+            else:
+                save(marker, owner)
+        else:
+            root.mkdir(mode=0o700)
+            save(root / "owner.json", owner)
+    if (raw / "plan.json").exists():
+        if load(raw / "plan.json") != plan:
+            raise ValueError("saved plan differs from this script/configuration")
+    else:
+        save(raw / "plan.json", plan)
+    return raw, shared, owner
+
+
+def cleanup(work_root, shared, unit, owner):
+    """Remove only the completed case's exact marker-owned BeeGFS subtree."""
+    if work_root != shared / unit["id"] or not shutil.rmtree.avoids_symlink_attacks:
+        raise ValueError("unsafe cleanup target")
+    no_symlinks(work_root)
+    if (work_root / "owner.json").is_symlink() or load(work_root / "owner.json") != owner:
+        raise ValueError("case marker differs")
+    device = work_root.stat().st_dev
+    for directory, folders, files in os.walk(work_root, followlinks=False):
+        for name in (*folders, *files):
+            child = Path(directory) / name
+            if child.is_symlink() or child.stat().st_dev != device:
+                raise ValueError(f"foreign link or mount in case: {child}")
+    shutil.rmtree(work_root)
+
+
+def launch(argv, raw, timeout):
+    """Capture native streams; terminate only this MPI process group on timeout."""
+    started = time.time()
+    interrupted = False
+    with (raw / "stdout.txt").open("xb") as stdout, (raw / "stderr.txt").open("xb") as stderr:
+        process = subprocess.Popen(argv, stdout=stdout, stderr=stderr, start_new_session=True)
         try:
-            current = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
-            if (current.st_dev, current.st_ino) != (os.fstat(descriptor).st_dev,
-                                                    os.fstat(descriptor).st_ino):
-                raise ValueError("attempt root changed during cleanup")
-            os.rmdir(path.name, dir_fd=parent)
-        finally:
-            os.close(parent)
-    finally:
-        os.close(descriptor)
+            process.wait(timeout=timeout)
+        except (subprocess.TimeoutExpired, KeyboardInterrupt):
+            interrupted = True
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+    return {"returncode": process.returncode, "interrupted": interrupted,
+            "started_at": started, "ended_at": time.time()}
 
 
-def preflight(inventory):
-    require_reviewed_inventory(inventory, "metadata", ("clients", "meta_target", "mount",
-                                                      "tools", "namespace", "allowed_cores"))
-    if any(len(inventory["allowed_cores"].get(host, [])) < 16 for host in CLIENTS):
-        raise ValueError("each client needs at least 16 allowed distinct CPU cores")
-    if not inventory.get("netbench_off") or not inventory.get("shared_mount_verified"):
-        raise ValueError("NetBench-off and identical BeeGFS mount must be verified")
-    return True
+def measure(unit, raw, shared, owner, items, timeout, baseline):
+    """Run one case and checkpoint its unmodified output; stop on any failure."""
+    case_raw = raw / "cases" / unit["id"]
+    case_shared = shared / unit["id"]
+    if case_raw.exists() or case_shared.exists() or case_raw.is_symlink() or case_shared.is_symlink():
+        raise ValueError(f"{unit['id']}: incomplete/foreign case exists; inspect before retry")
+    probe = remote_probe(shared / "owner.json", baseline["tools"]["mdtest"]["sha256"])
+    if probe["client_config_sha256"] != baseline["remote_client_config_sha256"]:
+        raise ValueError("BeeGFS client configuration changed during the run")
+    before = mount_state()
+    if before != {key: baseline[key] for key in before}:
+        raise ValueError("BeeGFS mount changed before mdtest")
+    no_symlinks(shared)
+    case_shared.mkdir(mode=0o700)
+    save(case_shared / "owner.json", owner)
+    (case_shared / "work").mkdir(mode=0o700)
+    case_raw.mkdir(parents=True)
+    save(case_raw / "preflight.json", probe)
+    argv = command(unit, case_shared / "work", items)
+    save(case_raw / "command.json", argv)
+    save(case_raw / "before.json", {"at": time.time(), **before})
+    print(f"{unit['id']}: {' '.join(argv)}", flush=True)
+    result = launch(argv, case_raw, timeout)
+    after = mount_state()
+    save(case_raw / "after.json", {"at": time.time(), **after})
+    result["stdout_sha256"] = sha256(case_raw / "stdout.txt")
+    result["stderr_sha256"] = sha256(case_raw / "stderr.txt")
+    result["cleanup"] = "pending"
+    save(case_raw / "result.json", result)
+    if result["returncode"] != 0 or result["interrupted"]:
+        raise ValueError(f"{unit['id']}: MPI failed/interrupted; shared namespace preserved")
+    if after != before:
+        raise ValueError("BeeGFS mount changed before cleanup")
+    cleanup(case_shared, shared, unit, owner)
+    result["cleanup"] = "completed"
+    save(case_raw / "result.json", result)
 
 
-def validate_measurement(unit, stdout, evidence, *, schema, workdir):
-    if (not evidence.get("rank_map_verified") or not evidence.get("telemetry_complete")
-            or not evidence.get("netbench_off") or not evidence.get("mount_unchanged")):
-        raise ValueError("metadata run lacks verified rank/telemetry/mount evidence")
-    tasks = unit["ranks_per_client"] * (2 if unit["placement"] == "dual" else 1)
-    return validate_mdtest(stdout, schema=schema, tasks=tasks,
-                           items_per_rank=100000, workdir=workdir)
+def benchmark(run_id, pilot):
+    """Run pending cases serially, skipping only intact completed raw cases."""
+    mode = "pilot" if pilot else "full"
+    if not re.fullmatch(rf"metadata-{mode}-[A-Za-z0-9_-]+", run_id):
+        raise ValueError(f"run ID must start with metadata-{mode}-")
+    items = PILOT_ITEMS_PER_RANK if pilot else FULL_ITEMS_PER_RANK
+    if type(items) is not int or items < 1:
+        raise ValueError("set FULL_ITEMS_PER_RANK from pilot timings before --full")
+    if not RUNS.is_dir() or RUNS.is_symlink():
+        raise ValueError("project results/microbenchmarks/runs directory missing")
+    no_symlinks(RUNS)
+    if (RUNS / ".metadata.lock").is_symlink():
+        raise ValueError("metadata lock is a symlink")
+    with (RUNS / ".metadata.lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        baseline = preflight()
+        plan = {"mode": mode, "items_per_rank": items, "units": units(pilot),
+                "mpirun": {key: baseline["tools"]["mpirun"][key] for key in ("path", "sha256")},
+                "mdtest": {key: baseline["tools"]["mdtest"][key] for key in ("path", "sha256")},
+                "mount": baseline["mount"], "client_config_sha256": baseline["client_config_sha256"]}
+        raw, shared, owner = owned_run(run_id, plan)
+        probe = remote_probe(shared / "owner.json", baseline["tools"]["mdtest"]["sha256"])
+        remote_file = raw / "remote_clients.json"
+        if remote_file.exists():
+            if load(remote_file)["client_config_sha256"] != probe["client_config_sha256"]:
+                raise ValueError("remote BeeGFS client configuration changed")
+        else:
+            save(remote_file, probe)
+        baseline["remote_client_config_sha256"] = probe["client_config_sha256"]
+        no_symlinks(raw / "cases")
+        (raw / "cases").mkdir(exist_ok=True)
+        for unit in plan["units"]:
+            case_raw = raw / "cases" / unit["id"]
+            case_shared = shared / unit["id"]
+            result_file = case_raw / "result.json"
+            if result_file.exists():
+                no_symlinks(case_raw)
+                for name in ("stdout.txt", "stderr.txt", "command.json", "result.json"):
+                    if (case_raw / name).is_symlink():
+                        raise ValueError(f"{unit['id']}: symlinked raw evidence")
+                result = load(result_file)
+                if (result.get("returncode") != 0 or result.get("interrupted")
+                        or result.get("cleanup") != "completed"
+                        or case_shared.exists() or case_shared.is_symlink()
+                        or load(case_raw / "command.json") != command(unit, case_shared / "work", items)
+                        or sha256(case_raw / "stdout.txt") != result.get("stdout_sha256")
+                        or sha256(case_raw / "stderr.txt") != result.get("stderr_sha256")):
+                    raise ValueError(f"{unit['id']}: saved raw case is incomplete or changed")
+                continue
+            measure(unit, raw, shared, owner, items,
+                    PILOT_CASE_TIMEOUT if pilot else FULL_CASE_TIMEOUT, baseline)
+        print(f"{mode}: {len(plan['units'])}/{len(plan['units'])} mdtest exits and cleanups; "
+              f"native phase validation pending; raw results: {raw}")
 
 
 def main(argv=None):
+    """Expose only run identity and pilot/full choice; cluster control is fixed."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--plan-out", type=Path, required=True)
-    parser.add_argument("--pilot", action="store_true")
+    parser.add_argument("--run-id", required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--pilot", action="store_true")
+    mode.add_argument("--full", action="store_true")
     args = parser.parse_args(argv)
-    config = load_config(HERE / "metadata_config.json")
-    units = pilot_units(config) if args.pilot else plan_units(config)
-    root = HERE.parents[2].resolve() / "results" / "microbenchmarks" / "runs"
-    if not args.plan_out.resolve().is_relative_to(root):
-        parser.error("plan output must be below project results/microbenchmarks/runs")
-    record = write_plan(args.plan_out, "metadata-pilot" if args.pilot else "metadata", config, units)
-    print(json.dumps({"units": len(units), "fingerprint": record["fingerprint"]}))
+    def on_term(_signal, _frame):
+        raise KeyboardInterrupt
+    old_handler = signal.signal(signal.SIGTERM, on_term)
+    try:
+        benchmark(args.run_id, args.pilot)
+        return 0
+    except (OSError, ValueError, subprocess.SubprocessError, KeyboardInterrupt) as error:
+        print(f"Metadata stopped: {error}", file=sys.stderr)
+        return 1
+    finally:
+        signal.signal(signal.SIGTERM, old_handler)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

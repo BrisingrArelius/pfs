@@ -8,7 +8,7 @@ implementation status for BeeGFS target-placement experiments.
 Existing FIO, network, workload, Darshan-analysis, and trace-analysis tools are
 available under `scripts/`. New outputs use run-specific directories under
 `results/`; historical evidence is kept under `results/*/legacy/`. FIO and
-iperf3 have completed runs; the other three microbenchmark domains have no
+iperf3 and cache have completed runs; communication and metadata have no
 completed cluster runs.
 
 ## Repository layout
@@ -19,8 +19,8 @@ scripts/
     fio/                 local-target FIO runner and raw-to-plot visualizer
     network/             iperf3 runner and raw-to-plot visualizer
     communication/       offline NetBench IOR plan and raw-to-plot visualizer
-    cache/               one cache benchmark runner (no cluster run recorded)
-    metadata/            offline mdtest plan and raw-to-plot visualizer
+    cache/               cache runner, native raw results and visualizer
+    metadata/            one native mdtest pilot/full runner
     placement/           historical pool-management helpers only
     analysis/            OST-log, capacity and placement utilities
   workloads/             synthetic workloads, profiles and orchestration
@@ -42,8 +42,8 @@ logs for workload-profile research; they are not BeeGFS microbenchmark runners.
 ## Current coverage
 
 - The separate DLIO whole-workload D/S/H comparison is not implemented.
-- BeeGFS communication and metadata have no live runners; the cache runner has
-  no cluster-verified results.
+- BeeGFS communication has no live runner. Metadata has an unpiloted raw-capture
+  runner; cache has completed buffered and native cluster runs.
 - Durable suite-wide progress and resume support is missing.
 - Controlled capacity conditions and application-validation coverage are missing.
 

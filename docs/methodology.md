@@ -11,6 +11,7 @@ and evidence.
 | Network transport | Six-host iperf3 runner with native endpoint JSON, synchronized concurrent epochs, telemetry, and resume; 190-unit/320-path full raw run available |
 | Microbenchmark figures | FIO, iperf3, and cache visualizers plot completed native run artifacts directly; communication and metadata have no cluster result set |
 | Cache effects | `run_cache.py` contains one HDD/SSD IOR cache runner and `visualize_results.py`; buffered and native full runs achieved every intended path; early native pilots remain investigation data |
+| Metadata operations | `run_mdtest.py` launches a four-case, 1,000-item-per-rank pilot from anjuna3 and contains a 90-case full mdtest plan; full execution awaits a pilot-derived item count, and no cluster result exists yet |
 | Placement administration | Shell helpers with historical hard-coded target inventories |
 | Application workloads | Single-process IOR wrapper, two current contiguous read-only profiles, Darshan invocation, and run-specific logs/checkpoints |
 | Darshan parsing | Aggregate POSIX/MPI-IO/STDIO rows in `global.csv` |
@@ -33,11 +34,15 @@ an intermediate CSV parser. The completed FIO run includes both FIO 3.28 and
 ## Missing experiment coverage
 
 Local FIO and iperf3 have documented protocols and completed cluster runs.
-BeeGFS communication and metadata have offline plans and raw-evidence
-visualizers without live runners or validated cluster pilots. The cache domain
+BeeGFS communication remains offline-only. Metadata now has a runnable pilot
+and a defined full raw-evidence path, but no cluster pilot, validated
+native-output schema, plots, or pilot-derived full item count. The cache domain
 has completed buffered and native full runs, with three early native
 investigation pilots preserved separately. The current workload
 pipeline is application-level tooling, not a completed DLIO experiment.
+At the owner's request, the metadata runner is narrowly scoped: it has fixed
+per-case timeouts and skips intact completed cases on rerun, but no
+allocation-wide deadline extension or automatic recovery of a failed MPI case.
 
 The whole-workload D/S/H, chooser, stripe, capacity, and concurrency matrix
 belongs to the separate DLIO experiment; it is not implemented. Numerical

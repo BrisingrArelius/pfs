@@ -2,7 +2,7 @@
 
 Use this file when designing or implementing any microbenchmark domain in this
 repository. It records the owner's requirements; it does not replace the domain
-`DESIGN.md` or the research specifications.
+README or the research specifications.
 
 ## Required references
 
@@ -11,7 +11,7 @@ repository. It records the owner's requirements; it does not replace the domain
   any domain, plus its current README or design and the applicable topology in
   [`CLUSTER_TOPOLOGY.md`](../../docs/CLUSTER_TOPOLOGY.md).
 - Trace each executable choice (matrix, command, dataset, validation, cleanup)
-  back to the applicable spec and domain design. Record protocol deviations and
+  back to the applicable spec and current domain README. Record protocol deviations and
   pilot-derived changes explicitly, with a new fingerprint.
 
 ## Scope and evidence
@@ -75,7 +75,7 @@ repository. It records the owner's requirements; it does not replace the domain
 ## Current scope
 
 Implement `cache/`, `communication/`, and `metadata/` against their
-own designs. Do not change FIO or iperf3 **raw-result generation**; their
+current protocols. Do not change FIO or iperf3 **raw-result generation**; their
 visualizers may be updated to consume their existing raw output directly. No
 cluster pilot or privileged state transition may be claimed complete without
 live, reviewed evidence.
