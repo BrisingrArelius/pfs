@@ -127,7 +127,8 @@ def measure(index, medium, state, mode, remote_fsync, interface, namespace, resu
     """Prepare one target and measure a single write; retain raw evidence."""
     folder = results / f"{index:02d}-{medium.lower()}-{state}"
     folder.mkdir()
-    path = target_file(namespace / medium.lower(), TARGETS[medium][0])
+    path = target_file(namespace / medium.lower(), TARGETS[medium][0],
+                       folder / "placement.json")
     size = CLIENT_SIZE if state == "client_ram" else SIZE
     try:
         drop()

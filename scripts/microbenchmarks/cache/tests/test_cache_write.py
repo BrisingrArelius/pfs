@@ -37,6 +37,62 @@ class CacheWriteContract(unittest.TestCase):
         self.assertIs(write.target_file, common.target_file)
         self.assertIs(write.prepared_run, common.prepared_run)
 
+    def test_target_selection_uses_live_pool_and_one_actual_target(self):
+        listing = ("TargetID   St. Pool   NodeID\n"
+                   "101 7 1\n104 1 1\n201 7 2\n")
+        self.assertEqual(common.storage_pools(listing)[101], 7)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            commands = []
+
+            def fake_ctl(*args):
+                commands.append(args)
+                if args[:2] == ("--listtargets", "--storagepools"):
+                    return listing
+                if args[0] == "--getentryinfo":
+                    candidate = Path(args[-1]).name
+                    chosen = 101 if candidate == "candidate-002" else 104
+                    return f"+ Storage targets:\n  + {chosen} @ colva1 [ID: 1]\n"
+                return ""
+
+            with patch.object(common, "ctl", side_effect=fake_ctl):
+                path = common.target_file(root / "hdd", 101, root / "placement.json")
+            self.assertEqual(path.name, "candidate-002")
+            self.assertFalse((root / "hdd" / "candidate-001").exists())
+            self.assertIn("--storagepoolid=7", commands[1])
+            self.assertIn("--pattern=raid0", commands[1])
+            self.assertIn("--numtargets=1", commands[1])
+            placement = json.loads((root / "placement.json").read_text())
+            self.assertEqual(placement["target"], 101)
+            self.assertEqual(placement["pool"], 7)
+            self.assertIn("+ 101 @", placement["file_entryinfo"])
+
+    def test_target_missing_from_pools_fails_before_file_creation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch.object(common, "ctl", return_value="104 1 1\n"):
+                with self.assertRaisesRegex(RuntimeError, "missing"):
+                    common.target_file(root / "hdd", 101)
+            self.assertFalse((root / "hdd").exists())
+
+    def test_read_preparation_passes_placement_path_to_shared_selector(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "candidate-001"
+            path.touch()
+            placement = root / "placement.json"
+
+            def fake_fill(argv):
+                self.assertEqual(argv[0], "dd")
+                with path.open("r+b") as stream:
+                    stream.truncate(common.SIZE)
+
+            with patch.object(read, "target_file", return_value=path) as select, patch.object(
+                    read, "run", side_effect=fake_fill), patch.object(
+                    read, "targets", return_value=[101]):
+                self.assertEqual(read.make_file(root, 101, placement), path)
+            select.assert_called_once_with(root, 101, placement)
+
     def test_shared_preparation_saves_live_configuration_and_cleans_up(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -129,24 +129,61 @@ def check_cluster(mode):
 def targets(path):
     """Return integer storage target IDs from BeeGFS entry information for path."""
     info = ctl("--getentryinfo", "--verbose", str(path))
-    return [int(value) for value in re.findall(r"(?m)^\s*\+\s+(\d+)\s+@", info)]
+    return target_ids(info)
 
 
-def target_file(directory, target):
-    """Create an empty file on one verified storage target in a run-owned directory."""
+def target_ids(entryinfo):
+    """Parse assigned target IDs from native BeeGFS entry information."""
+    return [int(value) for value in re.findall(
+        r"(?m)^\s*\+\s+(\d+)\s+@", entryinfo)]
+
+
+def storage_pools(listing):
+    """Parse target-to-pool membership from beegfs-ctl's live target table."""
+    rows = re.findall(r"(?m)^[ \t]*(\d+)[ \t]+(\d+)[ \t]+\d+[ \t]*$", listing)
+    pools = {}
+    for target, pool in rows:
+        if int(target) in pools:
+            raise RuntimeError(f"Duplicate target {target} in storage-pool listing")
+        pools[int(target)] = int(pool)
+    if not pools:
+        raise RuntimeError("No target-to-pool rows in BeeGFS listing")
+    return pools
+
+
+def target_file(directory, target, placement=None):
+    """Select one target within its live pool; optionally save native evidence."""
+    listing = ctl("--listtargets", "--storagepools")
+    pool = storage_pools(listing).get(target)
+    if pool is None:
+        raise RuntimeError(f"Target {target} is missing from the storage-pool listing")
     if not directory.exists():
         directory.mkdir()
-        ctl("--setpattern", "--numtargets=1", "--chunksize=512k", str(directory))
+        ctl("--setpattern", "--pattern=raid0", f"--storagepoolid={pool}",
+            "--numtargets=1", "--chunksize=512k", str(directory))
     elif directory.is_symlink() or not directory.is_dir():
         raise RuntimeError("Target directory is not a real directory")
+    seen = {}
     for number in range(1, 513):
         path = directory / f"candidate-{number:03d}"
         descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         os.close(descriptor)
-        if targets(path) == [target]:
+        info = ctl("--getentryinfo", "--verbose", str(path))
+        assigned = target_ids(info)
+        if assigned == [target]:
+            if placement is not None:
+                record(placement, {"target": target, "pool": pool, "pattern": "raid0",
+                                   "numtargets": 1, "chunksize": "512k",
+                                   "pool_listing": listing, "file_entryinfo": info,
+                                   "candidate": path.name})
             return path
+        seen[str(assigned)] = seen.get(str(assigned), 0) + 1
         path.unlink()
-    raise RuntimeError(f"Could not obtain one-stripe file on target {target}")
+    if placement is not None:
+        record(placement, {"target": target, "pool": pool, "pool_listing": listing,
+                           "candidate_assignments": seen, "selected": None})
+    raise RuntimeError(f"Could not obtain one-stripe file on target {target}"
+                       f" in pool {pool}; observed {seen}")
 
 
 def drop(client_only=False, server_only=False):

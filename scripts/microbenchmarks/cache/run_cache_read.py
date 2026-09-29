@@ -17,12 +17,12 @@ STATES = ("backend", "server_ram", "client_ram")
 VERIFICATION = "traffic_counters_v1"
 
 
-def make_file(directory, target):
+def make_file(directory, target, placement=None):
     """Create and return one 8-GiB file actually assigned to target.
 
     Select its target before filling it and verifying size and layout.
     """
-    path = target_file(directory, target)
+    path = target_file(directory, target, placement)
     run(["dd", "if=/dev/zero", f"of={path}", "bs=1M", "count=8192",
          "oflag=direct", "conv=fsync", "status=none"])
     if path.stat().st_size != SIZE or targets(path) != [target]:
@@ -123,7 +123,8 @@ def measure(index, medium, state, path, interface, mode, results):
 def benchmark(run_id, pilot, mode, results):
     """Measure read cases in a verified, lock-protected BeeGFS namespace."""
     with prepared_run(run_id, pilot, mode, results) as namespace:
-        files = {medium: make_file(namespace / medium.lower(), target)
+        files = {medium: make_file(namespace / medium.lower(), target,
+                                   results / f"{medium.lower()}-placement.json")
                  for medium, (target, _) in TARGETS.items()}
         interface = network_interface()
         planned = cases(pilot, mode)

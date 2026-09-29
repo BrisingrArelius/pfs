@@ -90,12 +90,18 @@ logical read, server-sent traffic at most 0.0000017, and target-device reads
 were zero. The visualizer revalidated all 30 raw IOR summaries, commands,
 counters and state labels, and produced throughput and traffic-evidence plots.
 The full run also used the transitional format without a saved idle-window
-sample or live configuration snapshot. Shortly after the run, before
+sample, live configuration snapshot, pool-membership listing or raw BeeGFS
+file-entry layout. Target labels relied on runner checks but cannot be
+independently reconstructed from the preserved files. Shortly after the run, before
 restoration, the live mount showed `native` with `tuneFileCacheBufSize=2097152`;
 that observation does not prove the exact setting throughout the run. After
 the experiment, the live mount was verified as `buffered` with `524288`.
 The current runner records the idle sample and rejects a native mount below
-2097152 bytes.
+2097152 bytes. Both current cache runners now look up each target's live
+storage pool, request one target within that pool on a run-owned directory,
+verify the exact target ID and save native placement evidence. This fixed a
+write-pilot preparation failure: the inherited Default pool excluded HDD
+target 101; no write workload ran in that attempt.
 
 The prior mapping-based `residency()` probe was the reproducible runner failure.
 The writable version coincided with system `Cached` falling from 9,007,872 to

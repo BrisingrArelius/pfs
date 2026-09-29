@@ -75,9 +75,10 @@ data path. There is no `--posix.odirect` option on the measured command.
 1. Check that the existing `/mnt/beegfs` client on `anjuna2` matches the chosen
    `--mode`, that NetBench is off, and that RAM, target health and the
    HDD/NVMe mappings match the experiment.
-2. Create one run-owned directory per medium with a one-target stripe pattern.
-   Check each newly created file's actual target **before** filling it with
-   8 GiB. No cluster-wide storage-pool membership changes occur.
+2. Read the live target-to-pool table, then set that target's current pool and
+   a one-target stripe pattern on each run-owned medium directory. Check each
+   new file's actual target **before** filling it with 8 GiB. No cluster-wide
+   storage-pool membership changes occur.
 3. For each case, drop client and server caches. An unmeasured read warms the
    file for `server_ram` and, in native mode, `client_ram`. Then drop **only
    the client** cache for `server_ram`, or **only the server** cache for
@@ -89,10 +90,14 @@ data path. There is no `--posix.odirect` option on the measured command.
    this run's BeeGFS files on normal exit.
 
 The 8-GiB files are filled with direct `dd` writes and an fsync *before* the
-read cases. The script sets one desired stripe on each run-owned directory,
-creates empty candidate files, checks BeeGFS's **actual target ID** for each,
-and fills only a file assigned to 101 or 104. It does not move targets between
-storage pools. Normal IOR reads and non-direct `dd` warm-ups use the **existing**
+read cases. The script discovers target 101's and 104's current pools from
+`beegfs-ctl --listtargets --storagepools`; it does not assume pool numbers
+or names. On each new run-owned directory it sets that pool and
+`--numtargets=1`, creates empty candidate files, checks BeeGFS's **actual
+target ID** for each, and fills only a file assigned to 101 or 104. A pool
+limits eligible targets; it does not make this one-target file span the pool.
+The script does not move targets between storage pools. Normal IOR reads and
+non-direct `dd` warm-ups use the **existing**
 BeeGFS mount; the script does not change its caching policy.
 
 ### What each cache state means
@@ -126,7 +131,7 @@ rule as `traffic_counters_v1` and contain no `client_residency` field.
 | `run_cache_read.benchmark` | Prepare two files, measure read cases, and save results. |
 | `cache_common.new_run/prepared_run` | Create the run, lock out both cache runners, preflight, verify ownership, prepare the BeeGFS namespace, and clean up. |
 | `cache_common.check_cluster/cache_config_matches` | Check the existing mount's mode/native threshold, target health/mapping, NetBench, sudo and RAM. |
-| `cache_common.target_file/targets` | Select and verify one storage target for a new file. |
+| `cache_common.storage_pools/target_file/targets` | Discover the live target pool, request one stripe in that pool, and verify the actual target ID. |
 | `make_file` | Select a file on target 101 or 104, fill it with direct writes, and recheck size and placement. |
 | `cache_common.drop` | Clear both hosts' caches at the start of a case, then optionally clear only one host after warm-up. |
 | `counters` | Read client-received network bytes, server-sent network bytes and backing-device read bytes. |
@@ -201,6 +206,8 @@ after every completed IOR read. Output is saved under
 ```text
 owner.json                  run/user identity, selected mode and pilot flag
 live_config.json            effective mode, threshold and fsync policy at preflight
+hdd-placement.json          live pool listing and BeeGFS entry info for the selected HDD file
+ssd-placement.json          same evidence for the selected SSD file
 results.json                completed cases and their verified/unverified labels
 01-hdd-backend/             one example measured case
   command.json              exact IOR argument list
@@ -274,7 +281,11 @@ near-zero bulk traffic directly supports client-cache hits. Both native runs
 used the transitional traffic-only result format, without the later explicit
 `verification` marker or saved idle-window sample. Their recorded
 `quiet_before` flags cannot be independently recomputed. Neither run saved a
-live configuration snapshot. Shortly after the full run and before restoration,
+live configuration, pool-membership or raw `beegfs-ctl --getentryinfo`
+snapshot. Their target labels came from the runner's placement checks, but
+the exact historical layout cannot be re-audited solely from these artifacts.
+Today's pool membership does not establish what it was during those runs.
+Shortly after the full run and before restoration,
 the live mount showed `native` and `2097152`; this observation is not a
 during-run snapshot. The mount was subsequently restored and verified as
 `buffered` with `524288`. Native pilots `cache-native-pilot-01` through `-03`
@@ -355,7 +366,7 @@ to the runner:
 ```bash
 sudo grep -E 'tuneFileCacheType|tuneFileCacheBufSize|tuneRemoteFSync' /proc/fs/beegfs/*/config
 python3 -B scripts/microbenchmarks/cache/run_cache_write.py \
-  --run-id cache-write-buffered-true-pilot-02 \
+  --run-id cache-write-buffered-true-pilot-03 \
   --mode buffered --remote-fsync true --pilot
 ```
 
@@ -418,9 +429,19 @@ snapshot, not proof that a mount could not change later. The call chain is
 `main → cache_common.new_run → benchmark →
 cache_common.prepared_run → measure → ior_write/client_write`. Each case
 saves its exact command or POSIX workload description, native IOR output
-where applicable, idle and measurement counters, and a `result.json`
+where applicable, a `placement.json` with the live pool listing and selected
+file's BeeGFS entry info, idle and measurement counters, and a `result.json`
 with intended/achieved state. A failed run preserves completed raw results.
 `visualize_results.py` does not accept write runs; inspect their
 `results.json` and raw case directories until a write-specific validator
 is implemented. No cluster write pilot or full run has yet been executed
 with this runner.
+
+The first write attempt, `cache-write-buffered-true-pilot-01`, stopped in
+preflight because procfs printed `tuneRemoteFSync = 1`; the boolean parser is
+now corrected. Attempt `-02` stopped before IOR because the inherited
+Default pool 1 excluded HDD target 101, which was in pool 3. The shared
+selector now discovers target membership and sets the appropriate pool on
+its **run-owned** directory before requesting one target. Neither failed
+attempt produced a measured write rate; their result directories remain
+investigation artifacts on anjuna2.
