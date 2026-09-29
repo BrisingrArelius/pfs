@@ -66,10 +66,16 @@ class CacheWriteContract(unittest.TestCase):
     def test_live_remote_fsync_is_required(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "config"
-            config.write_text("tuneRemoteFSync = false\n")
             with patch.object(write.Path, "glob", return_value=[config]):
-                write.check_remote_fsync("false")
-                with self.assertRaisesRegex(RuntimeError, "tuneRemoteFSync=true"):
+                for value, expected, opposite in (
+                        ("1", "true", "false"), ("true", "true", "false"),
+                        ("0", "false", "true"), ("false", "false", "true")):
+                    config.write_text(f"tuneRemoteFSync = {value}\n")
+                    write.check_remote_fsync(expected)
+                    with self.assertRaisesRegex(RuntimeError, f"tuneRemoteFSync={opposite}"):
+                        write.check_remote_fsync(opposite)
+                config.write_text("tuneRemoteFSync =\ntuneFileCacheType = buffered\n")
+                with self.assertRaisesRegex(RuntimeError, "observed"):
                     write.check_remote_fsync("true")
 
     def test_ior_command_and_traffic_evidence(self):

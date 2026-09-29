@@ -349,16 +349,19 @@ served the read.
 `run_cache_write.py` uses the same anjuna2/colva1 preflight, cache drops,
 one-target placement, exclusive lock and run-owned cleanup as the read runner.
 It does **not** edit or remount BeeGFS. Check the live client configuration
-first and pass its actual `tuneRemoteFSync` value:
+first. Procfs may print `1`/`0`; pass the equivalent `true`/`false`
+to the runner:
 
 ```bash
 sudo grep -E 'tuneFileCacheType|tuneFileCacheBufSize|tuneRemoteFSync' /proc/fs/beegfs/*/config
 python3 -B scripts/microbenchmarks/cache/run_cache_write.py \
-  --run-id cache-write-buffered-false-pilot-01 \
-  --mode buffered --remote-fsync false --pilot
+  --run-id cache-write-buffered-true-pilot-02 \
+  --mode buffered --remote-fsync true --pilot
 ```
 
-Use a fresh run ID for each invocation. The script refuses a mismatched live
+The example applies only when the live values are `buffered` and `1` (true).
+Use a fresh run ID for each invocation, including after a failed preflight.
+The script refuses a mismatched live
 mode, native threshold or fsync policy. Run only after arranging exclusive
 host use: each case drops caches on anjuna2 and colva1. The four live
 configurations and matrix sizes are:

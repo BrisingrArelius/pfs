@@ -19,12 +19,17 @@ VERIFICATION = "write_traffic_v1"
 
 
 def check_remote_fsync(setting):
-    """Require every live BeeGFS client instance to use setting."""
+    """Match the CLI boolean to each live client's 0/1 or true/false value."""
     configs = list(Path("/proc/fs/beegfs").glob("*/config"))
-    if not configs or any(not re.search(
-            rf"(?m)^tuneRemoteFSync\s*=\s*{setting}\s*$", path.read_text())
-            for path in configs):
-        raise RuntimeError(f"Active client must have tuneRemoteFSync={setting}")
+    accepted = {"true": {"1", "true"}, "false": {"0", "false"}}[setting]
+    observed = []
+    for path in configs:
+        match = re.search(r"(?m)^tuneRemoteFSync[ \t]*=[ \t]*(\S+)[ \t]*$",
+                          path.read_text())
+        observed.append(match.group(1).lower() if match else None)
+    if not observed or any(value not in accepted for value in observed):
+        raise RuntimeError(
+            f"Active client must have tuneRemoteFSync={setting}; observed {observed}")
 
 
 def cases(pilot, mode, remote_fsync):
