@@ -148,7 +148,8 @@ def remote_probe(marker, mdtest_hash):
               '&& hash=$(sha256sum "$2") && test "${hash%% *}" = "$3" '
               '&& set -- /proc/fs/beegfs/*/netbench_mode '
               '&& test -r "$1" '
-              '&& for f; do test "$(cat "$f")" = 0 || exit 1; done '
+              '&& for f; do value=$(sed -n "1{s/[[:space:]]//g;p;}" "$f") '
+              '&& test "$value" = 0 || exit 1; done '
               '&& set -- /proc/fs/beegfs/*/config '
               '&& test "$#" -eq 1 && test -r "$1" '
               '&& hash=$(sha256sum "$1") '
@@ -160,7 +161,8 @@ def remote_probe(marker, mdtest_hash):
     rows = [line.split() for line in probe.stdout.splitlines()]
     clients = {row[0].split(".")[0]: row[1] for row in rows if len(row) == 2}
     if probe.returncode or len(rows) != 2 or set(clients) != set(CLIENTS):
-        raise ValueError(f"MPI/BeeGFS preflight failed: {probe.stdout} {probe.stderr}")
+        raise ValueError(f"MPI/BeeGFS preflight failed (exit {probe.returncode}): "
+                         f"stdout={probe.stdout!r} stderr={probe.stderr!r}")
     return {"argv": argv, "stdout": probe.stdout, "stderr": probe.stderr,
             "client_config_sha256": clients}
 
