@@ -1,0 +1,7 @@
+{
+  "run_id": "combined-cache-write",
+  "plots": [
+    "throughput.png",
+    "traffic_evidence.png"
+  ]
+}

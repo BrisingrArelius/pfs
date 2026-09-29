@@ -1,0 +1,10 @@
+{
+  "target": 104,
+  "pool": 1,
+  "pattern": "raid0",
+  "numtargets": 1,
+  "chunksize": "512k",
+  "pool_listing": "TargetID   St. Pool   NodeID\n========   ========   ======\n     101          3        1\n     102          3        1\n     103          3        1\n     104          1        1\n     105          1        1\n     106          1        1\n     107          1        1\n     201          3        2\n     202          3        2\n     203          3        2\n     204          3        2\n     205          1        2\n     206          1        2\n     207          4        2\n     301          3        3\n     302          3        3\n     303          3        3\n     304          3        3\n     305          1        3\n     306          1        3\n     307          1        3\n     401          3        4\n     402          3        4\n     403          3        4\n     404          1        4\n     405          1        4\n     406          1        4\n     407          1        4\n",
+  "file_entryinfo": "Entry type: file\nEntryID: C-6ABBFD65-1\nStripe pattern details:\n+ Type: RAID0\n+ Chunksize: 512K\n+ Number of storage targets: desired: 1; actual: 1\n+ Storage targets:\n  + 104 @ colva1 [ID: 1]\nChunk path: u3E9/6ABB/F/11-6ABBFC6F-1/C-6ABBFD65-1\nInlined inode: yes\nDentry info:\n + Path: 53/4/11-6ABBFC6F-1/\n + Metadata node: anjuna3 [ID: 1]\n",
+  "candidate": "candidate-013"
+}

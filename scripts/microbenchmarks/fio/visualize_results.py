@@ -28,6 +28,7 @@ except ImportError as error:
 
 
 COLORS = {"hdd": "#B86B25", "nvme": "#16858C"}
+NETWORK_REFERENCE_MIB_S = 2_500_000_000 / 8 / 1024**2
 WORKLOAD_ORDER = ["seq_read", "seq_write", "rand_read_4k", "rand_write_4k", "rand_read_128k"]
 WORKLOAD_LABELS = {
     "seq_read": "Sequential read\n1 MiB",
@@ -241,6 +242,8 @@ def plot_workload_by_ost(rows, workload, version, output_dir):
     axis.set_xlabel("OST ID")
     axis.set_title(f"{WORKLOAD_LABELS[workload].replace(chr(10), ' ')} bandwidth by OST · {version}")
     style_axis(axis, "Bandwidth (MiB/s)", use_log(all_values))
+    axis.axhline(NETWORK_REFERENCE_MIB_S, color="#343A40", linestyle=":",
+                 linewidth=1.7, zorder=1)
     for media in ("hdd", "nvme"):
         if not media_medians[media]:
             continue
@@ -252,6 +255,8 @@ def plot_workload_by_ost(rows, workload, version, output_dir):
     legend = [Patch(facecolor=COLORS[media], label=media.upper()) for media in ("hdd", "nvme")]
     legend.append(Line2D([], [], color="#29333A", marker="_", linestyle="-",
                          label="Repetitions / min-max"))
+    legend.append(Line2D([], [], color="#343A40", linestyle=":", linewidth=1.7,
+                         label="2.5-Gbit/s network rate (~298 MiB/s; reference only)"))
     axis.legend(handles=legend, frameon=False, ncol=4)
     figure.tight_layout()
     slug = re.sub(r"[^a-z0-9]+", "_", version.lower()).strip("_")

@@ -1,0 +1,127 @@
+{
+  "Version": "4.1.0+dev", 
+  "Began": "Tue Sep 29 23:14:56 2026", 
+  "Command line": "/usr/local/bin/ior -a POSIX -w -E -k -g -e -t 1m -b 8g -s 1 -i 1 -o /mnt/beegfs/pfs/.cache-cache-write-native-true-full-01/ssd/candidate-013 -O summaryFormat=JSON -O summaryFile=/home/pfs/tejas/pfs/results/microbenchmarks/runs/cache-write-native-true-full-01/18-ssd-server_disk/ior.json", 
+  "Machine": "Linux anjuna2", 
+  "tests": [
+    {
+    "TestID": 0, 
+    "StartTime": "Tue Sep 29 23:14:56 2026"    , "Path": "/mnt/beegfs/pfs/.cache-cache-write-native-true-full-01/ssd/candidate-013","Capacity": "38.2 TiB", "Used Capacity": "10.1%","Inodes": "0.0 Mi", "Used Inodes" : "-nan%"
+, 
+    "Parameters": {
+      "testID": 0, 
+      "refnum": 0, 
+      "api": "POSIX", 
+      "platform": "anjuna(Linux)", 
+      "testFileName": "/mnt/beegfs/pfs/.cache-cache-write-native-true-full-01/ssd/candidate-013", 
+      "deadlineForStonewall": 0, 
+      "stoneWallingWearOut": 0, 
+      "maxTimeDuration": 0, 
+      "outlierThreshold": 0, 
+      "options": "(null)", 
+      "dryRun": 0, 
+      "nodes": 1, 
+      "memoryPerTask": 0, 
+      "memoryPerNode": 0, 
+      "tasksPerNode": 1, 
+      "repetitions": 1, 
+      "multiFile": 0, 
+      "interTestDelay": 0, 
+      "fsync": 1, 
+      "fsyncperwrite": 0, 
+      "useExistingTestFile": 1, 
+      "uniqueDir": 0, 
+      "singleXferAttempt": 0, 
+      "readFile": 0, 
+      "writeFile": 1, 
+      "filePerProc": 0, 
+      "reorderTasks": 0, 
+      "reorderTasksRandom": 0, 
+      "reorderTasksRandomSeed": 0, 
+      "randomOffset": 0, 
+      "checkWrite": 0, 
+      "checkRead": 0, 
+      "dataPacketType": 0, 
+      "keepFile": 1, 
+      "keepFileWithError": 0, 
+      "warningAsErrors": 0, 
+      "verbose": 0, 
+      "data packet type": "g", 
+      "setTimeStampSignature/incompressibleSeed": 0, 
+      "collective": 0, 
+      "segmentCount": 1, 
+      "transferSize": 1048576, 
+      "blockSize": 8589934592
+    }
+, 
+    "Options": {
+      "api": "POSIX", 
+      "apiVersion": "", 
+      "test filename": "/mnt/beegfs/pfs/.cache-cache-write-native-true-full-01/ssd/candidate-013", 
+      "access": "single-shared-file", 
+      "type": "independent", 
+      "segments": 1, 
+      "ordering in a file": "sequential", 
+      "ordering inter file": "no tasks offsets", 
+      "nodes": 1, 
+      "tasks": 1, 
+      "clients per node": 1, 
+      "memoryBuffer": "CPU", 
+      "dataAccess": "CPU", 
+      "GPUDirect": "0", 
+      "repetitions": 1, 
+      "xfersize": "1 MiB", 
+      "blocksize": "8 GiB", 
+      "aggregate filesize": "8 GiB"
+    }
+, 
+    "Results": [
+            {
+        "access": "write", 
+        "bwMiB": 263.2797, 
+        "blockKiB": 8388608.0000, 
+        "xferKiB": 1024.0000, 
+        "iops": 263.2977, 
+        "latency": 0.0038, 
+        "openTime": 0.0004, 
+        "wrRdTime": 31.1131, 
+        "closeTime": 0.0017, 
+        "totalTime": 31.1152
+      }
+]
+
+  }
+]
+, 
+"summary": [
+    {
+    "operation": "write", 
+    "API": "POSIX", 
+    "TestID": 0, 
+    "ReferenceNumber": 0, 
+    "segmentCount": 1, 
+    "blockSize": 8589934592, 
+    "transferSize": 1048576, 
+    "numTasks": 1, 
+    "tasksPerNode": 1, 
+    "repetitions": 1, 
+    "filePerProc": 0, 
+    "reorderTasks": 0, 
+    "taskPerNodeOffset": 1, 
+    "reorderTasksRandom": 0, 
+    "reorderTasksRandomSeed": 0, 
+    "bwMaxMIB": 263.2797, 
+    "bwMinMIB": 263.2797, 
+    "bwMeanMIB": 263.2797, 
+    "bwStdMIB": 0.0000, 
+    "OPsMax": 263.2797, 
+    "OPsMin": 263.2797, 
+    "OPsMean": 263.2797, 
+    "OPsSD": 0.0000, 
+    "MeanTime": 31.1152, 
+    "xsizeMiB": 8192.0000
+  }
+]
+, 
+"Finished": "Tue Sep 29 23:15:27 2026"
+}

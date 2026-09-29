@@ -1,0 +1,12 @@
+{
+  "before": {
+    "client_sent": 3598510248871,
+    "server_received": 8983839007157,
+    "device_written": 8088502300672
+  },
+  "after": {
+    "client_sent": 3607498344296,
+    "server_received": 8992825195945,
+    "device_written": 8097092313088
+  }
+}

@@ -157,6 +157,10 @@ only after the new set has been published.
 Receiver `end.sum_received.bits_per_second` is the principal delivered-bandwidth
 metric. Sender throughput, bytes, retransmissions, endpoint CPU utilization and
 native JSON are retained. Isolated and simultaneous modes remain separate.
+Dotted throughput references use the captured nominal 2.5-Gbit/s per-link rate;
+the concurrent aggregate plot uses the corresponding topology ceiling (2.5
+Gbit/s for one client, 5 Gbit/s for two clients). These are raw interface
+line-rate ceilings from the inventory, not measured or expected TCP throughput.
 
 ## Retrieval
 

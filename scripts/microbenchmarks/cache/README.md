@@ -8,9 +8,9 @@ completion under the existing fsync policy and, in native mode, client-side
 write acceptance. Neither runner changes the mount or its configuration.
 Both import `cache_common.py` for the same preflight, target selection,
 cache drops, lock, run ownership and cleanup. `visualize_results.py` handles
-completed **read** runs only; it never touches the cluster.
-Buffered and native read pilots/full runs are complete; the write runner is
-implemented but has not yet had a cluster pilot.
+completed read and write runs with protocol-specific validation; it never
+touches the cluster. Buffered and native read pilots/full runs and all four
+write full matrices are complete.
 
 ## Read benchmark
 
@@ -226,7 +226,8 @@ resume command.
 ## Visualizing a completed run
 
 `visualize_results.py` needs only the copied run directory and matplotlib; it
-runs on any machine and starts no MPI or BeeGFS command:
+runs on any machine and starts no MPI or BeeGFS command. It detects whether
+the run contains read or write results and applies the matching protocol:
 
 ```bash
 RUN_ID=cache-native-full-01
@@ -257,6 +258,49 @@ reinterpret them as valid residency.
 
 The program also prints one line per group with its count, minimum, median and
 maximum rate, plus the run's verified and `unverified` totals.
+
+For a write run, invoke the same command with that write run's directory:
+
+```bash
+python3 -B scripts/microbenchmarks/cache/visualize_results.py \
+  results/microbenchmarks/runs/cache-write-native-true-full-01
+```
+
+To compare complete matrices without opening each run's separate plots, pass
+all runs of one operation in a single invocation. Each run is revalidated;
+the combined throughput figure uses a log y-axis, while traffic evidence is
+linear. The four combined figures are written under
+`results/microbenchmarks/plots/cache-read/` and
+`results/microbenchmarks/plots/cache-write/`:
+
+```bash
+python3 -B scripts/microbenchmarks/cache/visualize_results.py results/microbenchmarks/runs/cache-buffered-full-01 results/microbenchmarks/runs/cache-native-full-01
+python3 -B scripts/microbenchmarks/cache/visualize_results.py results/microbenchmarks/runs/cache-write-buffered-true-full-01 results/microbenchmarks/runs/cache-write-buffered-false-full-01 results/microbenchmarks/runs/cache-write-native-true-full-01 results/microbenchmarks/runs/cache-write-native-false-full-01
+```
+
+Each output directory contains `throughput.png` and `traffic_evidence.png`.
+The two read full runs contribute 50 cases; the four write full runs also
+contribute 50 cases. Combined inputs must be from the same operation and the
+same `results/microbenchmarks/runs/` directory. Single-run invocations still
+write plots below that run's own `plots/` directory. Every throughput figure
+has a dotted reference at about 298 MiB/s, the nominal 2.5-Gbit/s line rate
+recorded for the client-to-storage links in `network_inventory.json`. It is a
+raw link-rate ceiling, not measured iperf3 throughput or expected application
+throughput; protocol overhead makes usable TCP throughput lower.
+
+Write validation rechecks each IOR 8-GiB POSIX write summary or native
+client-write timing, recomputes network/device ratios and the quiet-before
+check from raw counters, and derives `achieved` using the runner's write
+verification rules. The `server_ram` label means the `tuneRemoteFSync=false`
+server-cache acknowledgement policy; it does not claim that no concurrent
+writeback occurred. The native `client_ram` rate times write calls only; its
+final fsync is outside the timed interval. The traffic plot distinguishes
+the timed client TX counter from counters measured through fsync completion.
+
+| Write plot | Contents |
+|---|---|
+| `plots/write_throughput.png` | One dot per write case, grouped by medium and acknowledgement/completion state; min–max span and median bar |
+| `plots/write_traffic_evidence.png` | Client TX, server RX and target-device write ratios; native client-write cases also show client TX during the timed write calls |
 
 **Execution status:** buffered pilot `cache-buffered-pilot-04` achieved 4/4 and
 buffered full `cache-buffered-full-01` achieved 20/20. Native pilot
@@ -355,7 +399,7 @@ The read runner does not load Darshan. Its results come from native IOR JSON
 and client/server Linux counters; Darshan cannot identify which cache level
 served the read.
 
-## Write benchmark (implemented, not yet run)
+## Write benchmark (implemented and run)
 
 `run_cache_write.py` uses the same anjuna2/colva1 preflight, cache drops,
 one-target placement, exclusive lock and run-owned cleanup as the read runner.
@@ -432,10 +476,11 @@ saves its exact command or POSIX workload description, native IOR output
 where applicable, a `placement.json` with the live pool listing and selected
 file's BeeGFS entry info, idle and measurement counters, and a `result.json`
 with intended/achieved state. A failed run preserves completed raw results.
-`visualize_results.py` does not accept write runs; inspect their
-`results.json` and raw case directories until a write-specific validator
-is implemented. No cluster write pilot or full run has yet been executed
-with this runner.
+All four full write matrices were run and copied locally under
+`cache-write-buffered-true-full-01`, `cache-write-buffered-false-full-01`,
+`cache-write-native-true-full-01`, and `cache-write-native-false-full-01`.
+Use the visualization command above once per run; each invocation validates
+the raw evidence before creating plots under that run's `plots/` directory.
 
 The first write attempt, `cache-write-buffered-true-pilot-01`, stopped in
 preflight because procfs printed `tuneRemoteFSync = 1`; the boolean parser is

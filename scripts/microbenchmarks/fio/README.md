@@ -239,6 +239,9 @@ min-max range and a colored bar shows the OST median.
 HDD and NVMe are distinguished by color but are never aggregated.
 Color-matched dotted lines label the mean of the per-OST medians for HDD and
 NVMe, providing explicit MiB/s reference values without pooling repetitions.
+A black dotted line marks the nominal 2.5-Gbit/s network rate (~298 MiB/s) for
+cross-benchmark reference only; this is a local-storage FIO experiment, so the
+line is not a FIO or device throughput limit.
 
 ## Developer verification (no benchmark I/O)
 

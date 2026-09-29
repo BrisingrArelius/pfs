@@ -21,6 +21,7 @@ try:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
 except ImportError as error:
     raise SystemExit("matplotlib is required: python3 -m pip install matplotlib") from error
@@ -34,6 +35,11 @@ MODE_LABELS = {
     "one_client_four_oss": "1 client / 4 OSS",
     "two_clients_four_oss": "2 clients / 4 OSS",
 }
+
+
+def path_line_rate(rows):
+    """Return the lowest recorded client-to-server path line rate in Gbit/s."""
+    return min(row["path_link_mbps"] for row in rows) / 1000
 
 
 def parse_args(argv=None):
@@ -177,6 +183,9 @@ def plot_isolated(rows, output_dir):
         return None
     groups = grouped(selected, ("direction", "client", "server", "streams"))
     paths = sorted({(row["client"], row["server"]) for row in selected})
+    path_peaks = {path: min(row["path_link_mbps"] for row in selected
+                            if (row["client"], row["server"]) == path) / 1000
+                  for path in paths}
     figure, axes = plt.subplots(2, 1, figsize=(max(12, len(paths) * 1.25), 10), sharex=True)
     width = 0.34
     for axis, direction in zip(axes, DIRECTIONS):
@@ -195,13 +204,19 @@ def plot_isolated(rows, output_dir):
                               fmt="none", color="#26343D", capsize=3, linewidth=1)
                 axis.scatter([position + offset] * len(values), values, marker="_",
                              color="#17242C", s=45, linewidths=0.9, zorder=4)
+        for position, path in enumerate(paths):
+            axis.hlines(path_peaks[path], position - .42, position + .42,
+                        color="#343A40", linestyle=":", linewidth=1.6, zorder=1)
         axis.set_title(DIRECTION_LABELS[direction], loc="left", fontweight="bold")
         style(axis, "Receiver throughput (Gbit/s)")
     axes[-1].set_xticks(range(len(paths)), [f"{client} to {server}" for client, server in paths],
                        rotation=35, ha="right")
     axes[-1].set_xlabel("Fixed client/OSS path")
-    figure.legend(handles=[Patch(facecolor=STREAM_COLORS[value], label=f"{value} stream(s)")
-                           for value in (1, 4)], loc="upper center", bbox_to_anchor=(.5, .968),
+    handles = [Patch(facecolor=STREAM_COLORS[value], label=f"{value} stream(s)")
+               for value in (1, 4)]
+    handles.append(Line2D([], [], color="#343A40", linestyle=":", linewidth=1.6,
+                          label="Nominal path line rate (2.5 Gbit/s)"))
+    figure.legend(handles=handles, loc="upper center", bbox_to_anchor=(.5, .968),
                   ncol=2, frameon=False)
     figure.suptitle("Isolated TCP throughput by path", fontsize=15, fontweight="bold", y=.995)
     figure.tight_layout(rect=(0, 0, 1, .91))
@@ -210,12 +225,19 @@ def plot_isolated(rows, output_dir):
     return relative
 
 
-def plot_concurrent_epochs(rows, output_dir):
+def plot_concurrent_epochs(rows, measurements, output_dir):
     selected = [row for row in rows if row["unit_mode"] in MODE_LABELS]
     if not selected:
         return None
     groups = grouped(selected, ("unit_mode", "direction"))
     modes = tuple(MODE_LABELS)
+    ceilings = {}
+    for mode in modes:
+        paths = [row for row in measurements if row["unit_mode"] == mode]
+        if paths:
+            clients = {row["client"] for row in paths}
+            servers = {row["server"] for row in paths}
+            ceilings[mode] = min(len(clients), len(servers)) * path_line_rate(paths)
     figure, axis = plt.subplots(figsize=(10, 6.5))
     width = 0.34
     for direction_index, direction in enumerate(DIRECTIONS):
@@ -233,12 +255,19 @@ def plot_concurrent_epochs(rows, output_dir):
                           fmt="none", color="#26343D", capsize=4, linewidth=1.1)
             axis.scatter([position + offset] * len(values), values, marker="_",
                          color="#17242C", s=55, linewidths=1, zorder=4)
+    for position, mode in enumerate(modes):
+        if mode in ceilings:
+            axis.hlines(ceilings[mode], position - .42, position + .42,
+                        color="#343A40", linestyle=":", linewidth=1.6, zorder=1)
     axis.set_xticks(range(len(modes)), [MODE_LABELS[mode] for mode in modes])
     axis.set_xlabel("Simultaneous topology")
     axis.set_title("Concurrent epoch aggregate throughput", loc="left", fontweight="bold")
     style(axis, "Aggregate receiver throughput (Gbit/s)")
-    axis.legend(handles=[Patch(facecolor=DIRECTION_COLORS[value], label=DIRECTION_LABELS[value])
-                         for value in DIRECTIONS], frameon=False)
+    handles = [Patch(facecolor=DIRECTION_COLORS[value], label=DIRECTION_LABELS[value])
+               for value in DIRECTIONS]
+    handles.append(Line2D([], [], color="#343A40", linestyle=":", linewidth=1.6,
+                          label="Nominal aggregate link-rate ceiling (by topology)"))
+    axis.legend(handles=handles, frameon=False, fontsize=8)
     figure.tight_layout()
     relative = "concurrent_epoch_aggregate.png"
     save(figure, output_dir / relative)
@@ -263,12 +292,17 @@ def plot_concurrent_sessions(rows, output_dir):
     for position, category_values in enumerate(values, 1):
         axis.scatter([position] * len(category_values), category_values, marker="_",
                      color="#17242C", alpha=0.5, s=28, linewidths=0.7, zorder=3)
+    peak = path_line_rate(selected)
+    axis.axhline(peak, color="#343A40", linestyle=":", linewidth=1.6, zorder=1)
     axis.set_xticks(range(1, len(categories) + 1),
                     [f"{MODE_LABELS[mode]}\n{DIRECTION_LABELS[direction]}"
                      for mode, direction in categories], rotation=15, ha="right")
     axis.set_xlabel("Simultaneous topology and direction")
     axis.set_title("Per-session throughput under concurrency", loc="left", fontweight="bold")
     style(axis, "Receiver throughput per path (Gbit/s)")
+    axis.legend(handles=[Line2D([], [], color="#343A40", linestyle=":", linewidth=1.6,
+                                label=f"Nominal path line rate ({peak:g} Gbit/s)")],
+                frameon=False)
     figure.tight_layout()
     relative = "concurrent_session_distribution.png"
     save(figure, output_dir / relative)
@@ -369,7 +403,7 @@ def main(argv=None):
         with tempfile.TemporaryDirectory(prefix=".plot-stage-", dir=args.output_dir) as temporary_dir:
             staged = Path(temporary_dir)
             plots = [plot_isolated(measurements, staged),
-                     plot_concurrent_epochs(epochs, staged),
+                     plot_concurrent_epochs(epochs, measurements, staged),
                      plot_concurrent_sessions(measurements, staged)]
             plots = [plot for plot in plots if plot]
             manifest = {
@@ -379,6 +413,7 @@ def main(argv=None):
                     "isolated": "path medians with repetition marks and min-max whiskers",
                     "concurrent_epochs": "aggregate receiver throughput per atomic simultaneous epoch",
                     "concurrent_sessions": "per-path throughput distributions; paths are not summed",
+                    "network_reference": "dotted lines show nominal physical link-rate ceilings from the captured inventory, not measured TCP ceilings",
                     "separation": "isolated and simultaneous modes are never combined",
                 },
             }

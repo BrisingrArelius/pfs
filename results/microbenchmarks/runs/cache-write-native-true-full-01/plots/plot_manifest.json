@@ -1,0 +1,7 @@
+{
+  "run_id": "cache-write-native-true-full-01",
+  "plots": [
+    "write_throughput.png",
+    "write_traffic_evidence.png"
+  ]
+}

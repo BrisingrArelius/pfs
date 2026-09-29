@@ -1,0 +1,18 @@
+{
+  "operation": "write",
+  "mode": "native",
+  "medium": "SSD",
+  "target": 104,
+  "intended": "client_ram",
+  "achieved": "client_ram",
+  "bytes": 1073741824,
+  "MiB_per_second": 5088.275799420905,
+  "seconds": 0.2012469528708607,
+  "remote_fsync": "true",
+  "verification": "write_traffic_v1",
+  "quiet_before": true,
+  "client_sent_ratio": 1.0465194378048182,
+  "server_received_ratio": 1.0461346106603742,
+  "device_written_ratio": 1.0000133514404297,
+  "timed_client_sent_ratio": 9.814184159040451e-05
+}

@@ -1,0 +1,8 @@
+{
+  "run_id": "cache-write-buffered-true-full-01",
+  "user": "pfs",
+  "mode": "buffered",
+  "pilot": false,
+  "operation": "write",
+  "remote_fsync": "true"
+}
