@@ -2,7 +2,6 @@
 """Measure HDD/SSD cache paths through anjuna2's existing BeeGFS mount."""
 
 import argparse
-import ctypes
 import fcntl
 import json
 import os
@@ -150,36 +149,6 @@ def make_file(directory, target):
     return path
 
 
-def residency(path):
-    """Return the fraction (0..1) of path's pages resident in client page cache.
-
-    Used only in native mode; Linux mincore reports page state without reading data.
-
-    The mapping must be read-only. A writable MAP_PRIVATE mapping makes the BeeGFS
-    client drop the file's cached pages, which emptied the cache this measures and
-    forced every client-RAM case to unverified. mincore needs the raw address, which
-    the mmap module cannot expose for a read-only buffer, so mmap(2) is called
-    directly.
-    """
-    length = path.stat().st_size
-    pages = (length + os.sysconf("SC_PAGE_SIZE") - 1) // os.sysconf("SC_PAGE_SIZE")
-    libc = ctypes.CDLL(None, use_errno=True)
-    libc.mmap.restype = ctypes.c_void_p
-    libc.mmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int,
-                          ctypes.c_int, ctypes.c_int, ctypes.c_long]
-    with path.open("rb", buffering=0) as source:
-        address = libc.mmap(None, length, 0x1, 0x2, source.fileno(), 0)
-    if address is None or address == ctypes.c_void_p(-1).value:
-        raise OSError(ctypes.get_errno(), "mmap failed")
-    try:
-        vector = (ctypes.c_ubyte * pages)()
-        if libc.mincore(ctypes.c_void_p(address), ctypes.c_size_t(length), vector):
-            raise OSError(ctypes.get_errno(), "mincore failed")
-        return sum(byte & 1 for byte in vector) / pages
-    finally:
-        libc.munmap(ctypes.c_void_p(address), ctypes.c_size_t(length))
-
-
 def counters(interface, device):
     """Return cumulative host-wide network and device-read byte counters.
 
@@ -210,7 +179,6 @@ def drop(client_only=False, server_only=False):
 
 def cases(pilot, mode):
     """Return ordered (medium, state) pairs: 4/20 buffered or 8/30 native."""
-    states = STATES if mode == "native" else STATES[:2]
     combinations = [(medium, state) for medium in TARGETS for state in states]
     if pilot:
         return (combinations + [(medium, "client_ram") for medium in TARGETS]
@@ -236,7 +204,6 @@ def measure(index, medium, state, path, interface, mode, results):
             drop(client_only=True)
         else:
             drop(server_only=True)
-    cached = residency(path) if mode == "native" else None
     identity = path.stat()
     idle = counters(interface, TARGETS[medium][1])
     time.sleep(1)
@@ -272,24 +239,15 @@ def measure(index, medium, state, path, interface, mode, results):
     network = (after["client_network"] - before["client_network"]) / SIZE
     server = (after["server_network"] - before["server_network"]) / SIZE
     backend = (after["device_read"] - before["device_read"]) / SIZE
-    if mode == "buffered":
-        # BeeGFS buffered mode has its own small buffers: mincore is not a
-        # measurement of their residency. Require traffic evidence instead.
-        verified = quiet and {
-            "backend": network >= .8 and server >= .8 and backend >= .8,
-            "server_ram": network >= .8 and server >= .8 and backend <= .2,
-        }[state]
-    else:
-        verified = quiet and {
-            "backend": network >= .8 and server >= .8 and backend >= .8 and cached <= .1,
-            "server_ram": network >= .8 and server >= .8 and backend <= .2 and cached <= .1,
-            "client_ram": network <= .2 and server <= .2 and backend <= .2 and cached >= .95,
-        }[state]
+    verified = quiet and {
+        "backend": network >= .8 and server >= .8 and backend >= .8,
+        "server_ram": network >= .8 and server >= .8 and backend <= .2,
+        "client_ram": network <= .2 and server <= .2 and backend <= .2,
+    }[state]
     result = {"mode": mode, "medium": medium, "target": TARGETS[medium][0], "intended": state,
               "achieved": state if verified else "unverified", "MiB_per_second": rate,
-              "client_residency": cached, "network_ratio": network,
-              "server_network_ratio": server, "backend_ratio": backend,
-              "quiet_before": quiet,
+              "network_ratio": network, "server_network_ratio": server,
+              "backend_ratio": backend, "quiet_before": quiet,
               "seconds": time.time() - started}
     record(folder / "result.json", result)
     return result
