@@ -179,6 +179,7 @@ def drop(client_only=False, server_only=False):
 
 def cases(pilot, mode):
     """Return ordered (medium, state) pairs: 4/20 buffered or 8/30 native."""
+    states = STATES if mode == "native" else STATES[:2]
     combinations = [(medium, state) for medium in TARGETS for state in states]
     if pilot:
         return (combinations + [(medium, "client_ram") for medium in TARGETS]
