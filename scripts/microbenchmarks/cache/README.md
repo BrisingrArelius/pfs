@@ -75,8 +75,8 @@ data path. There is no `--posix.odirect` option on the measured command.
    file for `server_ram` and, in native mode, `client_ram`. Then drop **only
    the client** cache for `server_ram`, or **only the server** cache for
    `client_ram`. Run IOR once and capture client network bytes, server network
-   bytes, and target-device read bytes. Client page residency is sampled in
-   `native` mode only.
+   bytes, and target-device read bytes. The runner does not map or probe the
+   file between warm-up and IOR.
 4. Compare that traffic with the intended path. A read whose path cannot be
    verified is recorded as `unverified`, not called a cache hit. Remove only
    this run's BeeGFS files on normal exit.
@@ -97,20 +97,19 @@ are outside the measured IOR invocation.
 |---|---|---|
 | `backend` | Drop both hosts' caches, then measure | Client and server network traffic **and** backing-device reads |
 | `server_ram` | Drop both, read the file once to warm it, drop **client only**, then measure | Client and server network traffic, few backing-device reads |
-| `client_ram` (`native` only) | Drop both, read the file once to warm it, drop **server only**, then measure | File resident in client RAM, little bulk network or backing-device activity |
+| `client_ram` (`native` only) | Drop both, read the file once to warm it, drop **server only**, then measure | Little bulk network or backing-device activity during the 8-GiB IOR read, consistent with a client-cache hit |
 
 Traffic ratios use **IOR's 8-GiB logical read** as the denominator. A verified
 backend case requires at least 80% of that amount in each of client-received,
 server-sent and device-read bytes. A verified server-RAM case requires at least
-80% on both network counters and at most 20% device reads. In `native` mode,
-both cases also require at most 10% client page residency. The script does not
-use Linux `mincore` to claim how much of BeeGFS's **internal buffered cache** is
-resident; `client_residency` is `null` in `buffered` results. A verified
-client-RAM case (`native` only) requires at least 95% client residency and at
-most 20% on each network and
-device counter. The script also checks a one-second pre-read window for
-background traffic. These are *observed classifications*, not labels inferred
-from the order of cache-drop commands alone.
+80% on both network counters and at most 20% device reads. A verified
+client-RAM case (`native` only) requires at most 20% on each network and device
+counter. The script also checks a one-second pre-read window for background
+traffic. These are *observed traffic classifications*, not labels inferred
+from cache-drop order alone. The counters cover whole interfaces and a whole
+device, so unrelated traffic can make a real hit `unverified`; they do not
+measure the exact number of resident client pages. New results identify this
+rule as `traffic_counters_v1` and contain no `client_residency` field.
 
 ### Functions in `run_cache.py`
 
@@ -118,11 +117,11 @@ from the order of cache-drop commands alone.
 |---|---|
 | `main` | Parse the run ID, `--mode` and `--pilot`, create a results directory, and call `benchmark`. |
 | `benchmark` | Hold the run lock, prepare two files on the existing mount, measure the cases, and clean up. |
-| `check_cluster` | Check the selected mode on the existing mount, target health/mapping, NetBench state, sudo access and available RAM before preparing data. |
+| `check_cluster` | Check the selected mode and native threshold on the existing mount, target health/mapping, NetBench state, sudo access and available RAM before preparing data. |
+| `cache_config_matches` | Check the effective cache mode and native I/O threshold from the mounted client's procfs configuration. |
 | `targets` | Ask BeeGFS which storage target actually holds a given file. |
 | `make_file` | Select a file on target 101 or 104, fill it with direct writes, and recheck size and placement. |
 | `drop` | Clear both hosts' caches at the start of a case, then optionally clear only one host after warm-up. |
-| `residency` | In native mode, use Linux `mincore` to check how much of the file is in the client's page cache without reading it. |
 | `counters` | Read client-received network bytes, server-sent network bytes and backing-device read bytes. |
 | `cases` | Return buffered (4/20) or native (8/30) pilot/full cases; full runs rotate their configuration order. |
 | `measure` | Prepare one cache state, run IOR, compare IOR and host evidence, and save the achieved label. |
@@ -144,29 +143,49 @@ caches, so its measurements require exclusive use of those hosts. Its file lock
 only prevents two copies of `run_cache.py` from running at once; it does not
 block other cluster workloads.
 
-Buffered pilot (four measured reads) with the current `buffered` mount:
+For another buffered pilot (four measured reads), use an unused run ID with
+an active `buffered` mount:
 
 ```bash
 python3 -B scripts/microbenchmarks/cache/run_cache.py \
-  --run-id cache-buffered-pilot-02 --mode buffered --pilot
+  --run-id cache-buffered-pilot-05 --mode buffered --pilot
 ```
 
-Buffered full run (20 measured reads, new run ID):
+For another buffered full run (20 measured reads), use a new run ID:
 
 ```bash
 python3 -B scripts/microbenchmarks/cache/run_cache.py \
-  --run-id cache-buffered-full-01 --mode buffered
+  --run-id cache-buffered-full-02 --mode buffered
 ```
 
 With the **existing** client separately configured and verified as `native`,
 the same script accepts `--mode native`. Its pilot has eight measured reads
-and its full run has 30, each using a new run ID:
+and its full run has 30, each using a new run ID. Before a native run, check
+the live mount configuration on `anjuna2`:
+
+```bash
+sudo grep -E 'tuneFileCacheType|tuneFileCacheBufSize' /proc/fs/beegfs/*/config
+```
+
+It must show `native` and a `tuneFileCacheBufSize` of at least `2097152`
+bytes. The installed client configuration describes this value as a threshold
+for direct I/O in native mode. Its original `524288`-byte value is below the
+benchmark's 1-MiB transfer; 2 MiB permits the page-cache path. The current
+runner checks the effective value and stops if it is too small. To repeat the
+pilot, use a fresh ID, for example:
 
 ```bash
 python3 -B scripts/microbenchmarks/cache/run_cache.py \
-  --run-id cache-native-pilot-01 --mode native --pilot
+  --run-id cache-native-pilot-07 --mode native --pilot
+```
+
+Inspect all eight pilot cases and their raw traffic counters before deciding
+whether a native full run is valid. Only after a pilot verifies both media and
+all intended states, use a fresh full-run ID, for example:
+
+```bash
 python3 -B scripts/microbenchmarks/cache/run_cache.py \
-  --run-id cache-native-full-01 --mode native
+  --run-id cache-native-full-02 --mode native
 ```
 
 Each run ID is used once. The terminal prints a bandwidth and `achieved` label
@@ -180,8 +199,8 @@ results.json                completed cases and their verified/unverified labels
   command.json              exact IOR argument list
   ior.json                  native IOR summary
   stdout.txt, stderr.txt    native IOR output
-  counters.json             before/after network and target-device counters
-  result.json               mode, throughput, residency (native only), ratios and achieved label
+  counters.json             pre-read idle, before and after traffic counters (new runs)
+  result.json               mode, throughput, traffic ratios and achieved label
   warmup/                   present for states with an unmeasured warm-up
 ```
 
@@ -196,33 +215,123 @@ resume command.
 runs on any machine and starts no MPI or BeeGFS command:
 
 ```bash
+RUN_ID=cache-native-full-01
 python3 scripts/microbenchmarks/cache/visualize_results.py \
-  results/microbenchmarks/runs/<run-id>
+  "results/microbenchmarks/runs/$RUN_ID"
 ```
 
 It revalidates every case before plotting: the native IOR summary must be one
 POSIX read of the whole 8-GiB file by one rank with 1-MiB transfers, its rate
 must match the recorded result, the recorded command must be the documented
 one without `O_DIRECT`, and the traffic ratios in `result.json` must be
-recomputable from the raw `counters.json`. It then re-derives each case's
-`achieved` label from the same thresholds the runner applied and refuses to
-plot if the recorded label disagrees with its own evidence. `client_residency`
-is `null` in buffered results, so a native run adds a third figure.
+recomputable from the raw `counters.json`. For new runs it also recomputes the
+one-second quiet check from the saved idle and before samples. It then
+re-derives each case's `achieved` label from the same thresholds the runner
+applied and refuses to plot if the recorded label disagrees with its own
+evidence. It also accepts transitional native traffic-only results without the
+newer marker or idle sample, such as pilot `-06`, while preserving that evidence
+limit. For older mapping-probe investigation runs, it preserves their original
+labels and plots their legacy probe values as diagnostics; it does not
+reinterpret them as valid residency.
 
 | Output | Contents |
 |---|---|
 | `plots/throughput.png` | One dot per measured read, grouped by medium and cache state, with each group's min-to-max span and median bar |
 | `plots/traffic_evidence.png` | One panel per configuration: client-received, server-sent and device-read ratios for each case against the 0.8 and 0.2 thresholds |
-| `plots/client_residency.png` | Sampled client page residency (native runs only) |
+| `plots/client_residency.png` | Failed legacy probe values, only when those values exist in an older run |
 | `plots/plot_manifest.json` | The complete figure set this visualizer owns for the run |
 
 The program also prints one line per group with its count, minimum, median and
 maximum rate, plus the run's verified and `unverified` totals.
 
-**Execution status:** the buffered pilot and buffered full run have completed on
-`anjuna2` with every case `achieved`. Native-mode runs have not been executed.
-A run stops without reporting a verified cache path when its layout, mount,
-IOR output or traffic evidence does not match the protocol.
+**Execution status:** buffered pilot `cache-buffered-pilot-04` achieved 4/4 and
+buffered full `cache-buffered-full-01` achieved 20/20. Native pilot
+`cache-native-pilot-06` achieved 8/8 and native full `cache-native-full-01`
+achieved 30/30. The visualizer rechecked every completed case's IOR summary,
+command, recorded label and raw traffic counters. The full run has five reads
+per medium/state; mean IOR throughput was:
+
+| Medium and state | Buffered full (MiB/s) | Native full (MiB/s) |
+|---|---:|---:|
+| HDD backend | 182.9 | 163.4 |
+| HDD server RAM | 239.0 | 235.9 |
+| HDD client RAM | — | 9586.3 |
+| SSD backend | 237.8 | 244.4 |
+| SSD server RAM | 240.5 | 243.9 |
+| SSD client RAM | — | 9550.0 |
+
+The ten native full-run client-RAM reads ranged from 9515.3 to 9626.5 MiB/s.
+Their client-received traffic was at most 0.0000312 of the 8-GiB logical read,
+server-sent traffic at most 0.0000017, and target-device reads zero. The
+near-zero bulk traffic directly supports client-cache hits. Both native runs
+used the transitional traffic-only result format, without the later explicit
+`verification` marker or saved idle-window sample. Their recorded
+`quiet_before` flags cannot be independently recomputed. Neither run saved a
+live configuration snapshot. Shortly after the full run and before restoration,
+the live mount showed `native` and `2097152`; this observation is not a
+during-run snapshot. The mount was subsequently restored and verified as
+`buffered` with `524288`. Native pilots `cache-native-pilot-01` through `-03`
+remain investigation artifacts with unverified client-RAM cases.
+
+The preserved [buffered full raw run](../../../results/microbenchmarks/runs/cache-buffered-full-01/)
+and [native full raw run](../../../results/microbenchmarks/runs/cache-native-full-01/)
+include their throughput and traffic-evidence plots.
+
+Layout, mount, or IOR protocol failures stop a run; a traffic mismatch leaves
+the affected case labeled `unverified`.
+
+### Native investigation record
+
+Native caching itself worked in manual tests with the 2-MiB threshold: after a
+separate `dd` process warmed the 8-GiB file and exited, IOR read it at
+9053 MiB/s; other warm IOR reads reached 11425–11863 MiB/s. Closing the
+warm-up file therefore did not necessarily invalidate the cache. The original
+runner's mapping-based `residency()` probe coincided with a destructive loss of
+cached pages: a writable mapping was followed by system `Cached` falling from
+9,007,872 to 624,860 kB, and the later **read-only** `libc.mmap` plus `mincore`
+version returned 0.0 while `Cached` fell from 8,978,276 to 596,132 kB. The
+precise BeeGFS/kernel mechanism is unknown. The current runner removes that
+probe and uses the independent traffic counters above. Rates from the earlier
+native pilots' `client_ram` cases are preserved as investigation data, not
+validated client-cache throughput. Their roughly 240-MiB/s results do not
+establish a buffer-capacity or network ceiling; the same-path iperf3 result
+reached 280.5 MiB/s and native pilot rates varied.
+
+The `anjuna2` checkout is separate from this coding checkout. Pilot `-06` and
+full `-01` used the transitional traffic-only format; transfer the current
+runner to `anjuna2` before any future run so its threshold guard and raw idle
+sample are active.
+
+### Copying raw results through `anjuna3`
+
+Run these commands yourself after a run. On **`anjuna3`**, copy one complete
+run directory from `anjuna2` into the existing results directory, retaining
+the same run ID:
+
+```bash
+RUN_ID=cache-native-full-01
+ls -ld "$HOME/pfs/results/microbenchmarks/runs"
+rsync -a --ignore-existing "pfs@anjuna2:/home/pfs/tejas/pfs/results/microbenchmarks/runs/$RUN_ID" "$HOME/pfs/results/microbenchmarks/runs/"
+rsync -ai --checksum --dry-run "pfs@anjuna2:/home/pfs/tejas/pfs/results/microbenchmarks/runs/$RUN_ID" "$HOME/pfs/results/microbenchmarks/runs/"
+```
+
+The final dry run should print no file changes. On **your laptop**, copy that
+run directory from `anjuna3` into the coding checkout's existing results
+directory:
+
+```bash
+RUN_ID=cache-native-full-01
+ls -ld /home/arelius/projects/pfs/results/microbenchmarks/runs
+rsync -a --ignore-existing -e 'ssh -J dashlab@lab.dashlab.in' "pfs@anjuna3.dashlab.in:/home/pfs/pfs/results/microbenchmarks/runs/$RUN_ID" /home/arelius/projects/pfs/results/microbenchmarks/runs/
+rsync -ai --checksum --dry-run -e 'ssh -J dashlab@lab.dashlab.in' "pfs@anjuna3.dashlab.in:/home/pfs/pfs/results/microbenchmarks/runs/$RUN_ID" /home/arelius/projects/pfs/results/microbenchmarks/runs/
+```
+
+The second dry run should also print no file changes. `--ignore-existing`
+protects existing files; a nonempty checksum dry run means a file is missing or
+differs and should be inspected before relying on the copy. Change `RUN_ID` to
+copy another full or pilot run, including the early investigation artifacts.
+These commands copy raw files; run `visualize_results.py` on the laptop
+afterward.
 
 This cache runner does not load Darshan. Its results come from native IOR JSON
 and client/server Linux counters; Darshan cannot identify which cache level

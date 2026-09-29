@@ -9,8 +9,8 @@ and evidence.
 |---|---|
 | Local storage | Per-target FIO runner with native JSON, deadlines and measurement-level resume; protocol-5 full run completed |
 | Network transport | Six-host iperf3 runner with native endpoint JSON, synchronized concurrent epochs, telemetry, and resume; 190-unit/320-path full raw run available |
-| Microbenchmark figures | FIO and iperf3 visualizers plot their completed native runs directly; communication and metadata have no cluster result set |
-| Cache effects | `run_cache.py` contains one HDD/SSD IOR cache runner and `visualize_results.py`; buffered pilot and full runs completed with every case achieving its intended path |
+| Microbenchmark figures | FIO, iperf3, and cache visualizers plot completed native run artifacts directly; communication and metadata have no cluster result set |
+| Cache effects | `run_cache.py` contains one HDD/SSD IOR cache runner and `visualize_results.py`; buffered and native full runs achieved every intended path; early native pilots remain investigation data |
 | Placement administration | Shell helpers with historical hard-coded target inventories |
 | Application workloads | Single-process IOR wrapper, two current contiguous read-only profiles, Darshan invocation, and run-specific logs/checkpoints |
 | Darshan parsing | Aggregate POSIX/MPI-IO/STDIO rows in `global.csv` |
@@ -35,15 +35,73 @@ an intermediate CSV parser. The completed FIO run includes both FIO 3.28 and
 Local FIO and iperf3 have documented protocols and completed cluster runs.
 BeeGFS communication and metadata have offline plans and raw-evidence
 visualizers without live runners or validated cluster pilots. The cache domain
-has a completed buffered full run, but no native-mode run yet. The current workload
+has completed buffered and native full runs, with three early native
+investigation pilots preserved separately. The current workload
 pipeline is application-level tooling, not a completed DLIO experiment.
 
 The whole-workload D/S/H, chooser, stripe, capacity, and concurrency matrix
 belongs to the separate DLIO experiment; it is not implemented. Numerical
 capacity bands are not defined. Suite-wide durable progress, allocation recovery, complete
 provenance capture, mutable allocation deadlines and clean time-budget shutdown
-across the whole suite are also missing. No live cache-state verification has
-been recorded.
+across the whole suite are also missing. Buffered cache states were verified
+with client/server traffic and device-read counters. Native pilot `-06` and
+full `-01` also verified their intended paths with raw IOR and traffic evidence.
+
+## Cache investigation and current protocol
+
+Buffered pilot `cache-buffered-pilot-04` achieved 4/4 intended states and
+buffered full `cache-buffered-full-01` achieved 20/20. The full-run mean IOR
+rates were 182.9 MiB/s for HDD backend, 239.0 for HDD server RAM, 237.8 for
+SSD backend, and 240.5 for SSD server RAM. The HDD server-RAM gain over its
+backend state was about 31%.
+
+Native pilots `cache-native-pilot-01` through `-03` had unverified client-RAM
+cases. Manual tests with `tuneFileCacheBufSize=2097152` established that native
+client caching can hold the 8-GiB BeeGFS file: an IOR read after a separate
+`dd` warm-up process exited reached 9053 MiB/s, and other warm reads reached
+11425–11863 MiB/s. The benchmark uses 1-MiB POSIX transfers; the original
+524288-byte threshold is below that size, while 2097152 permits the native
+page-cache path. The runner now checks the effective threshold on the live
+mount before a native run.
+
+Native pilot `cache-native-pilot-06` achieved 8/8 intended states after the
+mapping probe was removed. Its four client-RAM IOR reads reached 9537–9616
+MiB/s with client-received and server-sent traffic ratios below 0.00003 and
+zero target-device read bytes. The other four cases' raw counters also match
+their backend or server-RAM labels; the IOR summaries and commands match the
+one-rank, 8-GiB, 1-MiB POSIX protocol. This pilot's result schema predates the
+explicit verification marker and saved pre-read idle counter sample, so the
+recorded quiet-window flag cannot be independently recomputed. The live cache
+threshold during the pilot was not recorded in its artifacts.
+
+Native full `cache-native-full-01` achieved 30/30 intended states, five reads
+per medium/state. Mean IOR rates in MiB/s were HDD backend 163.4, HDD server
+RAM 235.9, HDD client RAM 9586.3, SSD backend 244.4, SSD server RAM 243.9,
+and SSD client RAM 9550.0. Its ten client-RAM reads ranged from 9515.3 to
+9626.5 MiB/s; client-received traffic was at most 0.0000312 of the 8-GiB
+logical read, server-sent traffic at most 0.0000017, and target-device reads
+were zero. The visualizer revalidated all 30 raw IOR summaries, commands,
+counters and state labels, and produced throughput and traffic-evidence plots.
+The full run also used the transitional format without a saved idle-window
+sample or live configuration snapshot. Shortly after the run, before
+restoration, the live mount showed `native` with `tuneFileCacheBufSize=2097152`;
+that observation does not prove the exact setting throughout the run. After
+the experiment, the live mount was verified as `buffered` with `524288`.
+The current runner records the idle sample and rejects a native mount below
+2097152 bytes.
+
+The prior mapping-based `residency()` probe was the reproducible runner failure.
+The writable version coincided with system `Cached` falling from 9,007,872 to
+624,860 kB. After it was changed to read-only `libc.mmap` plus `mincore`, the
+actual imported runner returned 0.0 and `Cached` fell from 8,978,276 to
+596,132 kB. The exact BeeGFS/kernel cause is unknown. The current runner does
+not map the file between warm-up and IOR. It classifies paths from independent
+client-received, server-sent and backing-device-read counters, and labels a
+case `unverified` when the observed ratios or pre-read quiet check fail.
+These host-wide counters do not quantify resident pages; older probe values
+remain diagnostics only. Earlier roughly 240-MiB/s native readings
+do not prove a staging-buffer or network ceiling; same-path iperf3 reached
+280.5 MiB/s and the native pilot rates varied.
 
 ## Current operation paths
 
@@ -100,3 +158,5 @@ labels are not treated as verified facts.
 - [Target management and capacity classes](https://doc.beegfs.io/7.4.4/advanced_topics/target_management.html)
 - [Storage pools](https://doc.beegfs.io/7.4.4/advanced_topics/storage_pools.html)
 - [Client caching](https://doc.beegfs.io/7.4.4/advanced_topics/client_caching.html)
+- [Current client caching description](https://doc.beegfs.io/latest/advanced_topics/client_caching.html)
+- [Qian et al., FAST 2024: buffered and direct I/O in distributed file systems](https://www.usenix.org/system/files/fast24-qian.pdf)

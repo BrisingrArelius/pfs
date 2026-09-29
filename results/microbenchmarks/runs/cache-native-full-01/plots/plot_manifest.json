@@ -1,0 +1,7 @@
+{
+  "run_id": "cache-native-full-01",
+  "plots": [
+    "throughput.png",
+    "traffic_evidence.png"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "run_id": "cache-native-pilot-06",
+  "plots": [
+    "throughput.png",
+    "traffic_evidence.png"
+  ]
+}

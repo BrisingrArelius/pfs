@@ -22,6 +22,8 @@ CLIENT_CONFIG = "/etc/beegfs/beegfs-client.conf"
 TARGETS = {"HDD": (101, "sdb1"), "SSD": (104, "nvme1n1p1")}
 STATES = ("backend", "server_ram", "client_ram")
 SIZE = 8 * 1024**3
+VERIFICATION = "traffic_counters_v1"
+NATIVE_CACHE_THRESHOLD = 2 * 1024**2
 
 
 def run(argv, *, timeout=600, output=None):
@@ -77,8 +79,18 @@ def record(path, data):
     temporary.replace(path)
 
 
+def cache_config_matches(text, mode):
+    """Check the effective cache mode and native I/O threshold from procfs."""
+    if not re.search(rf"(?m)^tuneFileCacheType\s*=\s*{mode}\s*$", text):
+        return False
+    if mode == "native":
+        match = re.search(r"(?m)^tuneFileCacheBufSize\s*=\s*(\d+)\s*$", text)
+        return bool(match and int(match.group(1)) >= NATIVE_CACHE_THRESHOLD)
+    return True
+
+
 def check_cluster(mode):
-    """Require the selected active mode and the expected cluster inventory.
+    """Require the active mode, native threshold and expected inventory.
 
     Return None when host, mount, targets, NetBench, RAM and sudo checks pass;
     raise on a mismatch before creating BeeGFS benchmark data.
@@ -88,9 +100,10 @@ def check_cluster(mode):
     if run(["findmnt", "-n", "-o", "FSTYPE", "--target", str(SHARED)]).strip() != "beegfs":
         raise RuntimeError("/mnt/beegfs/pfs is not BeeGFS")
     configs = list(Path("/proc/fs/beegfs").glob("*/config"))
-    if (not configs or any(not re.search(rf"(?m)^tuneFileCacheType\s*=\s*{mode}\s*$",
-                               config.read_text()) for config in configs)):
-        raise RuntimeError(f"The active anjuna2 BeeGFS client must be configured as {mode}")
+    if not configs or any(not cache_config_matches(config.read_text(), mode)
+                          for config in configs):
+        raise RuntimeError(f"The active anjuna2 BeeGFS client must be {mode}"
+                           + (" with tuneFileCacheBufSize >= 2097152" if mode == "native" else ""))
     states = ctl("--listtargets", "--longnodes", "--state")
     for target, _ in TARGETS.values():
         if not re.search(rf"(?m)^\s*{target}\s+Online\s+Good\s+.*colva1\b", states):
@@ -221,7 +234,7 @@ def measure(index, medium, state, path, interface, mode, results):
         run(argv, output=folder)
     finally:
         after = counters(interface, TARGETS[medium][1])
-        record(folder / "counters.json", {"before": before, "after": after})
+        record(folder / "counters.json", {"idle": idle, "before": before, "after": after})
     if (path.stat().st_ino, path.stat().st_size, path.stat().st_mtime_ns) != (
             identity.st_ino, identity.st_size, identity.st_mtime_ns):
         raise RuntimeError("IOR modified its input file")
@@ -247,6 +260,7 @@ def measure(index, medium, state, path, interface, mode, results):
     }[state]
     result = {"mode": mode, "medium": medium, "target": TARGETS[medium][0], "intended": state,
               "achieved": state if verified else "unverified", "MiB_per_second": rate,
+              "verification": VERIFICATION,
               "network_ratio": network, "server_network_ratio": server,
               "backend_ratio": backend, "quiet_before": quiet,
               "seconds": time.time() - started}

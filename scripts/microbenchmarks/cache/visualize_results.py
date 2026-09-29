@@ -11,6 +11,7 @@ import json
 import math
 import os
 from pathlib import Path
+from statistics import median
 import sys
 import uuid
 
@@ -23,6 +24,7 @@ SIZE = 8 * 1024**3
 STATES = ("backend", "server_ram", "client_ram")
 COLORS = {"backend": "#315A7D", "server_ram": "#D08B32", "client_ram": "#4E7D5B"}
 MEASURED = ("client_network", "server_network", "backend_ratio")
+VERIFICATION = "traffic_counters_v1"
 
 
 def load(path):
@@ -82,17 +84,30 @@ def ratios(counters):
             "backend_ratio": (after["device_read"] - before["device_read"]) / SIZE}
 
 
-def expected_label(mode, state, network, server, backend, cached, quiet):
-    """Return the state this evidence supports, or 'unverified'."""
+def expected_label(mode, state, network, server, backend, cached, quiet, verification):
+    """Return the state supported by current or preserved legacy evidence."""
     if not quiet:
         return "unverified"
-    if mode == "buffered":
-        rules = {"backend": (network >= .8 and server >= .8 and backend >= .8),
-                 "server_ram": (network >= .8 and server >= .8 and backend <= .2)}
-    else:
+    traffic_rules = {"backend": network >= .8 and server >= .8 and backend >= .8,
+                     "server_ram": network >= .8 and server >= .8 and backend <= .2,
+                     "client_ram": network <= .2 and server <= .2 and backend <= .2}
+    if verification == VERIFICATION or (verification is None and mode == "buffered"):
+        rules = traffic_rules
+    elif verification is None and mode == "native" and cached is None:
+        # Transitional native pilots recorded traffic and labels without a
+        # verification marker or a raw pre-read idle sample. Validate their
+        # measured traffic, but retain that evidence limit in documentation.
+        rules = traffic_rules
+    elif verification is None and mode == "native" and isinstance(cached, (int, float)):
+        # Preserve the labels attached to investigation pilots made with the
+        # destructive residency probe. It is not accepted for new results.
         rules = {"backend": (network >= .8 and server >= .8 and backend >= .8 and cached <= .1),
                  "server_ram": (network >= .8 and server >= .8 and backend <= .2 and cached <= .1),
                  "client_ram": (network <= .2 and server <= .2 and backend <= .2 and cached >= .95)}
+    else:
+        raise ValueError("native result lacks a recognized verification method")
+    if state not in rules or (mode == "buffered" and state == "client_ram"):
+        raise ValueError(f"state {state!r} is invalid for mode {mode!r}")
     return state if rules[state] else "unverified"
 
 
@@ -112,18 +127,30 @@ def load_cases(run):
         name = f"{index:02d}-{result['medium'].lower()}-{result['intended']}"
         case = run / name
         record = {"name": name, "medium": result["medium"], "state": result["intended"],
-                  "mode": result["mode"], "recorded": result["achieved"]}
+                  "mode": result["mode"], "recorded": result["achieved"],
+                  "verification": result.get("verification")}
+        if result["mode"] != owner.get("mode"):
+            raise ValueError(f"{name}: case mode differs from owner.json")
         record["rate"] = check_native(load(case / "ior.json"), result)
         check_command(load(case / "command.json"))
-        observed = ratios(load(case / "counters.json"))
+        raw_counters = load(case / "counters.json")
+        observed = ratios(raw_counters)
         for key, value in observed.items():
             if abs(value - result[key]) > 1e-6:
                 raise ValueError(f"{name}: {key} differs from the raw counters")
         cached = result.get("client_residency")
+        if record["verification"] == VERIFICATION:
+            if "client_residency" in result:
+                raise ValueError(f"{name}: current traffic evidence includes a legacy residency field")
+            idle, before = raw_counters["idle"], raw_counters["before"]
+            quiet_from_raw = all(0 <= before[key] - idle[key] < SIZE // 100
+                                 for key in before)
+            if result.get("quiet_before") is not quiet_from_raw:
+                raise ValueError(f"{name}: quiet_before differs from the raw counters")
         record.update(observed, cached=cached, quiet=result.get("quiet_before") is True)
         record["label"] = expected_label(result["mode"], record["state"], observed["network_ratio"],
-                                         observed["server_network_ratio"], observed["backend_ratio"],
-                                         cached if cached is not None else 1.0, record["quiet"])
+                                          observed["server_network_ratio"], observed["backend_ratio"],
+                                          cached, record["quiet"], record["verification"])
         if record["label"] != record["recorded"]:
             raise ValueError(f"{name}: recorded label {record['recorded']!r} "
                              f"does not follow from the evidence ({record['label']!r})")
@@ -181,7 +208,7 @@ def plot_throughput(cases, path, manifest_path, owned):
         color = COLORS[state]
         ax.plot([position, position], [rates[0], rates[-1]], color=color, linewidth=2,
                 solid_capstyle="butt", zorder=1)
-        middle = rates[len(rates) // 2]
+        middle = median(rates)
         ax.plot([position - .16, position + .16], [middle, middle], color="black",
                 linewidth=2.5, zorder=3)
         for offset, rate in zip((-.16, -.08, 0, .08, .16) * 4, rates):
@@ -241,7 +268,7 @@ def plot_evidence(cases, path, manifest_path, owned):
 
 
 def plot_residency(cases, path, manifest_path, owned):
-    """Draw sampled client page residency for runs that recorded it."""
+    """Draw the failed legacy probe values as investigation evidence only."""
     fig, ax = plt.subplots(figsize=(11, 4))
     for position, (_, _, members) in enumerate(groups(cases), 1):
         values = [case["cached"] for case in members if case["cached"] is not None]
@@ -252,9 +279,9 @@ def plot_residency(cases, path, manifest_path, owned):
     ax.set_xticks(range(1, len(groups(cases)) + 1))
     ax.set_xticklabels([f"{medium} {state}" for medium, state, _ in groups(cases)],
                        rotation=20, ha="right")
-    ax.set_ylabel("client pages resident (mincore)")
+    ax.set_ylabel("legacy mincore probe result")
     ax.set_ylim(-.05, 1.05)
-    ax.set_title("Client page residency sampled before each IOR read (native mode)")
+    ax.set_title("Legacy destructive probe diagnostic; not valid residency evidence")
     ax.grid(axis="y", alpha=.3)
     fig.tight_layout()
     return save(fig, path, manifest_path, owned)
@@ -268,7 +295,7 @@ def summarize(owner, cases):
              f" unverified={labels.count('unverified')}"]
     for medium, state, members in groups(cases):
         rates = sorted(case["rate"] for case in members)
-        middle = rates[len(rates) // 2]
+        middle = median(rates)
         lines.append(f"  {medium:3} {state:10} n={len(rates)} "
                      f"min={rates[0]:.1f} median={middle:.1f} max={rates[-1]:.1f} MiB/s")
     return lines
