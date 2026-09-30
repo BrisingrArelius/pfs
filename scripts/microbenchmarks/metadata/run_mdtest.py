@@ -176,7 +176,7 @@ def storage_pool_state():
 
 
 def pattern_command(work, pool_id):
-    """Set one-stripe RAID0 inheritance on an empty case work directory."""
+    """Set one-stripe RAID0 inheritance on an empty benchmark directory."""
     return ["sudo", "-n", str(BEEGFS_CTL), f"--cfgFile={CLIENT_CONFIG}",
             "--setpattern", "--pattern=raid0", f"--storagepoolid={pool_id}",
             "--numtargets=1", "--chunksize=512k", str(work)]
@@ -190,6 +190,21 @@ def directory_pattern(entryinfo):
     if not pool or not targets:
         raise ValueError("BeeGFS entry info lacks storage-pool or stripe-count details")
     return {"pool_id": int(pool.group(1)), "num_targets": int(targets.group(1))}
+
+
+def apply_directory_pattern(directory, pool_id):
+    """Assign and verify a usable singleton pool before writing marker files."""
+    argv = pattern_command(directory, pool_id)
+    result = subprocess.run(argv, capture_output=True, text=True, timeout=30)
+    if result.returncode:
+        raise ValueError(f"could not set directory storage pool {pool_id}: "
+                         f"{result.stderr.strip()}")
+    entryinfo = beegfs_ctl(["--getentryinfo", "--verbose", str(directory)])
+    verified = directory_pattern(entryinfo)
+    if verified != {"pool_id": pool_id, "num_targets": 1}:
+        raise ValueError(f"BeeGFS did not apply singleton pool {pool_id} to {directory}")
+    return {"setpattern_command": argv, "setpattern_stdout": result.stdout,
+            "directory_entryinfo": entryinfo, "verified_pattern": verified}
 
 
 def validate_placement(record, unit, work, storage_pools):
@@ -333,9 +348,21 @@ def owned_run(run_id, plan):
             elif list(root.iterdir()):
                 raise ValueError(f"unowned nonempty run directory: {root}")
             else:
+                if root == shared:
+                    scaffold = plan["storage_pools"]["classes"]["hdd"]
+                    evidence = apply_directory_pattern(root, scaffold["pool_id"])
+                    save(raw / "scaffold_pattern.json", {
+                        "purpose": "runner marker files", "pool": scaffold,
+                        **evidence})
                 save(marker, owner)
         else:
             root.mkdir(mode=0o700)
+            if root == shared:
+                scaffold = plan["storage_pools"]["classes"]["hdd"]
+                evidence = apply_directory_pattern(root, scaffold["pool_id"])
+                save(raw / "scaffold_pattern.json", {
+                    "purpose": "runner marker files", "pool": scaffold,
+                    **evidence})
             save(root / "owner.json", owner)
     if (raw / "plan.json").exists():
         if load(raw / "plan.json") != plan:
@@ -399,32 +426,22 @@ def measure(unit, raw, shared, owner, items, timeout, baseline):
     before = mount_state()
     if before != {key: baseline[key] for key in before}:
         raise ValueError("BeeGFS mount changed before mdtest")
-    no_symlinks(shared)
-    case_shared.mkdir(mode=0o700)
-    save(case_shared / "owner.json", owner)
-    (case_shared / "work").mkdir(mode=0o700)
-    case_raw.mkdir(parents=True)
-    save(case_raw / "preflight.json", probe)
     live_pools = storage_pool_state()
     if live_pools != baseline["storage_pools"]:
         raise ValueError("BeeGFS storage-pool membership changed during the run")
     pool = live_pools["classes"][unit["target_class"]]
-    setpattern_argv = pattern_command(case_shared / "work", pool["pool_id"])
-    setpattern = subprocess.run(setpattern_argv, capture_output=True, text=True,
-                                timeout=30)
-    if setpattern.returncode:
-        raise ValueError(f"could not set {unit['target_class']} pool pattern: "
-                         f"{setpattern.stderr.strip()}")
-    entryinfo = beegfs_ctl(["--getentryinfo", "--verbose", str(case_shared / "work")])
-    verified_pattern = directory_pattern(entryinfo)
-    if verified_pattern != {"pool_id": pool["pool_id"], "num_targets": 1}:
-        raise ValueError(f"{unit['id']}: BeeGFS did not apply the requested singleton pattern")
+    case_raw.mkdir(parents=True)
+    save(case_raw / "preflight.json", probe)
+    no_symlinks(shared)
+    case_shared.mkdir(mode=0o700)
+    scaffold = apply_directory_pattern(case_shared, pool["pool_id"])
+    save(case_raw / "case_scaffold_pattern.json", scaffold)
+    save(case_shared / "owner.json", owner)
+    (case_shared / "work").mkdir(mode=0o700)
+    placement = apply_directory_pattern(case_shared / "work", pool["pool_id"])
     save(case_raw / "placement.json", {
         "target_class": unit["target_class"], "pool": pool,
-        "setpattern_command": setpattern_argv,
-        "setpattern_stdout": setpattern.stdout,
-        "directory_entryinfo": entryinfo,
-        "verified_pattern": verified_pattern,
+        **placement,
     })
     argv = command(unit, case_shared / "work", items)
     save(case_raw / "command.json", argv)

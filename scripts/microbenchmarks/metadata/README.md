@@ -44,10 +44,11 @@ The runner globals are currently `HDD_POOL_NAME = "hdd_meta_101"` and
 `SSD_POOL_NAME = "ssd_meta_104"`. Change them only if your exact,
 single-token pool descriptions differ. The runner requires the HDD pool to
 contain only target 101 and the SSD pool to contain only target 104. It
-discovers their live pool IDs;
-there is no pool ID to edit. Each case applies RAID0, one target, 512-KiB
-chunks, and that pool to its owned work directory, then confirms the resulting
-pattern with `beegfs-ctl --getentryinfo`. `placement.json` preserves the command,
+discovers their live pool IDs; there is no pool ID to edit. The run directory
+for its owner marker uses the HDD singleton pool; each case's marker directory
+uses that case's singleton pool. This lets setup work even if Default is empty.
+Each mdtest work directory gets its case's RAID0, one-target, 512-KiB pattern,
+which the runner confirms before launching mdtest. `placement.json` preserves the command,
 pool membership and verified directory pattern. The runner never creates,
 deletes, or changes global pool membership.
 

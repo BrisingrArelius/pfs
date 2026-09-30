@@ -132,7 +132,10 @@ class MetadataTest(unittest.TestCase):
             stderr = ""
 
         def fake_entryinfo(argv):
-            pool_id = 3 if str(argv[-1]).endswith("-hdd/work") else 8
+            directory = Path(argv[-1])
+            is_ssd = (directory.name.endswith("-ssd")
+                      or directory.parent.name.endswith("-ssd"))
+            pool_id = 8 if is_ssd else 3
             pool_name = "hdd_single" if pool_id == 3 else "ssd_single"
             return ("Stripe pattern details:\n"
                     "+ Number of storage targets: desired: 1\n"
