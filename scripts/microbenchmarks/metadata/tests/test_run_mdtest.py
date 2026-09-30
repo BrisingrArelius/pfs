@@ -20,6 +20,9 @@ class MetadataTest(unittest.TestCase):
         self.root = Path(temporary.name)
 
     def test_fixed_plans_and_command(self):
+        self.assertEqual(md.HDD_POOL_NAME, "hdd_meta_101")
+        self.assertEqual(md.SSD_POOL_NAME, "ssd_meta_104")
+        self.assertEqual(md.duration_text(3661), "1h 01m")
         self.assertEqual(len(md.legacy_units(True)), 4)
         self.assertEqual(len(md.units(True)), 8)
         pilot_units = md.units(True)

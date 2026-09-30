@@ -40,10 +40,11 @@ is about 0.001 seconds for the phase. The full run sets `-n 10000` items per
 rank; each mdtest phase reports its own aggregate operation rate. Five
 separate invocations (`-i 1` each) repeat each configuration.
 
-Before running, set `HDD_POOL_NAME` and `SSD_POOL_NAME` near the top of
-`run_mdtest.py` to the exact, single-token descriptions of the singleton pools
-you created. The runner requires the HDD pool to contain only target 101 and
-the SSD pool to contain only target 104. It discovers their live pool IDs;
+The runner globals are currently `HDD_POOL_NAME = "hdd_meta_101"` and
+`SSD_POOL_NAME = "ssd_meta_104"`. Change them only if your exact,
+single-token pool descriptions differ. The runner requires the HDD pool to
+contain only target 101 and the SSD pool to contain only target 104. It
+discovers their live pool IDs;
 there is no pool ID to edit. Each case applies RAID0, one target, 512-KiB
 chunks, and that pool to its owned work directory, then confirms the resulting
 pattern with `beegfs-ctl --getentryinfo`. `placement.json` preserves the command,
@@ -93,8 +94,12 @@ non-interactive sudo permission for that command. Check it before starting:
 sudo -n /usr/sbin/beegfs-ctl --cfgFile=/etc/beegfs/beegfs-client.conf --liststoragepools
 ```
 
-It launches one case at a time and captures unchanged native `stdout.txt` and
-`stderr.txt`, exact `command.json`, verified `placement.json`, preflight,
+It launches one case at a time and prints readable `START`/`DONE` progress,
+including case number, target class, clients/ranks, layout, repetition, elapsed
+time and a rough remaining-time estimate based on completed cases. The estimate
+is approximate because case configurations have different runtimes. Exact
+commands remain in `command.json`. The runner captures unchanged native
+`stdout.txt` and `stderr.txt`, verified `placement.json`, preflight,
 before/after mount and storage-pool records, and `result.json` under
 `~/pfs/results/microbenchmarks/runs/<run-id>/cases/<case-id>/`. `plan.json`
 and `remote_clients.json` pin the run protocol. The working directory is an

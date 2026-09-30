@@ -28,8 +28,8 @@ FULL_ITEMS_PER_RANK = 10000  # Pilot phases were too short at 1,000 for full run
 PILOT_CASE_TIMEOUT = 300
 FULL_CASE_TIMEOUT = 3600  # Revisit with the pilot-derived full item count.
 CLIENTS = ("anjuna2", "anjuna3")
-HDD_POOL_NAME = "REPLACE_WITH_HDD_SINGLETON_POOL"
-SSD_POOL_NAME = "REPLACE_WITH_SSD_SINGLETON_POOL"
+HDD_POOL_NAME = "hdd_meta_101"
+SSD_POOL_NAME = "ssd_meta_104"
 TARGET_POOLS = {"hdd": {"name": HDD_POOL_NAME, "target_id": 101},
                 "ssd": {"name": SSD_POOL_NAME, "target_id": 104}}
 BEEGFS_CTL = Path("/usr/sbin/beegfs-ctl")
@@ -429,8 +429,6 @@ def measure(unit, raw, shared, owner, items, timeout, baseline):
     argv = command(unit, case_shared / "work", items)
     save(case_raw / "command.json", argv)
     save(case_raw / "before.json", {"at": time.time(), **before})
-    print(f"{unit['id']}: {unit['target_class']} target {pool['target_id']} "
-          f"via pool {pool['name']} ({pool['pool_id']}); {' '.join(argv)}", flush=True)
     result = launch(argv, case_raw, timeout)
     after = mount_state()
     save(case_raw / "after.json", {"at": time.time(), **after})
@@ -492,10 +490,27 @@ def benchmark(run_id, pilot):
         baseline["remote_client_config_sha256"] = probe["client_config_sha256"]
         no_symlinks(raw / "cases")
         (raw / "cases").mkdir(exist_ok=True)
-        for unit in plan["units"]:
+        total = len(plan["units"])
+        print(f"Metadata {mode}: {total} cases, {items:,} items per rank; "
+              f"raw results: {raw}", flush=True)
+        run_started = time.monotonic()
+        case_durations = []
+        completed = 0
+        for position, unit in enumerate(plan["units"], 1):
             case_raw = raw / "cases" / unit["id"]
             case_shared = shared / unit["id"]
             result_file = case_raw / "result.json"
+            placement = ("anjuna2 + anjuna3" if unit["placement"] == "dual"
+                         else unit["placement"])
+            client_count = 2 if unit["placement"] == "dual" else 1
+            total_ranks = client_count * unit["ranks"]
+            rank_label = f"{total_ranks} MPI {'rank' if total_ranks == 1 else 'ranks'}"
+            if client_count == 2:
+                rank_label += f" ({unit['ranks']} per client)"
+            layout = "per-rank directories" if unit["layout"] == "per_rank" else "flat directory"
+            target = TARGET_POOLS[unit["target_class"]]["target_id"]
+            label = (f"{unit['target_class'].upper()} target {target} | {placement} | "
+                     f"{rank_label} | {layout} | repetition {unit['repetition']}")
             if result_file.exists():
                 no_symlinks(case_raw)
                 for name in ("stdout.txt", "stderr.txt", "command.json", "result.json"):
@@ -521,11 +536,38 @@ def benchmark(run_id, pilot):
                         or sha256(case_raw / "stdout.txt") != result.get("stdout_sha256")
                         or sha256(case_raw / "stderr.txt") != result.get("stderr_sha256")):
                     raise ValueError(f"{unit['id']}: saved raw case is incomplete or changed")
+                completed += 1
+                print(f"[{position}/{total}] SKIP {label} (already complete)", flush=True)
                 continue
+            print(f"[{position}/{total}] START {label}", flush=True)
+            case_started = time.monotonic()
             measure(unit, raw, shared, owner, items,
                     PILOT_CASE_TIMEOUT if pilot else FULL_CASE_TIMEOUT, baseline)
-        print(f"{mode}: {len(plan['units'])}/{len(plan['units'])} mdtest exits and cleanups; "
-              f"native phase summaries are preserved, not parsed; raw results: {raw}")
+            case_durations.append(time.monotonic() - case_started)
+            completed += 1
+            elapsed = time.monotonic() - run_started
+            remaining = total - position
+            average = sum(case_durations) / len(case_durations)
+            eta = average * remaining
+            print(f"[{position}/{total}] DONE {label} | case {duration_text(case_durations[-1])} | "
+                  f"elapsed {duration_text(elapsed)} | rough remaining "
+                  f"{duration_text(eta)} (average of {len(case_durations)} completed cases)",
+                  flush=True)
+        print(f"Metadata {mode} complete: {completed}/{total} cases, "
+              f"elapsed {duration_text(time.monotonic() - run_started)}; "
+              f"raw results: {raw}", flush=True)
+
+
+def duration_text(seconds):
+    """Format progress durations compactly for terminal output."""
+    seconds = max(0, int(round(seconds)))
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    if hours:
+        return f"{hours}h {minutes:02d}m"
+    if minutes:
+        return f"{minutes}m {seconds:02d}s"
+    return f"{seconds}s"
 
 
 def main(argv=None):
