@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the BeeGFS metadata pilot or its 90-case full matrix on anjuna3."""
+"""Run the BeeGFS metadata pilot or its 180-case full matrix on anjuna3."""
 
 import argparse
 import fcntl
@@ -28,6 +28,12 @@ FULL_ITEMS_PER_RANK = 10000  # Pilot phases were too short at 1,000 for full run
 PILOT_CASE_TIMEOUT = 300
 FULL_CASE_TIMEOUT = 3600  # Revisit with the pilot-derived full item count.
 CLIENTS = ("anjuna2", "anjuna3")
+HDD_POOL_NAME = "REPLACE_WITH_HDD_SINGLETON_POOL"
+SSD_POOL_NAME = "REPLACE_WITH_SSD_SINGLETON_POOL"
+TARGET_POOLS = {"hdd": {"name": HDD_POOL_NAME, "target_id": 101},
+                "ssd": {"name": SSD_POOL_NAME, "target_id": 104}}
+BEEGFS_CTL = Path("/usr/sbin/beegfs-ctl")
+CLIENT_CONFIG = Path("/etc/beegfs/beegfs-client.conf")
 PILOT = (("anjuna2", 1, "flat"), ("anjuna3", 1, "flat"),
          ("dual", 1, "per_rank"), ("dual", 4, "flat"))
 
@@ -67,8 +73,8 @@ def load(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def units(pilot):
-    """Return four unreplicated pilot cases or the fixed 90-case full plan."""
+def legacy_units(pilot):
+    """Return the original unpinned matrix for validation of saved results."""
     if pilot:
         return [{"id": f"pilot-{i:02d}", "placement": place, "ranks": ranks,
                  "layout": layout, "repetition": 1}
@@ -83,6 +89,144 @@ def units(pilot):
                            "placement": place, "ranks": ranks, "layout": layout,
                            "repetition": repetition})
     return result
+
+
+def units(pilot):
+    """Pair target classes and counterbalance which one runs first."""
+    expanded = []
+    for index, unit in enumerate(legacy_units(pilot)):
+        reverse = index % 2 == 1
+        target_order = ("ssd", "hdd") if reverse else ("hdd", "ssd")
+        expanded.extend({**unit, "target_class": target_class,
+                         "id": f"{unit['id']}-{target_class}"}
+                        for target_class in target_order)
+    return expanded
+
+
+def beegfs_ctl(argv, timeout=20):
+    """Run a local BeeGFS control command with the installed client config."""
+    return subprocess.run(["sudo", "-n", str(BEEGFS_CTL),
+                           f"--cfgFile={CLIENT_CONFIG}", *argv],
+                          capture_output=True, text=True, check=True,
+                          timeout=timeout).stdout
+
+
+def parse_pool_names(output, expected_names):
+    """Resolve configured descriptions in both two- and multi-column listings."""
+    expected_names = set(expected_names)
+    pools = {}
+    for line in output.splitlines():
+        match = re.match(r"^\s*(\d+)\s+(\S+)(?:\s+.*)?$", line)
+        if match and match.group(2) in expected_names:
+            pool_id, name = int(match.group(1)), match.group(2)
+            if name in pools or pool_id in pools.values():
+                raise ValueError("duplicate storage pool ID or description")
+            pools[name] = pool_id
+    return pools
+
+
+def parse_target_pools(output):
+    """Parse every target row; reject malformed numeric rows rather than miss members."""
+    targets = {}
+    for line in output.splitlines():
+        if not re.match(r"^\s*\d+\b", line):
+            continue
+        fields = line.split()
+        if len(fields) < 3 or any(not field.isdigit() for field in fields[:3]):
+            raise ValueError(f"unrecognized target row in pool listing: {line!r}")
+        target_id, pool_id = int(fields[0]), int(fields[1])
+        if target_id in targets:
+            raise ValueError(f"duplicate target {target_id} in pool listing")
+        targets[target_id] = pool_id
+    if not targets:
+        raise ValueError("could not parse target-to-pool listing")
+    return targets
+
+
+def storage_pool_state():
+    """Resolve configured pool names and require one expected target per pool."""
+    names = {key: value["name"] for key, value in TARGET_POOLS.items()}
+    if (set(names) != {"hdd", "ssd"}
+            or any(not re.fullmatch(r"[A-Za-z0-9_-]+", name)
+                   or name.startswith("REPLACE_") for name in names.values())
+            or len(set(names.values())) != 2):
+        raise ValueError("set HDD_POOL_NAME and SSD_POOL_NAME to distinct pool descriptions")
+    pool_listing = beegfs_ctl(["--liststoragepools"])
+    target_listing = beegfs_ctl(["--listtargets", "--storagepools"])
+    name_to_id = parse_pool_names(pool_listing, names.values())
+    target_to_pool = parse_target_pools(target_listing)
+    result = {}
+    for target_class, configured in TARGET_POOLS.items():
+        name = configured["name"]
+        if name not in name_to_id:
+            raise ValueError(f"configured {target_class} pool {name!r} was not found")
+        pool_id = name_to_id[name]
+        members = sorted(target for target, member_pool in target_to_pool.items()
+                         if member_pool == pool_id)
+        expected = configured["target_id"]
+        if members != [expected]:
+            raise ValueError(f"{target_class} pool {name!r} must contain only target "
+                             f"{expected}; found {members}")
+        result[target_class] = {"name": name, "pool_id": pool_id,
+                                "target_id": expected, "members": members}
+    if result["hdd"]["pool_id"] == result["ssd"]["pool_id"]:
+        raise ValueError("HDD and SSD pool names resolve to the same pool")
+    return {"classes": result, "pool_listing": pool_listing,
+            "target_listing": target_listing}
+
+
+def pattern_command(work, pool_id):
+    """Set one-stripe RAID0 inheritance on an empty case work directory."""
+    return ["sudo", "-n", str(BEEGFS_CTL), f"--cfgFile={CLIENT_CONFIG}",
+            "--setpattern", "--pattern=raid0", f"--storagepoolid={pool_id}",
+            "--numtargets=1", "--chunksize=512k", str(work)]
+
+
+def directory_pattern(entryinfo):
+    """Return the configured pool and desired target count from entry info."""
+    pool = re.search(r"(?m)^\s*\+?\s*Storage Pool:\s*(\d+)", entryinfo)
+    targets = re.search(r"(?m)^\s*\+ Number of storage targets: desired:\s*(\d+)",
+                        entryinfo)
+    if not pool or not targets:
+        raise ValueError("BeeGFS entry info lacks storage-pool or stripe-count details")
+    return {"pool_id": int(pool.group(1)), "num_targets": int(targets.group(1))}
+
+
+def validate_placement(record, unit, work, storage_pools):
+    """Require raw placement evidence to match the plan and case directory."""
+    target_class = unit.get("target_class")
+    pool = storage_pools["classes"][target_class]
+    if (record.get("target_class") != target_class
+            or record.get("pool") != pool
+            or record.get("setpattern_command") != pattern_command(work, pool["pool_id"])
+            or record.get("verified_pattern") != {"pool_id": pool["pool_id"],
+                                                    "num_targets": 1}
+            or directory_pattern(record.get("directory_entryinfo", ""))
+            != record.get("verified_pattern")):
+        raise ValueError(f"{unit['id']}: saved storage-pool placement differs from plan")
+
+
+def validate_storage_pools(storage_pools):
+    """Validate saved singleton-pool membership evidence without cluster access."""
+    classes = storage_pools.get("classes", {})
+    if set(classes) != {"hdd", "ssd"}:
+        raise ValueError("plan lacks HDD/SSD singleton pool configuration")
+    if classes["hdd"].get("target_id") != 101 or classes["ssd"].get("target_id") != 104:
+        raise ValueError("plan target IDs differ from the documented HDD/SSD pair")
+    if (classes["hdd"].get("members") != [101]
+            or classes["ssd"].get("members") != [104]
+            or classes["hdd"].get("pool_id") == classes["ssd"].get("pool_id")
+            or classes["hdd"].get("name") == classes["ssd"].get("name")):
+        raise ValueError("plan pools are not distinct single-target pools")
+    names = parse_pool_names(storage_pools.get("pool_listing", ""),
+                             (pool["name"] for pool in classes.values()))
+    target_to_pool = parse_target_pools(storage_pools.get("target_listing", ""))
+    for target_class, pool in classes.items():
+        if (names.get(pool["name"]) != pool["pool_id"]
+                or target_to_pool.get(pool["target_id"]) != pool["pool_id"]
+                or sorted(target for target, pool_id in target_to_pool.items()
+                          if pool_id == pool["pool_id"]) != pool["members"]):
+            raise ValueError("saved BeeGFS pool listings do not verify singleton targets")
 
 
 def command(unit, work, items):
@@ -122,7 +266,7 @@ def mount_state():
 
 
 def preflight():
-    """Require anjuna3, the expected mount and installed MPICH/mdtest flags."""
+    """Require anjuna3, installed tools and the configured singleton target pools."""
     if socket.gethostname().split(".")[0] != "anjuna3":
         raise ValueError("run this script on anjuna3")
     state = mount_state()
@@ -138,7 +282,7 @@ def preflight():
         if any(flag not in output for flag in required):
             raise ValueError(f"{name} help lacks required options")
         tools[name] = {"path": str(path), "sha256": sha256(path), "help": output}
-    return {**state, "tools": tools}
+    return {**state, "tools": tools, "storage_pools": storage_pool_state()}
 
 
 def remote_probe(marker, mdtest_hash):
@@ -261,19 +405,54 @@ def measure(unit, raw, shared, owner, items, timeout, baseline):
     (case_shared / "work").mkdir(mode=0o700)
     case_raw.mkdir(parents=True)
     save(case_raw / "preflight.json", probe)
+    live_pools = storage_pool_state()
+    if live_pools != baseline["storage_pools"]:
+        raise ValueError("BeeGFS storage-pool membership changed during the run")
+    pool = live_pools["classes"][unit["target_class"]]
+    setpattern_argv = pattern_command(case_shared / "work", pool["pool_id"])
+    setpattern = subprocess.run(setpattern_argv, capture_output=True, text=True,
+                                timeout=30)
+    if setpattern.returncode:
+        raise ValueError(f"could not set {unit['target_class']} pool pattern: "
+                         f"{setpattern.stderr.strip()}")
+    entryinfo = beegfs_ctl(["--getentryinfo", "--verbose", str(case_shared / "work")])
+    verified_pattern = directory_pattern(entryinfo)
+    if verified_pattern != {"pool_id": pool["pool_id"], "num_targets": 1}:
+        raise ValueError(f"{unit['id']}: BeeGFS did not apply the requested singleton pattern")
+    save(case_raw / "placement.json", {
+        "target_class": unit["target_class"], "pool": pool,
+        "setpattern_command": setpattern_argv,
+        "setpattern_stdout": setpattern.stdout,
+        "directory_entryinfo": entryinfo,
+        "verified_pattern": verified_pattern,
+    })
     argv = command(unit, case_shared / "work", items)
     save(case_raw / "command.json", argv)
     save(case_raw / "before.json", {"at": time.time(), **before})
-    print(f"{unit['id']}: {' '.join(argv)}", flush=True)
+    print(f"{unit['id']}: {unit['target_class']} target {pool['target_id']} "
+          f"via pool {pool['name']} ({pool['pool_id']}); {' '.join(argv)}", flush=True)
     result = launch(argv, case_raw, timeout)
     after = mount_state()
     save(case_raw / "after.json", {"at": time.time(), **after})
+    pool_state_ok = False
+    try:
+        after_pools = storage_pool_state()
+        save(case_raw / "after_storage_pools.json",
+             {"at": time.time(), **after_pools})
+        pool_state_ok = after_pools == baseline["storage_pools"]
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        save(case_raw / "after_storage_pools.json",
+             {"at": time.time(), "error": str(error)})
+    result["storage_pools_unchanged"] = pool_state_ok
     result["stdout_sha256"] = sha256(case_raw / "stdout.txt")
     result["stderr_sha256"] = sha256(case_raw / "stderr.txt")
     result["cleanup"] = "pending"
     save(case_raw / "result.json", result)
     if result["returncode"] != 0 or result["interrupted"]:
         raise ValueError(f"{unit['id']}: MPI failed/interrupted; shared namespace preserved")
+    if not pool_state_ok:
+        raise ValueError(f"{unit['id']}: storage-pool state changed or could not be verified; "
+                         "shared namespace preserved")
     if after != before:
         raise ValueError("BeeGFS mount changed before cleanup")
     cleanup(case_shared, shared, unit, owner)
@@ -298,6 +477,7 @@ def benchmark(run_id, pilot):
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         baseline = preflight()
         plan = {"mode": mode, "items_per_rank": items, "units": units(pilot),
+                "storage_pools": baseline["storage_pools"],
                 "mpirun": {key: baseline["tools"]["mpirun"][key] for key in ("path", "sha256")},
                 "mdtest": {key: baseline["tools"]["mdtest"][key] for key in ("path", "sha256")},
                 "mount": baseline["mount"], "client_config_sha256": baseline["client_config_sha256"]}
@@ -321,9 +501,21 @@ def benchmark(run_id, pilot):
                 for name in ("stdout.txt", "stderr.txt", "command.json", "result.json"):
                     if (case_raw / name).is_symlink():
                         raise ValueError(f"{unit['id']}: symlinked raw evidence")
+                placement_file = case_raw / "placement.json"
+                if placement_file.is_symlink():
+                    raise ValueError(f"{unit['id']}: symlinked placement evidence")
+                validate_placement(load(placement_file), unit,
+                                   case_shared / "work", plan["storage_pools"])
                 result = load(result_file)
+                after_pools_file = case_raw / "after_storage_pools.json"
+                if (after_pools_file.is_symlink() or not after_pools_file.is_file()
+                        or result.get("storage_pools_unchanged") is not True):
+                    raise ValueError(f"{unit['id']}: missing or failed post-case pool check")
+                after_pools = load(after_pools_file)
+                after_pools.pop("at", None)
                 if (result.get("returncode") != 0 or result.get("interrupted")
                         or result.get("cleanup") != "completed"
+                        or after_pools != plan["storage_pools"]
                         or case_shared.exists() or case_shared.is_symlink()
                         or load(case_raw / "command.json") != command(unit, case_shared / "work", items)
                         or sha256(case_raw / "stdout.txt") != result.get("stdout_sha256")

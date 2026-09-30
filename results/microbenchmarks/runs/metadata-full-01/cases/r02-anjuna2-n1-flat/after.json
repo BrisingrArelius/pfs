@@ -1,0 +1,6 @@
+{
+  "at": 1790716129.754755,
+  "client_config_sha256": "4cbd5dc4e3959eb95515267a9f2716b143bfaeb78d9fac2e3f812981912754ad",
+  "mount": "beegfs beegfs_nodev /mnt/beegfs rw,nosuid,relatime,cfgFile=/etc/beegfs/beegfs-client.conf",
+  "mount_device": 61
+}

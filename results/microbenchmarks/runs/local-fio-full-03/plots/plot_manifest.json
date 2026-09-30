@@ -12,24 +12,20 @@
     "fio-3.36"
   ],
   "plots": [
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/seq_read_fio_3_28.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/seq_read_fio_3_36.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/seq_write_fio_3_28.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/seq_write_fio_3_36.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/rand_read_4k_fio_3_28.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/rand_read_4k_fio_3_36.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/rand_write_4k_fio_3_28.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/rand_write_4k_fio_3_36.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/rand_read_128k_fio_3_28.png",
-    "generations/a807d04d98c74113b6123a7295e354e8/by_access_pattern/rand_read_128k_fio_3_36.png"
+    "generations/04c99671f8fc49b397e9e6770af8cfeb/by_access_pattern/seq_read.png",
+    "generations/04c99671f8fc49b397e9e6770af8cfeb/by_access_pattern/seq_write.png",
+    "generations/04c99671f8fc49b397e9e6770af8cfeb/by_access_pattern/rand_read_4k.png",
+    "generations/04c99671f8fc49b397e9e6770af8cfeb/by_access_pattern/rand_write_4k.png",
+    "generations/04c99671f8fc49b397e9e6770af8cfeb/by_access_pattern/rand_read_128k.png"
   ],
   "semantics": {
     "sampling_unit": "each row is one OST; OST measurements are never combined",
-    "figures": "one bandwidth figure per access pattern and FIO version",
+    "figures": "one bandwidth figure per access pattern, containing every host and OST",
     "marks": "bars show OST medians, ticks show repetitions, and whiskers show min-max",
-    "media": "HDD and NVMe are identified by color only, not aggregated",
+    "media": "HDD and NVMe are identified by color; each OST remains separate",
+    "versions": "FIO version is listed by host; mean lines are separated by version and media",
     "axes": "OSTs are horizontal; bandwidth in MiB/s is vertical",
-    "references": "dotted lines average per-OST medians within one FIO version and media only"
+    "references": "mean lines summarize per-OST medians separately for each FIO version and media"
   },
-  "generation": "generations/a807d04d98c74113b6123a7295e354e8"
+  "generation": "generations/04c99671f8fc49b397e9e6770af8cfeb"
 }

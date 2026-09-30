@@ -1,0 +1,646 @@
+{
+  "client_config_sha256": "4cbd5dc4e3959eb95515267a9f2716b143bfaeb78d9fac2e3f812981912754ad",
+  "items_per_rank": 10000,
+  "mdtest": {
+    "path": "/home/pfs/ior-main/src/mdtest",
+    "sha256": "782986fa5098d68a15e2b75e37a4d79a47d30ae5fc35c9ef4e6dbee180bd21a2"
+  },
+  "mode": "full",
+  "mount": "beegfs beegfs_nodev /mnt/beegfs rw,nosuid,relatime,cfgFile=/etc/beegfs/beegfs-client.conf",
+  "mpirun": {
+    "path": "/mnt/nfs_shared/mpich-install/bin/mpirun",
+    "sha256": "cab03d9011c31a494853c030268b1f50a4883bd48d8dd50b5457bf8739591751"
+  },
+  "units": [
+    {
+      "id": "r01-anjuna3-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 1
+    },
+    {
+      "id": "r01-dual-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 1
+    },
+    {
+      "id": "r01-dual-n4-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 1
+    },
+    {
+      "id": "r01-dual-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 1
+    },
+    {
+      "id": "r01-dual-n1-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna2-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna2-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna3-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna3-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna3-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna3-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna2-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 1
+    },
+    {
+      "id": "r01-dual-n16-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna3-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 1
+    },
+    {
+      "id": "r01-dual-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna2-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna2-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 1
+    },
+    {
+      "id": "r01-anjuna2-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 1
+    },
+    {
+      "id": "r02-anjuna3-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna3-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna3-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna3-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna2-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 2
+    },
+    {
+      "id": "r02-dual-n16-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna3-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 2
+    },
+    {
+      "id": "r02-dual-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna2-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna2-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna2-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna3-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 2
+    },
+    {
+      "id": "r02-dual-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 2
+    },
+    {
+      "id": "r02-dual-n4-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 2
+    },
+    {
+      "id": "r02-dual-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 2
+    },
+    {
+      "id": "r02-dual-n1-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna2-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 2
+    },
+    {
+      "id": "r02-anjuna2-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 2
+    },
+    {
+      "id": "r03-dual-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna2-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna2-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna2-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna3-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 3
+    },
+    {
+      "id": "r03-dual-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 3
+    },
+    {
+      "id": "r03-dual-n4-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 3
+    },
+    {
+      "id": "r03-dual-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 3
+    },
+    {
+      "id": "r03-dual-n1-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna2-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna2-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna3-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna3-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna3-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna3-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna2-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 3
+    },
+    {
+      "id": "r03-dual-n16-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 3
+    },
+    {
+      "id": "r03-anjuna3-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 3
+    },
+    {
+      "id": "r04-dual-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 4
+    },
+    {
+      "id": "r04-dual-n1-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna2-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna2-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna3-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna3-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna3-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna3-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna2-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 4
+    },
+    {
+      "id": "r04-dual-n16-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna3-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 4
+    },
+    {
+      "id": "r04-dual-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna2-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna2-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna2-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 4
+    },
+    {
+      "id": "r04-anjuna3-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 4
+    },
+    {
+      "id": "r04-dual-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 4
+    },
+    {
+      "id": "r04-dual-n4-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 4
+    },
+    {
+      "id": "r05-anjuna3-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna2-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 5
+    },
+    {
+      "id": "r05-dual-n16-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna3-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 5
+    },
+    {
+      "id": "r05-dual-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna2-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna2-n16-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 16,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna2-n1-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 1,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna3-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 5
+    },
+    {
+      "id": "r05-dual-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 16,
+      "repetition": 5
+    },
+    {
+      "id": "r05-dual-n4-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 5
+    },
+    {
+      "id": "r05-dual-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "dual",
+      "ranks": 4,
+      "repetition": 5
+    },
+    {
+      "id": "r05-dual-n1-flat",
+      "layout": "flat",
+      "placement": "dual",
+      "ranks": 1,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna2-n4-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna2-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna2",
+      "ranks": 4,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna3-n16-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 16,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna3-n4-flat",
+      "layout": "flat",
+      "placement": "anjuna3",
+      "ranks": 4,
+      "repetition": 5
+    },
+    {
+      "id": "r05-anjuna3-n1-per_rank",
+      "layout": "per_rank",
+      "placement": "anjuna3",
+      "ranks": 1,
+      "repetition": 5
+    }
+  ]
+}

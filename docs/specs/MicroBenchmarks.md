@@ -233,8 +233,10 @@ Specify files per process, file sizes, directories and phase timing before runni
 **Path:** client -> metadata service/storage, with operation-dependent storage-
 server work. This is not pure metadata-daemon CPU isolation. Distinguish zero-byte
 namespace tests from data-bearing small-file operations; record any data traffic.
-Pools restrict data targets, not metadata-server placement, so do not mechanically
-repeat the full media/stripe matrix as a metadata-server experiment.
+The current target-assignment matrix uses singleton pools for targets 101 and
+104 to test whether assigned layout changes end-to-end namespace-operation
+rates. Pools do not relocate inode metadata from the metadata service. With
+zero-byte files this is not an HDD/SSD payload-throughput or durable-write test.
 
 ## 8. Instrumentation and interpretation
 

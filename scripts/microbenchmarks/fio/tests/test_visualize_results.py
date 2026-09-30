@@ -128,11 +128,11 @@ class RawVisualizerTests(unittest.TestCase):
         directory.mkdir(parents=True)
         victim = self.root / "unrelated"
         victim.write_text("preserve")
-        (directory / "seq_read_fio_3_test.png").symlink_to(victim)
+        (directory / "seq_read.png").symlink_to(victim)
         self.assertEqual(visualizer.main([str(self.root), "--output-dir", str(self.output)]), 1)
         self.assertEqual(victim.read_text(), "preserve")
 
-    def test_different_pinned_fio_versions_get_separate_figures(self):
+    def test_different_fio_versions_share_all_host_figures_but_keep_separate_means(self):
         other = self.root / "colva2"
         shutil.copytree(self.host, other)
         manifest_path = other / "manifest.json"
@@ -152,14 +152,14 @@ class RawVisualizerTests(unittest.TestCase):
         manifest_path.write_text(json.dumps(manifest))
         self.assertEqual(visualizer.main([str(self.root), "--output-dir", str(self.output)]), 0)
         plotted = json.loads((self.output / "plot_manifest.json").read_text())
-        self.assertEqual(len(plotted["plots"]), 10)
+        self.assertEqual(len(plotted["plots"]), 5)
         self.assertEqual(plotted["fio_versions"], ["fio-3.other", "fio-3.test"])
-        self.assertTrue(all("fio_3_other" in name or "fio_3_test" in name
-                            for name in plotted["plots"]))
+        self.assertEqual([Path(name).name for name in plotted["plots"]],
+                         [f"{name}.png" for name in visualizer.WORKLOAD_ORDER])
+        self.assertIn("FIO version is listed by host", plotted["semantics"]["versions"])
         shutil.rmtree(other)
         self.assertEqual(visualizer.main([str(self.root), "--output-dir", str(self.output)]), 0)
-        self.assertFalse(any((self.output / name).exists() for name in plotted["plots"]
-                             if "fio_3_other" in name))
+        self.assertEqual(len(json.loads((self.output / "plot_manifest.json").read_text())["plots"]), 5)
 
     def test_failed_second_plot_leaves_no_figures_and_retry_succeeds(self):
         original = visualizer.plot_workload_by_ost

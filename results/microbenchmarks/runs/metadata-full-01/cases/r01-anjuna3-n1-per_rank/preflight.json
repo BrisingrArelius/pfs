@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "/mnt/nfs_shared/mpich-install/bin/mpirun",
+    "-wdir",
+    "/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-01",
+    "-np",
+    "2",
+    "-hosts",
+    "anjuna2:1,anjuna3:1",
+    "/bin/sh",
+    "-c",
+    "test \"$(findmnt -n -o FSTYPE --target /mnt/beegfs)\" = beegfs && test -f \"$1\" && test -x \"$2\" && hash=$(sha256sum \"$2\") && test \"${hash%% *}\" = \"$3\" && set -- /proc/fs/beegfs/*/netbench_mode && test -r \"$1\" && for f; do value=$(sed -n \"1{s/[[:space:]]//g;p;}\" \"$f\") && test \"$value\" = 0 || exit 1; done && set -- /proc/fs/beegfs/*/config && test \"$#\" -eq 1 && test -r \"$1\" && hash=$(sha256sum \"$1\") && printf \"%s %s\\n\" \"$(hostname)\" \"${hash%% *}\"",
+    "sh",
+    "/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-01/owner.json",
+    "/home/pfs/ior-main/src/mdtest",
+    "782986fa5098d68a15e2b75e37a4d79a47d30ae5fc35c9ef4e6dbee180bd21a2"
+  ],
+  "client_config_sha256": {
+    "anjuna2": "2203f62662671a5224390028f7297105d99121ca2fa4fc5e62b4cb2898f72eae",
+    "anjuna3": "4cbd5dc4e3959eb95515267a9f2716b143bfaeb78d9fac2e3f812981912754ad"
+  },
+  "stderr": "",
+  "stdout": "anjuna3 4cbd5dc4e3959eb95515267a9f2716b143bfaeb78d9fac2e3f812981912754ad\nanjuna2 2203f62662671a5224390028f7297105d99121ca2fa4fc5e62b4cb2898f72eae\n"
+}

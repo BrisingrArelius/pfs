@@ -219,10 +219,13 @@ choose a new results directory and omit `--targets` to select all local targets.
 ## Visualize raw results
 
 Create per-OST bandwidth figures directly from the host manifests and native
-`fio.json` files, one for each access pattern **and installed FIO version**.
-The completed four-host run used both FIO 3.28 and 3.36, so it produces ten
-figures and never averages results across those versions. Each figure places OST IDs on the horizontal axis and measured
-bandwidth in MiB/s on the vertical axis. This requires Matplotlib:
+`fio.json` files: one figure per access pattern, with all four hosts and all 28
+targets together. The completed `local-fio-full-03` run used FIO 3.28 on
+`colva2`/`colva3` and FIO 3.36 on `colva1`/`colva4`. Every target label includes
+its host, the title records the host-to-version mapping, and HDD/NVMe mean lines
+remain separate by both media and FIO version. Thus the overview includes every
+target without implying that the two FIO versions were identical. It produces
+five figures. This requires Matplotlib:
 
 ```bash
 RUN="local-fio-full-03"
@@ -233,15 +236,13 @@ python3 scripts/microbenchmarks/fio/visualize_results.py \
 The visualizer treats native run evidence as read-only. `plot_manifest.json`
 lists the current PNG paths under `plots/generations/<id>/`, so an interrupted
 replot cannot expose a partial replacement figure set. Each host result directory contains a
-generated `RUN.md` with the exact configuration. Each figure keeps every OST in its own horizontal-axis
-category: small ticks show the five repetition values, whiskers show their
-min-max range and a colored bar shows the OST median.
-HDD and NVMe are distinguished by color but are never aggregated.
-Color-matched dotted lines label the mean of the per-OST medians for HDD and
-NVMe, providing explicit MiB/s reference values without pooling repetitions.
-A black dotted line marks the nominal 2.5-Gbit/s network rate (~298 MiB/s) for
-cross-benchmark reference only; this is a local-storage FIO experiment, so the
-line is not a FIO or device throughput limit.
+generated `RUN.md` with the exact configuration. Each figure keeps every OST in
+its own horizontal-axis category: small ticks show the five repetition values,
+whiskers show their min-max range, and a colored bar shows the OST median.
+HDD and NVMe are distinguished by color. Dotted mean lines are calculated from
+per-OST medians and are kept separate by media and FIO version; repetitions are
+not pooled into one mean. The raw FIO versions and native measurements remain
+available in the host manifests and `fio.json` files.
 
 ## Developer verification (no benchmark I/O)
 

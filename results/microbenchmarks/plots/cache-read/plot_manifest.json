@@ -1,7 +1,0 @@
-{
-  "run_id": "combined-cache-read",
-  "plots": [
-    "throughput.png",
-    "traffic_evidence.png"
-  ]
-}

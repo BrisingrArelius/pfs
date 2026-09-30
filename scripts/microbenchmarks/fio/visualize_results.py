@@ -28,7 +28,6 @@ except ImportError as error:
 
 
 COLORS = {"hdd": "#B86B25", "nvme": "#16858C"}
-NETWORK_REFERENCE_MIB_S = 2_500_000_000 / 8 / 1024**2
 WORKLOAD_ORDER = ["seq_read", "seq_write", "rand_read_4k", "rand_write_4k", "rand_read_128k"]
 WORKLOAD_LABELS = {
     "seq_read": "Sequential read\n1 MiB",
@@ -215,22 +214,25 @@ def use_log(values):
     return min(values) > 0 and max(values) / min(values) >= 20
 
 
-def plot_workload_by_ost(rows, workload, version, output_dir):
-    """Plot one access pattern and FIO version, keeping each OST separate."""
-    selected = [row for row in rows if row["workload"] == workload
-                and row["fio_version"] == version]
-    grouped = groups(selected, ("host", "target_id", "media"))
+def plot_workload_by_ost(rows, workload, output_dir):
+    """Plot one access pattern across hosts, keeping targets and versions distinct."""
+    selected = [row for row in rows if row["workload"] == workload]
+    grouped = groups(selected, ("host", "target_id", "media", "fio_version"))
     targets = sorted(grouped)
-    labels = [f"{host}\n{target}" for host, target, media in targets]
+    labels = [f"{target}\n{host}" for host, target, media, version in targets]
     all_values = []
-    media_medians = {media: [] for media in COLORS}
-    figure, axis = plt.subplots(figsize=(max(14, len(targets) * 0.52), 7))
+    version_medians = {}
+    versions = sorted({target[3] for target in targets})
+    styles = (":", "--", "-.", "-")
+    line_styles = {version: styles[index % len(styles)]
+                   for index, version in enumerate(versions)}
+    figure, axis = plt.subplots(figsize=(max(20, len(targets) * 0.7), 7))
     for position, target in enumerate(targets):
         values = [row["bw_mib_s"] for row in grouped[target]]
         all_values.extend(values)
         color = COLORS[target[2]]
         median = statistics.median(values)
-        media_medians[target[2]].append(median)
+        version_medians.setdefault((target[2], target[3]), []).append(median)
         axis.bar(position, median, width=0.68, color=color, edgecolor="#29333A",
                  linewidth=0.6, alpha=0.85, zorder=2)
         axis.errorbar(position, median,
@@ -239,28 +241,29 @@ def plot_workload_by_ost(rows, workload, version, output_dir):
         axis.scatter([position] * len(values), values, marker="_", s=65,
                      color="#29333A", linewidths=1.1, alpha=0.8, zorder=5)
     axis.set_xticks(range(len(targets)), labels, rotation=45, ha="right")
-    axis.set_xlabel("OST ID")
-    axis.set_title(f"{WORKLOAD_LABELS[workload].replace(chr(10), ' ')} bandwidth by OST · {version}")
+    axis.set_xlabel("OST ID and storage host")
+    version_by_host = {}
+    for host, target, media, version in targets:
+        version_by_host.setdefault(host, version.removeprefix("fio-"))
+    version_note = "FIO by host: " + ", ".join(
+        f"{host} {version}" for host, version in sorted(version_by_host.items()))
+    axis.set_title(f"{WORKLOAD_LABELS[workload].replace(chr(10), ' ')} bandwidth by OST\n{version_note}",
+                   pad=42)
     style_axis(axis, "Bandwidth (MiB/s)", use_log(all_values))
-    axis.axhline(NETWORK_REFERENCE_MIB_S, color="#343A40", linestyle=":",
-                 linewidth=1.7, zorder=1)
-    for media in ("hdd", "nvme"):
-        if not media_medians[media]:
-            continue
-        average = statistics.mean(media_medians[media])
-        axis.axhline(average, color=COLORS[media], linestyle=":", linewidth=1.8, zorder=1)
-        axis.text(0.995, average, f"{media.upper()} average: {average:,.1f} MiB/s",
-                  transform=axis.get_yaxis_transform(), color=COLORS[media],
-                  ha="right", va="bottom", fontweight="bold")
+    average_handles = []
+    for (media, version), medians in sorted(version_medians.items()):
+        average = statistics.mean(medians)
+        axis.axhline(average, color=COLORS[media], linestyle=line_styles[version],
+                     linewidth=1.6, zorder=1)
+        average_handles.append(Line2D([], [], color=COLORS[media], linestyle=line_styles[version],
+                                      label=f"{media.upper()} mean · {version}"))
     legend = [Patch(facecolor=COLORS[media], label=media.upper()) for media in ("hdd", "nvme")]
     legend.append(Line2D([], [], color="#29333A", marker="_", linestyle="-",
                          label="Repetitions / min-max"))
-    legend.append(Line2D([], [], color="#343A40", linestyle=":", linewidth=1.7,
-                         label="2.5-Gbit/s network rate (~298 MiB/s; reference only)"))
-    axis.legend(handles=legend, frameon=False, ncol=4)
+    axis.legend(handles=legend + average_handles, frameon=False, ncol=4,
+                loc="upper center", bbox_to_anchor=(0.5, 1.0))
     figure.tight_layout()
-    slug = re.sub(r"[^a-z0-9]+", "_", version.lower()).strip("_")
-    relative = f"by_access_pattern/{workload}_{slug}.png"
+    relative = f"by_access_pattern/{workload}.png"
     save_figure(figure, output_dir / relative)
     return relative
 
@@ -352,7 +355,7 @@ def publish_plots(staging, output, files, metadata):
 
 
 def main(argv=None):
-    """Generate both grouping views and record exactly what each plot represents."""
+    """Generate one all-host plot per access pattern from validated raw evidence."""
     args = parse_args(argv)
     try:
         source = args.run.resolve()
@@ -365,19 +368,19 @@ def main(argv=None):
         args.output_dir.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix=".plot-stage-", dir=args.output_dir) as temporary_dir:
             staging = Path(temporary_dir)
-            files = [plot_workload_by_ost(rows, workload, version, staging)
-                     for workload in WORKLOAD_ORDER for version in versions
-                     if any(row["workload"] == workload and row["fio_version"] == version for row in rows)]
+            files = [plot_workload_by_ost(rows, workload, staging)
+                     for workload in WORKLOAD_ORDER]
             metadata = {
                 "source": str(source), "manifests": [str(path) for path in manifests],
                 "measurements": len(rows), "fio_versions": versions, "plots": files,
                 "semantics": {
                     "sampling_unit": "each row is one OST; OST measurements are never combined",
-                    "figures": "one bandwidth figure per access pattern and FIO version",
+                    "figures": "one bandwidth figure per access pattern, containing every host and OST",
                     "marks": "bars show OST medians, ticks show repetitions, and whiskers show min-max",
-                    "media": "HDD and NVMe are identified by color only, not aggregated",
+                    "media": "HDD and NVMe are identified by color; each OST remains separate",
+                    "versions": "FIO version is listed by host; mean lines are separated by version and media",
                     "axes": "OSTs are horizontal; bandwidth in MiB/s is vertical",
-                    "references": "dotted lines average per-OST medians within one FIO version and media only",
+                    "references": "mean lines summarize per-OST medians separately for each FIO version and media",
                 },
             }
             publish_plots(staging, args.output_dir, files, metadata)
