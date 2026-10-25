@@ -23,6 +23,9 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   132-byte data files despite a 100-MB configured state. Added a local
   checkpoint hook that makes state trackable without editing DLIO; reject
   undersized files until a fresh cluster pilot verifies full payloads.
+- The trackable-state pilot produced eight ~100-MB checkpoint files. Normalize
+  DLIO 2.0.0's file-shuffle string to its enum in the local hook so seeded file
+  order is actually seeded across comparable runs.
 
 ---
 
