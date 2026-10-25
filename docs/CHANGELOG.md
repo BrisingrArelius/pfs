@@ -26,6 +26,16 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 - The trackable-state pilot produced eight ~100-MB checkpoint files. Normalize
   DLIO 2.0.0's file-shuffle string to its enum in the local hook so seeded file
   order is actually seeded across comparable runs.
+- Added workload-selectable DLIO data preparation and pilot/full-run commands
+  for ResNet-50, U-Net 3D, and CosmoFlow. New inputs are generated in pool 1
+  and copied to the other pools to keep dataset bytes identical; complete
+  existing datasets are reused and partial ones stop preparation. The shared
+  internal mechanics handle TensorFlow/PyTorch checkpoint files and bound CosmoFlow
+  placement inspection to a recorded sample instead of 1.5 million queries.
+  Kept all DLIO-owned scripts under `scripts/workloads/dlio/`. ResNet, U-Net,
+  and CosmoFlow have separate small runners; the DLIO-imported checkpoint
+  class lives in each runner rather than in a separate file. Added a folder-local
+  README with the generate → pilot → full-run commands and metric definitions.
 
 ---
 
