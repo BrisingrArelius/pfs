@@ -1,0 +1,54 @@
+-- started at 09/30/2026 14:27:23 --
+
+mdtest-4.1.0+dev was launched with 16 total task(s) on 16 node(s)
+Command line used: /home/pfs/ior-main/src/mdtest '-d' '/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r04-anjuna3-n16-flat-ssd/work' '-n' '10000' '-i' '1' '-w' '0' '-e' '0' '-N' '0' '-P'
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+Nodemap: 1111111111111111
+Path                : /mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r04-anjuna3-n16-flat-ssd/work
+FS                  : 38.2 TiB   Used FS: 10.3%   Inodes: 0.0 Mi   Used Inodes: -nan%
+16 tasks, 160000 files/directories
+
+SUMMARY rate (in ops/sec): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation           2950.682       2950.682       2950.682          0.000
+   Directory stat             253499.853     253499.853     253499.853          0.000
+   Directory rename             3517.754       3517.754       3517.754          0.000
+   Directory removal            4770.593       4770.593       4770.593          0.000
+   File creation                2503.678       2503.678       2503.678          0.000
+   File stat                  147404.732     147404.732     147404.732          0.000
+   File read                   44587.594      44587.594      44587.594          0.000
+   File removal                 5149.030       5149.030       5149.030          0.000
+   Tree creation                 656.180        656.180        656.180          0.000
+   Tree removal                    3.483          3.483          3.483          0.000
+
+SUMMARY time (in ms/op): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation             54.225         54.225         54.225          0.000
+   Directory stat                  0.631          0.631          0.631          0.000
+   Directory rename               45.484         45.484         45.484          0.000
+   Directory removal              33.539         33.539         33.539          0.000
+   File creation                  63.906         63.906         63.906          0.000
+   File stat                       1.085          1.085          1.085          0.000
+   File read                       3.588          3.588          3.588          0.000
+   File removal                   31.074         31.074         31.074          0.000
+   Tree creation                   0.002          0.002          0.002          0.000
+   Tree removal                    0.287          0.287          0.287          0.000
+-- finished at 09/30/2026 14:31:18 --
+

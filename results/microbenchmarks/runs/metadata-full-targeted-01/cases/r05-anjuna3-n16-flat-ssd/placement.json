@@ -1,0 +1,29 @@
+{
+  "directory_entryinfo": "Entry type: directory\nEntryID: 2-6ABD2CD4-1\nParentID: 0-6ABD2CD4-1\nStripe pattern details:\n+ Type: RAID0\n+ Chunksize: 512K\n+ Number of storage targets: desired: 1\n+ Storage Pool: 8 (ssd_meta_104)\nInlined inode: no\nDentry info:\n + Path: 25/38/0-6ABD2CD4-1/\n + Metadata node: anjuna3 [ID: 1]\nInode info:\n + Path: 7D/3D/2-6ABD2CD4-1\n + Metadata node: anjuna3 [ID: 1]\n",
+  "pool": {
+    "members": [
+      104
+    ],
+    "name": "ssd_meta_104",
+    "pool_id": 8,
+    "target_id": 104
+  },
+  "setpattern_command": [
+    "sudo",
+    "-n",
+    "/usr/sbin/beegfs-ctl",
+    "--cfgFile=/etc/beegfs/beegfs-client.conf",
+    "--setpattern",
+    "--pattern=raid0",
+    "--storagepoolid=8",
+    "--numtargets=1",
+    "--chunksize=512k",
+    "/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r05-anjuna3-n16-flat-ssd/work"
+  ],
+  "setpattern_stdout": "New chunksize: 524288\nNew number of storage targets: 1\nNew storage pool ID: 8\n\n",
+  "target_class": "ssd",
+  "verified_pattern": {
+    "num_targets": 1,
+    "pool_id": 8
+  }
+}

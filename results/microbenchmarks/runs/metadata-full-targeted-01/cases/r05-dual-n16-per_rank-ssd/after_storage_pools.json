@@ -1,0 +1,23 @@
+{
+  "at": 1790786088.114819,
+  "classes": {
+    "hdd": {
+      "members": [
+        101
+      ],
+      "name": "hdd_meta_101",
+      "pool_id": 7,
+      "target_id": 101
+    },
+    "ssd": {
+      "members": [
+        104
+      ],
+      "name": "ssd_meta_104",
+      "pool_id": 8,
+      "target_id": 104
+    }
+  },
+  "pool_listing": "Pool ID   Pool Description                      Targets                 Buddy Groups\n======= ================== ============================ ============================\n      1            Default                                                          \n      2 hdd_EMPTY_merged_into_3                                                          \n      3                hdd 102,103,201,202,203,204,301,                             \n                           302,303,304,401,402,403                                  \n      4       offline_pool 207                                                      \n      5           pfs_test                                                          \n      6                ssd 105,106,107,205,206,305,306,                             \n                           307,404,405,406,407                                      \n      7       hdd_meta_101 101                                                      \n      8       ssd_meta_104 104                                                      \n",
+  "target_listing": "TargetID   St. Pool   NodeID\n========   ========   ======\n     101          7        1\n     102          3        1\n     103          3        1\n     104          8        1\n     105          6        1\n     106          6        1\n     107          6        1\n     201          3        2\n     202          3        2\n     203          3        2\n     204          3        2\n     205          6        2\n     206          6        2\n     207          4        2\n     301          3        3\n     302          3        3\n     303          3        3\n     304          3        3\n     305          6        3\n     306          6        3\n     307          6        3\n     401          3        4\n     402          3        4\n     403          3        4\n     404          6        4\n     405          6        4\n     406          6        4\n     407          6        4\n"
+}

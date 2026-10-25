@@ -4,6 +4,24 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-10-26 — Prepare narrow DLIO pool comparison
+
+- Added an eight-rank ResNet-50 runner for three serial repetitions on each of
+  the existing Default/HDD/SSD pools using the installed DLIO 2.0.0. It reads
+  pre-generated datasets, records actual dataset/checkpoint OST placement,
+  and collects native epoch timings and checkpoint durations with checkpoint
+  rank-0 save rates derived from rank-0 output-file sizes (the only checkpoint
+  rank timed by DLIO 2.0.0); all native outputs are retained.
+- Checkpoint saves are explicitly labeled application-observed, not fsync or
+  durable-throughput measurements: DLIO 2.0.0 has no working TensorFlow fsync
+  setting. The runner does not pass unsupported configuration overrides and
+  its folder-local usage notes distinguish this pilot from the global matrix.
+- Aligned each measured invocation with the prior checkpoint-run preparation:
+  `sync` and drop client caches before DLIO starts; remove only the newly
+  created checkpoint directory after metrics and OST evidence are recorded.
+
+---
+
 ## 2026-09-25 — Restrict microbenchmarks to layer effects
 
 - Removed the standalone whole-system experiment and its plan, design,

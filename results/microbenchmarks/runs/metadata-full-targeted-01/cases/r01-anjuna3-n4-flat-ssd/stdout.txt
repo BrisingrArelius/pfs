@@ -1,0 +1,42 @@
+-- started at 09/30/2026 10:27:36 --
+
+mdtest-4.1.0+dev was launched with 4 total task(s) on 4 node(s)
+Command line used: /home/pfs/ior-main/src/mdtest '-d' '/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r01-anjuna3-n4-flat-ssd/work' '-n' '10000' '-i' '1' '-w' '0' '-e' '0' '-N' '0' '-P'
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+Nodemap: 1111
+Path                : /mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r01-anjuna3-n4-flat-ssd/work
+FS                  : 38.2 TiB   Used FS: 10.3%   Inodes: 0.0 Mi   Used Inodes: -nan%
+4 tasks, 40000 files/directories
+
+SUMMARY rate (in ops/sec): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation           2630.563       2630.563       2630.563          0.000
+   Directory stat             147050.276     147050.276     147050.276          0.000
+   Directory rename             3584.686       3584.686       3584.686          0.000
+   Directory removal            4059.630       4059.630       4059.630          0.000
+   File creation                2755.506       2755.506       2755.506          0.000
+   File stat                  149903.110     149903.110     149903.110          0.000
+   File read                   51964.047      51964.047      51964.047          0.000
+   File removal                 6161.709       6161.709       6161.709          0.000
+   Tree creation                1081.006       1081.006       1081.006          0.000
+   Tree removal                   17.009         17.009         17.009          0.000
+
+SUMMARY time (in ms/op): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation             15.206         15.206         15.206          0.000
+   Directory stat                  0.272          0.272          0.272          0.000
+   Directory rename               11.159         11.159         11.159          0.000
+   Directory removal               9.853          9.853          9.853          0.000
+   File creation                  14.516         14.516         14.516          0.000
+   File stat                       0.267          0.267          0.267          0.000
+   File read                       0.770          0.770          0.770          0.000
+   File removal                    6.492          6.492          6.492          0.000
+   Tree creation                   0.001          0.001          0.001          0.000
+   Tree removal                    0.059          0.059          0.059          0.000
+-- finished at 09/30/2026 10:28:35 --
+
