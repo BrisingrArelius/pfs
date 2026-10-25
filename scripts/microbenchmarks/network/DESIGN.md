@@ -420,7 +420,7 @@ manifest.json
 RUN.md
 inventory/
 raw/<case-id>/attempt-<n>/
-analysis/
+plots/                  figures made directly from manifest + native attempts
 ```
 
 The manifest contains a configuration fingerprint, protocol version, inventory,
@@ -431,8 +431,8 @@ durable.
 States include `pending`, `running`, `completed`, `failed`, and `interrupted`.
 On resume, abandoned running attempts become interrupted. Only validated completed
 measurements are skipped. The saved inventory fingerprint must still match the
-run; resume never substitutes newly discovered paths. Parser and plotting status
-are independent of measurement status, so analysis failures never repeat valid
+run; resume never substitutes newly discovered paths. Plotting status
+is independent of measurement status, so visualization failures never repeat valid
 network traffic.
 
 ## Time Budget and Interruption

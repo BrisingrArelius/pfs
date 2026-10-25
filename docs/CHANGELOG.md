@@ -4,6 +4,66 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-10-26 — Prepare narrow DLIO pool comparison
+
+- Added an eight-rank ResNet-50 runner for three serial repetitions on each of
+  the existing Default/HDD/SSD pools using the installed DLIO 2.0.0. It reads
+  pre-generated datasets, records actual dataset/checkpoint OST placement,
+  and collects native epoch timings and checkpoint durations with checkpoint
+  rank-0 save rates derived from rank-0 output-file sizes (the only checkpoint
+  rank timed by DLIO 2.0.0); all native outputs are retained.
+- Checkpoint saves are explicitly labeled application-observed, not fsync or
+  durable-throughput measurements: DLIO 2.0.0 has no working TensorFlow fsync
+  setting. The runner does not pass unsupported configuration overrides and
+  its folder-local usage notes distinguish this pilot from the global matrix.
+- Aligned each measured invocation with the prior checkpoint-run preparation:
+  `sync` and drop client caches before DLIO starts; remove only the newly
+  created checkpoint directory after metrics and OST evidence are recorded.
+- A cluster pilot showed stock DLIO 2.0.0's TensorFlow saver wrote only
+  132-byte data files despite a 100-MB configured state. Added a local
+  checkpoint hook that makes state trackable without editing DLIO; reject
+  undersized files until a fresh cluster pilot verifies full payloads.
+
+---
+
+## 2026-09-25 — Restrict microbenchmarks to layer effects
+
+- Removed the standalone whole-system experiment and its plan, design,
+  visualizer, inventory template, and synthetic tests. Retained the historical
+  pool-management helpers as provenance, not live authority.
+- Aligned the repository and Obsidian `MicroBenchmarks.md` specifications on five
+  layer-focused domains. D/S/H whole-workload comparisons remain in the separate
+  DLIO specification and global factor rules.
+
+---
+
+## 2026-09-25 — Visualize microbenchmarks directly from native evidence
+
+- FIO and iperf3 visualizers now validate completed raw runs and create figures
+  directly; removed their standalone intermediate-result parser commands without
+  changing either raw benchmark runner. The available full runs produced ten FIO
+  figures (separated by installed FIO version) and three iperf3 figures.
+- Added folder-local raw-to-plot visualizers, offline plans, and synthetic
+  evidence tests for cache, BeeGFS communication, and metadata.
+  These three domains **still lack live cluster runners and reviewed pilots**.
+- Plots are published as complete generations under each run's `plots/` directory,
+  with the current paths in `plot_manifest.json`. Updated the guides and backlog
+  to distinguish completed evidence from planned experiments.
+
+---
+
+## 2026-09-23 - Develop layer-effect microbenchmark designs
+
+- Added designs for BeeGFS NetBench communication and controlled cache effects.
+- Fixed each domain's workload geometry, matrix, state transitions, native
+  evidence, telemetry, validation, durable resume, cleanup, and pilot gates.
+- Kept capacity provisioning as a separate DLIO gate until site bands are
+  approved.
+- Changes in this entry are documentation only; no pool, cache, NetBench, IOR,
+  FIO, iperf3, or mdtest operation ran.
+
+---
+
 ## 2026-09-21 — Organize analysis by owning domain
 
 - Moved Darshan parsing and workload-result analysis to
@@ -18,15 +78,14 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
-## 2026-09-21 — Six-domain benchmark suite and execution requirements
+## 2026-09-21 — Layer-effects suite and execution requirements
 
-- Revised experiment specifications and repository summaries: six plainly named
-  benchmark domains, explicit communication/cache experiments,
-  operation paths, separate application validation and full placement matrix.
+- Revised experiment specifications and repository summaries for explicit
+  communication/cache experiments, operation paths, and separate DLIO validation.
 - Specified Darshan coverage/raw evidence, durable progress across allocations,
-  independent parser recovery and pilot-based full-matrix duration planning.
-- Added [implementation backlog](IMPLEMENTATION_BACKLOG.md), separate from
-  mechanical path repairs. Capacity meaning and numerical bands remain unresolved.
+  independent visualization recovery and pilot-based duration planning.
+- Added a work-tracking document at the time, separate from mechanical path
+  repairs. Capacity meaning and numerical bands remained unresolved.
 - Changes in this pass are documentation only.
 
 ---
@@ -174,5 +233,4 @@ meaning of `nd_strided`. Their historical discussion is recorded at:
   `gcc -O3 ...` in [CONTEXT.md](research/CONTEXT.md)) fail to compile on this machine
   without `-D_GNU_SOURCE`. This was not introduced or fixed by that change.
 
-The active versions of these missing items are in
-[IMPLEMENTATION_BACKLOG.md](IMPLEMENTATION_BACKLOG.md#workload-profiles-and-classification).
+These notes record the implementation state at the time.

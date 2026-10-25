@@ -1,0 +1,12 @@
+{
+  "before": {
+    "client_network": 3480513044188,
+    "server_network": 7193589939518,
+    "device_read": 9769241953280
+  },
+  "after": {
+    "client_network": 3480513138668,
+    "server_network": 7193589949076,
+    "device_read": 9769241953280
+  }
+}

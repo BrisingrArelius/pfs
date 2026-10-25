@@ -1,0 +1,13 @@
+{
+  "mode": "native",
+  "medium": "HDD",
+  "target": 101,
+  "intended": "server_ram",
+  "achieved": "server_ram",
+  "MiB_per_second": 229.6033,
+  "network_ratio": 1.0463773044757545,
+  "server_network_ratio": 1.0460063436767086,
+  "backend_ratio": 0.0,
+  "quiet_before": true,
+  "seconds": 38.61099195480347
+}

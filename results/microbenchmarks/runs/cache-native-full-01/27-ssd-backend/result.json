@@ -1,0 +1,13 @@
+{
+  "mode": "native",
+  "medium": "SSD",
+  "target": 104,
+  "intended": "backend",
+  "achieved": "backend",
+  "MiB_per_second": 227.3802,
+  "network_ratio": 1.0463107185205445,
+  "server_network_ratio": 1.0459758600918576,
+  "backend_ratio": 1.0000076293945312,
+  "quiet_before": true,
+  "seconds": 37.121362924575806
+}

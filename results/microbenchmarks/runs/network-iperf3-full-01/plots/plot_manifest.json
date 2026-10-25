@@ -1,0 +1,17 @@
+{
+  "raw_run": "/home/arelius/projects/pfs/results/microbenchmarks/runs/network-iperf3-full-01",
+  "measurements": 320,
+  "epochs": 190,
+  "plots": [
+    "generations/9720de6bd5f448bea505d2c5c68d5f11/isolated_throughput.png",
+    "generations/9720de6bd5f448bea505d2c5c68d5f11/concurrent_epoch_aggregate.png",
+    "generations/9720de6bd5f448bea505d2c5c68d5f11/concurrent_session_distribution.png"
+  ],
+  "semantics": {
+    "isolated": "path medians with repetition marks and min-max whiskers",
+    "concurrent_epochs": "aggregate receiver throughput per atomic simultaneous epoch",
+    "concurrent_sessions": "per-path throughput distributions; paths are not summed",
+    "separation": "isolated and simultaneous modes are never combined"
+  },
+  "generation": "generations/9720de6bd5f448bea505d2c5c68d5f11"
+}

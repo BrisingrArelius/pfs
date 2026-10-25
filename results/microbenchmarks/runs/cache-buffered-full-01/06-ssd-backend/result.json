@@ -1,0 +1,14 @@
+{
+  "mode": "buffered",
+  "medium": "SSD",
+  "target": 104,
+  "intended": "backend",
+  "achieved": "backend",
+  "MiB_per_second": 237.5299,
+  "client_residency": null,
+  "network_ratio": 1.0462065385654569,
+  "server_network_ratio": 1.045903617865406,
+  "backend_ratio": 1.0000057220458984,
+  "quiet_before": true,
+  "seconds": 35.545618772506714
+}

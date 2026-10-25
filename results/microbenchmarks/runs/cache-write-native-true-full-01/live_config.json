@@ -1,0 +1,10 @@
+[
+  {
+    "path": "/proc/fs/beegfs/245BB7-6ABBF66D-anjuna2/config",
+    "settings": {
+      "tuneFileCacheType": "native",
+      "tuneFileCacheBufSize": "2097152",
+      "tuneRemoteFSync": "1"
+    }
+  }
+]

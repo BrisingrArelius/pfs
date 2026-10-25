@@ -1,0 +1,20 @@
+{
+  "directory_entryinfo": "Entry type: directory\nEntryID: 4384-6ABD1DED-1\nParentID: 3E85-6ABCDEBE-1\nStripe pattern details:\n+ Type: RAID0\n+ Chunksize: 512K\n+ Number of storage targets: desired: 1\n+ Storage Pool: 7 (hdd_meta_101)\nInlined inode: no\nDentry info:\n + Path: 25/3E/3E85-6ABCDEBE-1/\n + Metadata node: anjuna3 [ID: 1]\nInode info:\n + Path: D/54/4384-6ABD1DED-1\n + Metadata node: anjuna3 [ID: 1]\n",
+  "setpattern_command": [
+    "sudo",
+    "-n",
+    "/usr/sbin/beegfs-ctl",
+    "--cfgFile=/etc/beegfs/beegfs-client.conf",
+    "--setpattern",
+    "--pattern=raid0",
+    "--storagepoolid=7",
+    "--numtargets=1",
+    "--chunksize=512k",
+    "/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r04-anjuna2-n16-per_rank-hdd"
+  ],
+  "setpattern_stdout": "New chunksize: 524288\nNew number of storage targets: 1\nNew storage pool ID: 7\n\n",
+  "verified_pattern": {
+    "num_targets": 1,
+    "pool_id": 7
+  }
+}

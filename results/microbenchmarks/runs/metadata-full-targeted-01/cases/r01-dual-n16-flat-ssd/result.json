@@ -1,0 +1,10 @@
+{
+  "cleanup": "completed",
+  "ended_at": 1790766140.8398752,
+  "interrupted": false,
+  "returncode": 0,
+  "started_at": 1790765476.614893,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "52a329a9267a3d2b2c33243b254f45c5e6466151d6f6120d0aaf8baaac88a161",
+  "storage_pools_unchanged": true
+}

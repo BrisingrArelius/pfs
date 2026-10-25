@@ -1,0 +1,6 @@
+{
+  "run_id": "cache-buffered-full-01",
+  "user": "pfs",
+  "mode": "buffered",
+  "pilot": false
+}

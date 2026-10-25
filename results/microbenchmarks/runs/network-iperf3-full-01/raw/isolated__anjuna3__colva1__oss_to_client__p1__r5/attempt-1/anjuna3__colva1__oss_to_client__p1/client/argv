@@ -1,0 +1,1 @@
+iperf3 --client 192.168.0.2 --bind 192.168.0.7 --port 5202 --parallel 1 --omit 5 --time 30 --interval 1 --json --reverse 

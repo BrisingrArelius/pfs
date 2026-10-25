@@ -1,0 +1,16 @@
+{
+  "domain": "communication",
+  "reviewed": false,
+  "captured_at": null,
+  "clients": {},
+  "targets": [],
+  "mount": null,
+  "netbench_paths": {},
+  "pool_baseline": null,
+  "chooser_baseline": null,
+  "restoration_baseline": null,
+  "namespace": null,
+  "watchdog_verified": false,
+  "restoration_tested": false,
+  "tools": {}
+}

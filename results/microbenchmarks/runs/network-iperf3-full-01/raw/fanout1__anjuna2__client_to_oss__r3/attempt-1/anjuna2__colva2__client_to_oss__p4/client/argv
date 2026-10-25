@@ -1,0 +1,1 @@
+iperf3 --client 10.1.19.76 --bind 10.1.19.73 --port 5201 --parallel 4 --omit 5 --time 30 --interval 1 --json 

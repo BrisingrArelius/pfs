@@ -1,0 +1,8 @@
+{
+  "run_id": "cache-write-native-false-full-01",
+  "user": "pfs",
+  "mode": "native",
+  "pilot": false,
+  "operation": "write",
+  "remote_fsync": "false"
+}

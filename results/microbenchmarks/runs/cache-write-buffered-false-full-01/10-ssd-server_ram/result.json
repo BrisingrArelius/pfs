@@ -1,0 +1,17 @@
+{
+  "operation": "write",
+  "mode": "buffered",
+  "medium": "SSD",
+  "target": 104,
+  "intended": "server_ram",
+  "achieved": "server_ram",
+  "bytes": 8589934592,
+  "MiB_per_second": 238.3992,
+  "seconds": 34.3625,
+  "remote_fsync": "false",
+  "verification": "write_traffic_v1",
+  "quiet_before": true,
+  "client_sent_ratio": 1.046384112094529,
+  "server_received_ratio": 1.0461515196366236,
+  "device_written_ratio": 0.9848637580871582
+}

@@ -7,8 +7,7 @@
 > Network-ceiling claims require active-transport evidence; client configuration
 > alone does not establish TCP versus RDMA. Historical commands are not current
 > refactor run instructions. To-do items, proposals, open decisions, and expected
-> results below are preserved historical notes, not active work definitions. Active
-> missing work is listed only in [IMPLEMENTATION_BACKLOG.md](../IMPLEMENTATION_BACKLOG.md).
+> results below are preserved historical notes, not active work definitions.
 
 ## Project Goal
 

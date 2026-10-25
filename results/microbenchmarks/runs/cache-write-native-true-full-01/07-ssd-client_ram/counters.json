@@ -1,0 +1,14 @@
+{
+  "before": {
+    "client_sent": 3558053299209,
+    "server_received": 8943400922643,
+    "device_written": 8076690654208
+  },
+  "after_sync": {
+    "client_sent": 3559176675108,
+    "server_received": 8944524204265,
+    "device_written": 8077764400128
+  },
+  "timed_start_tx": 3558053314806,
+  "timed_end_tx": 3558053319444
+}

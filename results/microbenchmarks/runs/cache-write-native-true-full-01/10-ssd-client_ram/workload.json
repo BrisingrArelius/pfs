@@ -1,0 +1,7 @@
+{
+  "API": "POSIX",
+  "operation": "write",
+  "bytes": 1073741824,
+  "transferSize": 1048576,
+  "timed_region": "write calls only; fsync/close excluded"
+}

@@ -1,0 +1,39 @@
+-- started at 09/29/2026 20:56:03 --
+
+mdtest-4.1.0+dev was launched with 1 total task(s) on 1 node(s)
+Command line used: /home/pfs/ior-main/src/mdtest '-d' '/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-01/r02-anjuna3-n1-flat/work' '-n' '10000' '-i' '1' '-w' '0' '-e' '0' '-N' '0' '-P'
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+Nodemap: 1
+Path                : /mnt/beegfs/pfs/.metadata-mdtest/metadata-full-01/r02-anjuna3-n1-flat/work
+FS                  : 38.2 TiB   Used FS: 10.1%   Inodes: 0.0 Mi   Used Inodes: -nan%
+1 tasks, 10000 files/directories
+
+SUMMARY rate (in ops/sec): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation           2000.474       2000.474       2000.474          0.000
+   Directory stat              15743.522      15743.522      15743.522          0.000
+   Directory rename             3410.492       3410.492       3410.492          0.000
+   Directory removal            3144.304       3144.304       3144.304          0.000
+   File creation                4923.322       4923.322       4923.322          0.000
+   File stat                   11067.995      11067.995      11067.995          0.000
+   File read                    3692.788       3692.788       3692.788          0.000
+   File removal                 3578.911       3578.911       3578.911          0.000
+   Tree creation                 553.996        553.996        553.996          0.000
+   Tree removal                   51.169         51.169         51.169          0.000
+
+SUMMARY time (in ms/op): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation              4.999          4.999          4.999          0.000
+   Directory stat                  0.635          0.635          0.635          0.000
+   Directory rename                2.932          2.932          2.932          0.000
+   Directory removal               3.180          3.180          3.180          0.000
+   File creation                   2.031          2.031          2.031          0.000
+   File stat                       0.904          0.904          0.904          0.000
+   File read                       2.708          2.708          2.708          0.000
+   File removal                    2.794          2.794          2.794          0.000
+   Tree creation                   0.002          0.002          0.002          0.000
+   Tree removal                    0.020          0.020          0.020          0.000
+-- finished at 09/29/2026 20:56:24 --
+

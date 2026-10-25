@@ -1,0 +1,13 @@
+{
+  "id": "anjuna2__colva2__oss_to_client__p1",
+  "client": "anjuna2",
+  "server": "colva2",
+  "direction": "oss_to_client",
+  "streams": 1,
+  "port": 5201,
+  "source_address": "10.1.19.73",
+  "source_interface": "eno1",
+  "destination_address": "10.1.19.76",
+  "destination_interface": "enp7s0",
+  "path_link_mbps": 2500
+}

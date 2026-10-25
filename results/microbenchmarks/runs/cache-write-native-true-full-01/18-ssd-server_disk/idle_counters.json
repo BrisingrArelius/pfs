@@ -1,0 +1,12 @@
+{
+  "idle": {
+    "client_sent": 3617614012313,
+    "server_received": 9002934732848,
+    "device_written": 8097092400640
+  },
+  "before": {
+    "client_sent": 3617614074067,
+    "server_received": 9002934742539,
+    "device_written": 8097092400640
+  }
+}

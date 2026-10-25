@@ -1,0 +1,14 @@
+{
+  "mode": "buffered",
+  "medium": "SSD",
+  "target": 104,
+  "intended": "server_ram",
+  "achieved": "server_ram",
+  "MiB_per_second": 243.0621,
+  "client_residency": null,
+  "network_ratio": 1.0461905816337094,
+  "server_network_ratio": 1.045904139871709,
+  "backend_ratio": 0.0,
+  "quiet_before": true,
+  "seconds": 34.783984899520874
+}

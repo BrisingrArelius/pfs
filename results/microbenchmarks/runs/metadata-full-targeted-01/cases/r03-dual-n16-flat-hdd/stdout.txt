@@ -1,0 +1,70 @@
+-- started at 09/30/2026 19:19:42 --
+
+mdtest-4.1.0+dev was launched with 32 total task(s) on 32 node(s)
+Command line used: /home/pfs/ior-main/src/mdtest '-d' '/mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r03-dual-n16-flat-hdd/work' '-n' '10000' '-i' '1' '-w' '0' '-e' '0' '-N' '0' '-P'
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+WARNING: Read bytes is 0, thus, a read test will actually just open/close
+Nodemap: 11111111111111110000000000000000
+Path                : /mnt/beegfs/pfs/.metadata-mdtest/metadata-full-targeted-01/r03-dual-n16-flat-hdd/work
+FS                  : 38.2 TiB   Used FS: 10.3%   Inodes: 0.0 Mi   Used Inodes: -nan%
+32 tasks, 320000 files/directories
+
+SUMMARY rate (in ops/sec): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation           1613.307       1613.307       1613.307          0.000
+   Directory stat             135823.364     135823.364     135823.364          0.000
+   Directory rename             2669.081       2669.081       2669.081          0.000
+   Directory removal            2652.063       2652.063       2652.063          0.000
+   File creation                2195.728       2195.728       2195.728          0.000
+   File stat                  123241.869     123241.869     123241.869          0.000
+   File read                   31584.166      31584.166      31584.166          0.000
+   File removal                 4482.753       4482.753       4482.753          0.000
+   Tree creation                 708.737        708.737        708.737          0.000
+   Tree removal                    2.039          2.039          2.039          0.000
+
+SUMMARY time (in ms/op): (of 1 iterations)
+   Operation                     Max            Min           Mean        Std Dev
+   ---------                     ---            ---           ----        -------
+   Directory creation            198.350        198.350        198.350          0.000
+   Directory stat                  2.356          2.356          2.356          0.000
+   Directory rename              119.891        119.891        119.891          0.000
+   Directory removal             120.661        120.661        120.661          0.000
+   File creation                 145.738        145.738        145.738          0.000
+   File stat                       2.597          2.597          2.597          0.000
+   File read                      10.132         10.132         10.132          0.000
+   File removal                   71.385         71.385         71.385          0.000
+   Tree creation                   0.001          0.001          0.001          0.000
+   Tree removal                    0.490          0.490          0.490          0.000
+-- finished at 09/30/2026 19:30:55 --
+

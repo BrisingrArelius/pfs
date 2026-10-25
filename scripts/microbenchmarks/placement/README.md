@@ -1,30 +1,23 @@
-# Pooling Scripts
+# Historical storage-pool helpers
 
-Helper scripts for configuring BeeGFS storage pools used by the workload pipeline.
-
-These scripts contain historical target inventories and are not verified against
-the current cluster. See [methodology](../../../docs/methodology.md) for D/S/H.
-The full experiment design is not implemented by these helpers.
+This folder retains historical BeeGFS pool-management scripts for provenance.
+They are **not** a reviewed live inventory, a reversible state transaction, or
+a benchmark runner. D/S/H comparisons belong to the separate
+[DLIO application experiment](../../../docs/specs/DL_Experiment.md); the
+[microbenchmark suite](../../../docs/specs/MicroBenchmarks.md) measures layer
+effects only.
 
 ## Files
 
 - `configure_pools.sh` — create or update HDD/SSD storage pools and move hard-coded targets
 - `reset_pools.sh` — move hard-coded targets to Default and remove named HDD/SSD pools
 
-## Historical usage (inventory review required)
+## Historical usage
 
-Run the pool configuration script with sudo:
-
-```bash
-cd scripts/microbenchmarks/placement
-sudo ./configure_pools.sh
-```
-
-The historical reset moves targets back to Default:
-
-```bash
-sudo ./reset_pools.sh
-```
+Do not run these scripts as DLIO setup or restoration.
+They encode old target memberships and cannot restore the exact live baseline.
+DLIO needs a reviewed inventory and reversible pool transactions with verified
+restoration instead.
 
 ## Notes
 

@@ -5,19 +5,23 @@ implementation status for BeeGFS target-placement experiments.
 
 ## Status
 
-Existing FIO, workload, Darshan-analysis, placement, and trace-analysis tools are
+Existing FIO, network, workload, Darshan-analysis, and trace-analysis tools are
 available under `scripts/`. New outputs use run-specific directories under
-`results/`; historical evidence is kept under `results/*/legacy/`. The complete
-six-domain experiment suite is not implemented yet; remaining work is listed in
-the [implementation backlog](docs/IMPLEMENTATION_BACKLOG.md).
+`results/`; historical evidence is kept under `results/*/legacy/`. FIO,
+iperf3, and cache reads have completed runs; cache writes, communication, and
+metadata have no completed cluster runs.
 
 ## Repository layout
 
 ```text
 scripts/
   microbenchmarks/
-    fio/                 existing FIO runner, configuration, analysis and visualizer
-    placement/           existing pool-management helpers
+    fio/                 local-target FIO runner and raw-to-plot visualizer
+    network/             iperf3 runner and raw-to-plot visualizer
+    communication/       offline NetBench IOR plan and raw-to-plot visualizer
+    cache/               separate read/write runners, shared prep and read visualizer
+    metadata/            one native mdtest pilot/full runner
+    placement/           historical pool-management helpers only
     analysis/            OST-log, capacity and placement utilities
   workloads/             synthetic workloads, profiles and orchestration
     analysis/            Darshan parsing and workload-result analysis
@@ -26,7 +30,7 @@ results/
   microbenchmarks/legacy/ fio-local, fio-beegfs, network and placement evidence
   workloads/legacy/      Darshan outputs and execution records
   trace_analysis/legacy/ preserved contiguity/frequency CSVs and plots
-docs/                    methodology, implementation backlog, references and history
+docs/                    methodology, references and history
   research/              historical context, profile notes and literature review
   references/            existing reference PDFs
 archive/                 old runner versions retained for historical reference
@@ -35,28 +39,22 @@ archive/                 old runner versions retained for historical reference
 The tools under `scripts/trace_characterization/` characterize external Polaris Darshan
 logs for workload-profile research; they are not BeeGFS microbenchmark runners.
 
-## Missing functionality
+## Current coverage
 
-- The complete D/S/H placement matrix is missing.
-- Dedicated network, BeeGFS communication, cache-state, and metadata runners are
-  missing.
+- The separate DLIO whole-workload D/S/H comparison is not implemented.
+- BeeGFS communication has no live runner. Metadata has an unpiloted raw-capture
+  runner; cache has completed buffered/native read runs and an unpiloted write runner.
 - Durable suite-wide progress and resume support is missing.
 - Controlled capacity conditions and application-validation coverage are missing.
 
-The detailed open work is in the
-[implementation backlog](docs/IMPLEMENTATION_BACKLOG.md). Current behavior and
-limitations are described in [methodology](docs/methodology.md).
+Current behavior and limitations are described in [methodology](docs/methodology.md).
 
 ## Documentation
 
-Current-state documentation describes only implemented or observed behavior.
-Missing behavior is stated as missing. The implementation backlog is kept in
-`docs/IMPLEMENTATION_BACKLOG.md`; changelog and research notes are historical
-records rather than active specifications.
+The changelog and research notes preserve historical observations.
 
 - [Microbenchmark inventory](scripts/microbenchmarks/README.md)
 - [Historical results and provenance](results/README.md)
-- [Implementation backlog](docs/IMPLEMENTATION_BACKLOG.md)
 - [Observed cluster topology](docs/CLUSTER_TOPOLOGY.md)
 - [Workload documentation](scripts/workloads/README.md)
 - [Darshan parsing and workload analysis](scripts/workloads/analysis/README.md)

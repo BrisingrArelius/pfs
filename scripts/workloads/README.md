@@ -4,7 +4,7 @@ This directory contains workload definitions, the IOR wrapper, the C workload
 implementation, and the workload/pipeline runners.
 
 The runners use run-specific output locations. This is an application-workload
-pipeline rather than the complete six-domain suite.
+pipeline rather than the complete five-domain layer-effects suite.
 Historical outputs live under
 [results/workloads/legacy](../../results/workloads/legacy/README.md).
 
@@ -85,6 +85,33 @@ New outputs, logs, errors, and checkpoints go under
 `results/microbenchmarks/legacy/placement/` and are not resume state.
 
 ## Usage
+
+### ResNet-50 BeeGFS pool comparison (DLIO 2.0.0)
+
+On `anjuna2`, after generating the 1,024 TFRecords separately in pools 1, 3,
+and 6 under `/mnt/beegfs/pfs/tejas/dlio/resnet50`, run:
+
+```bash
+python3 scripts/workloads/run_dlio_resnet50_pools.py --model-size-bytes SIZE_PER_RANK
+```
+
+Choose and record `SIZE_PER_RANK` explicitly; the ResNet profile has no model
+checkpoint size. The runner executes three repetitions per pool at eight ranks,
+with five epochs and saves after epochs 2 and 4. Results, per-file OST lists,
+and raw DLIO output go under `~/tejas/dlio/resnet50/runs-*/`. Training rates
+are native DLIO metrics; checkpoint-save rates use DLIO's rank-0 save duration
+and the actual rank-0 checkpoint file sizes. The companion
+`dlio_resnet_checkpoint.py` uses DLIO's custom checkpoint hook to save
+trackable TensorFlow Variables; the runner rejects checkpoints smaller than
+the requested model state. Pilot that hook on the cluster before the nine
+full runs. DLIO 2.0.0 does not fsync its
+TensorFlow checkpoints, so these are not durable-write rates. This is the
+narrow fixed-layout pilot, not the full factor matrix in `docs/specs/Global.md`.
+Before each DLIO invocation, the runner calls `sync` and drops the client
+page cache on `anjuna2` (requires `sudo`). After recording results and actual
+checkpoint placement, it removes only that run's checkpoint directory.
+The prepared training datasets and native DLIO logs remain; client cache
+dropping does not clear storage-server caches.
 
 Run the full project pipeline:
 

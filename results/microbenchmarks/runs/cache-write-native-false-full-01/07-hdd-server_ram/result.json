@@ -1,0 +1,17 @@
+{
+  "operation": "write",
+  "mode": "native",
+  "medium": "HDD",
+  "target": 101,
+  "intended": "server_ram",
+  "achieved": "server_ram",
+  "bytes": 8589934592,
+  "MiB_per_second": 257.2698,
+  "seconds": 31.8421,
+  "remote_fsync": "false",
+  "verification": "write_traffic_v1",
+  "quiet_before": true,
+  "client_sent_ratio": 1.0463053478160873,
+  "server_received_ratio": 1.0460797029081732,
+  "device_written_ratio": 0.3667033910751343
+}
