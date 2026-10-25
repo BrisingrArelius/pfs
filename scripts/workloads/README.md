@@ -100,7 +100,11 @@ checkpoint size. The runner executes three repetitions per pool at eight ranks,
 with five epochs and saves after epochs 2 and 4. Results, per-file OST lists,
 and raw DLIO output go under `~/tejas/dlio/resnet50/runs-*/`. Training rates
 are native DLIO metrics; checkpoint-save rates use DLIO's rank-0 save duration
-and the actual rank-0 checkpoint file sizes. DLIO 2.0.0 does not fsync its
+and the actual rank-0 checkpoint file sizes. The companion
+`dlio_resnet_checkpoint.py` uses DLIO's custom checkpoint hook to save
+trackable TensorFlow Variables; the runner rejects checkpoints smaller than
+the requested model state. Pilot that hook on the cluster before the nine
+full runs. DLIO 2.0.0 does not fsync its
 TensorFlow checkpoints, so these are not durable-write rates. This is the
 narrow fixed-layout pilot, not the full factor matrix in `docs/specs/Global.md`.
 Before each DLIO invocation, the runner calls `sync` and drops the client

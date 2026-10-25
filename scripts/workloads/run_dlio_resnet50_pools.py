@@ -9,6 +9,7 @@ import argparse
 import csv
 import importlib.metadata
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -50,10 +51,11 @@ def placement(files, output, pool):
     return used
 
 
-def checkpoint_sizes(files):
+def checkpoint_sizes(files, model_size_bytes):
     """Group TensorFlow .index/.data files by epoch and rank."""
     sizes = {}
     ranks = {}
+    data_sizes = {}
     for file in files:
         match = CKPT_FILE.search(file.name)
         if not match:
@@ -64,10 +66,17 @@ def checkpoint_sizes(files):
         sizes[epoch, rank] = sizes.get((epoch, rank), 0) + file.stat().st_size
         if ".data-" in file.name:
             ranks.setdefault(epoch, set()).add(rank)
+            data_sizes[epoch, rank] = data_sizes.get((epoch, rank), 0) + file.stat().st_size
     if set(sizes) != {(epoch, rank) for epoch in (2, 4) for rank in range(RANKS)} or any(
         ranks.get(epoch) != set(range(RANKS)) for epoch in (2, 4)
     ):
         raise RuntimeError(f"Expected rank-sharded checkpoints at epochs 2 and 4: {ranks}")
+    for (epoch, rank), size in data_sizes.items():
+        if size < model_size_bytes * 0.9:
+            raise RuntimeError(
+                f"Checkpoint epoch {epoch} rank {rank} is only {size} bytes; "
+                f"expected approximately {model_size_bytes} bytes"
+            )
     return sizes
 
 
@@ -117,6 +126,8 @@ def main():
         parser.error("--model-size-bytes must be positive")
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
         parser.error("This runner expects the installed DLIO 2.0.0 output and options")
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(Path(__file__).resolve().parent) + os.pathsep + environment.get("PYTHONPATH", "")
 
     results = RESULT_ROOT / f"runs-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}"
     results.mkdir(parents=True, exist_ok=False)
@@ -144,6 +155,7 @@ def main():
                     f"++workload.dataset.data_folder={DATA_ROOT / f'pool{pool}/dataset'}",
                     f"++workload.checkpoint.checkpoint_folder={checkpoint_dir}",
                     "++workload.checkpoint.type=all_ranks",
+                    "++workload.checkpoint.checkpoint_mechanism_classname=dlio_resnet_checkpoint.ResNetCheckpointing",
                     "++workload.checkpoint.checkpoint_after_epoch=2",
                     "++workload.checkpoint.epochs_between_checkpoints=2",
                     f"++workload.checkpoint.model_size={args.model_size_bytes}",
@@ -160,11 +172,12 @@ def main():
                 print(f"Running repetition {repetition}, pool {pool}", flush=True)
                 prepare_client_cache()
                 with (run_dir / "console.log").open("w") as log:
-                    subprocess.run(dlio_args, stdout=log, stderr=subprocess.STDOUT, check=True)
+                    subprocess.run(dlio_args, env=environment, stdout=log,
+                                   stderr=subprocess.STDOUT, check=True)
                 files = sorted(path for path in checkpoint_dir.rglob("*") if path.is_file())
                 if not files:
                     raise RuntimeError(f"No checkpoint files in {checkpoint_dir}")
-                sizes = checkpoint_sizes(files)
+                sizes = checkpoint_sizes(files, args.model_size_bytes)
                 checkpoint_osts = placement(files, run_dir / "checkpoint-osts.tsv", pool)
                 rows = metrics(run_dir, pool, repetition,
                                ",".join(map(str, sorted(osts[pool]))),

@@ -19,6 +19,10 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 - Aligned each measured invocation with the prior checkpoint-run preparation:
   `sync` and drop client caches before DLIO starts; remove only the newly
   created checkpoint directory after metrics and OST evidence are recorded.
+- A cluster pilot showed stock DLIO 2.0.0's TensorFlow saver wrote only
+  132-byte data files despite a 100-MB configured state. Added a local
+  checkpoint hook that makes state trackable without editing DLIO; reject
+  undersized files until a fresh cluster pilot verifies full payloads.
 
 ---
 
