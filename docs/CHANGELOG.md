@@ -50,6 +50,11 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   dataset OST file assignments. Rendered five figures from the copied sweep,
   with the anomalous epoch marked and per-run values separated from run-level
   mean/error bars.
+- A five-epoch U-Net run exposed missing `block1.duration` and zero native
+  throughput in odd epochs despite completed load steps on all ranks. Mark
+  those training rates unavailable instead of zero I/O; accept the native
+  epoch wall time separately. Kept the runner simple: there is no resume mode;
+  a broken run can be repeated as a new sweep.
 
 ---
 

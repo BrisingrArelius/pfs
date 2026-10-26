@@ -39,6 +39,18 @@ aggregate rates. The CosmoFlow OST listing samples 65 input files per pool;
 ResNet and U-Net list every input file. None of these commands runs the full
 factor matrix or checkpoint-recovery suite in `docs/specs/DL_Experiment.md`.
 
+### U-Net native timing gap
+
+In DLIO 2.0.0, U-Net can process all five batches in an epoch but omit
+`block1.duration` and report zero training samples/s in epochs without a
+checkpoint. Those zeros are **missing training metrics, not zero I/O**. The
+runner records the available native epoch wall time as
+`training_epoch_wall_only` and labels the native five-epoch mean
+`training_summary_incomplete`; it does not invent a read throughput.
+It checks that all eight ranks have load-step records before using this label.
+There is no resume mode: if a run is broken, leave its old evidence intact
+and start a fresh sweep with `python3 scripts/workloads/dlio/run_unet3d_pools.py`.
+
 `pool_common.py` contains the mechanics shared by the three small runners.
 Each checkpoint class remains inside its workload runner so DLIO can import
 it in every MPI rank without changing the installed DLIO package.

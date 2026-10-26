@@ -65,11 +65,30 @@ def metrics(output, pool, repetition, dataset_osts, checkpoint_osts, sizes):
     if sorted(map(int, epochs)) != [1, 2, 3, 4, 5] or len(samples) != 5:
         raise RuntimeError(f"Expected five completed epochs in {output}")
     rows = []
+    missing_blocks = []
     for epoch in range(1, 6):
         data = epochs[str(epoch)]
-        rows.append((pool, repetition, "training_input_block", epoch,
-                     data["block1"]["duration"], "", samples[epoch - 1],
-                     "samples/s", dataset_osts, str(output)))
+        block = data.get("block1", {})
+        if "duration" in block:
+            rows.append((pool, repetition, "training_input_block", epoch,
+                         block["duration"], "", samples[epoch - 1],
+                         "samples/s", dataset_osts, str(output)))
+        else:
+            if ("start" not in block or "duration" not in data
+                    or float(samples[epoch - 1]) != 0):
+                raise RuntimeError(f"Incomplete training evidence in {output}, epoch {epoch}")
+            for rank in range(RANKS):
+                rank_output = json.loads((output / f"{rank}_output.json").read_text())
+                loads = rank_output.get(str(epoch), {}).get("load", {}).get("block1", [])
+                reference = rank_output.get("2", {}).get("load", {}).get("block1", [])
+                if not reference or len(loads) != len(reference):
+                    raise RuntimeError(f"Incomplete rank-{rank} load steps in {output}, epoch {epoch}")
+            # This DLIO version sometimes never calls end_block despite all
+            # ranks loading data. Its reported zero is NOT zero training I/O.
+            missing_blocks.append(epoch)
+            rows.append((pool, repetition, "training_epoch_wall_only", epoch,
+                         data["duration"], "", "", "DLIO training rate unavailable",
+                         dataset_osts, str(output)))
         events = [event for name, event in data.items() if name.startswith("ckpt")]
         if len(events) != (1 if epoch in (2, 4) else 0):
             raise RuntimeError(f"Unexpected checkpoint events for epoch {epoch} in {output}")
@@ -82,9 +101,11 @@ def metrics(output, pool, repetition, dataset_osts, checkpoint_osts, sizes):
             rows.append((pool, repetition, "checkpoint_save_rank0", epoch,
                          duration, size, size / 1048576 / duration,
                          "MiB/s (no fsync)", checkpoint_osts, str(output)))
-    rows.append((pool, repetition, "training_summary", "", "", "",
-                 summary["metric"]["train_io_mean_MB_per_second"],
-                 "MiB/s (DLIO mean)", dataset_osts, str(output)))
+    rows.append((pool, repetition,
+                 "training_summary_incomplete" if missing_blocks else "training_summary",
+                 "", "", "", summary["metric"]["train_io_mean_MB_per_second"],
+                 ("MiB/s (DLIO native mean; incomplete epochs)" if missing_blocks
+                  else "MiB/s (DLIO mean)"), dataset_osts, str(output)))
     return rows
 
 
