@@ -75,7 +75,7 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   generated results READMEs and narrative reports and named each PNG for its
   measurement. U-Net's missing native rates are plotted only as explicitly
   estimated sample-size/time throughput, not as measured filesystem traffic.
-- Reduced the CosmoFlow variant to 131,072 files per pool (one quarter of its
+- Reduced the CosmoFlow variant to 8,192 files per pool (1/64 of its
   DLIO preset). Both dataset generation and the pool runner now explicitly
   override DLIO's file count so generated inputs match measured runs; this is
   a reduced-scale variant, not the native full-size CosmoFlow workload.

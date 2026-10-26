@@ -31,8 +31,8 @@ It also creates an empty `dataset/valid/` directory in every pool: DLIO 2.0.0
 lists that path at startup even when evaluation is disabled. Re-running the
 generator repairs a missing `valid/` without regenerating complete training
 datasets.
-This CosmoFlow variant uses 131,072 files of roughly 2.83 MB **per pool**
-(one quarter of the native file count, approximately 370 GB per pool). The
+This CosmoFlow variant uses 8,192 files of roughly 2.83 MB **per pool**
+(1/64 of the native file count, approximately 23 GB per pool). The
 generator and runner both override DLIO's default file count. Confirm time,
 free space, and inode availability before preparing it.
 
