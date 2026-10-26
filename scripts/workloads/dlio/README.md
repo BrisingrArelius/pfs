@@ -27,6 +27,10 @@ have been recorded. OST and cache commands require `sudo` access.
 bytes to pools 3 and 6 under their BeeGFS patterns. It reuses existing
 complete datasets (including the previously generated ResNet copies) and
 stops if a dataset is partial. It never regenerates data during a timed run.
+It also creates an empty `dataset/valid/` directory in every pool: DLIO 2.0.0
+lists that path at startup even when evaluation is disabled. Re-running the
+generator repairs a missing `valid/` without regenerating complete training
+datasets.
 CosmoFlow has 524,288 files of roughly 2.83 MB **per pool**; confirm time,
 free space, and inode availability before preparing it.
 

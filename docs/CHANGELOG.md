@@ -55,6 +55,11 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   those training rates unavailable instead of zero I/O; accept the native
   epoch wall time separately. Kept the runner simple: there is no resume mode;
   a broken run can be repeated as a new sweep.
+- Fixed pool-copy preparation after U-Net failed to initialize on pool 3:
+  DLIO 2.0.0 lists `dataset/valid/` even with evaluation disabled, but the
+  generator previously copied only `train/`. Create the empty directory in
+  every pool and check for it before starting measured MPI runs; completed
+  datasets remain reusable.
 
 ---
 

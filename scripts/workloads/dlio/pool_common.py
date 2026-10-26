@@ -124,6 +124,9 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
         files = data_files(profile, pool)
         if len(files) != profile.files:
             raise RuntimeError(f"Pool {pool}: expected {profile.files} input files; found {len(files)}")
+        if not (root / f"pool{pool}/dataset/valid").is_dir():
+            raise RuntimeError(f"Pool {pool}: DLIO requires an empty dataset/valid directory; "
+                               "run generate_data.py for this workload")
         # 524,288 placement commands per CosmoFlow pool would dominate the run.
         if len(files) > 1024:
             stride = max(1, len(files) // 64)

@@ -46,6 +46,9 @@ def main():
         layout(checkpoints, pool)
 
         train = dataset / "train"
+        # DLIO 2.0.0 lists both train/ and valid/ even when evaluation is off.
+        # Copying pool 1's training files does not create valid/ on pool 3/6.
+        (dataset / "valid").mkdir(exist_ok=True)
         count = sum(1 for _ in train.glob(f"*.{profile.extension}"))
         if count == profile.files:
             print(f"Pool {pool}: reusing {count} existing training files", flush=True)
