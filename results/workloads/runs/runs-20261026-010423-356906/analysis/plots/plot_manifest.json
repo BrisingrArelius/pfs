@@ -1,0 +1,17 @@
+{
+  "source": "results/workloads/runs/runs-20261026-010423-356906",
+  "inputs": [
+    "epochs.csv",
+    "rank_epochs.csv",
+    "checkpoints.csv",
+    "runs.csv",
+    "dataset_ost_counts.csv"
+  ],
+  "figures": {
+    "training_epochs.png": "Per-epoch DLIO modeled rate and measured training-block duration; the timing anomaly is marked.",
+    "checkpoint_rank0.png": "Rank-0 checkpoint save completion only; no fsync and no eight-rank aggregate rate.",
+    "training_repetitions.png": "DLIO training summary for each serial repetition and pool.",
+    "rank_load_p95.png": "Per-rank application-step load p95, summarized first within each run.",
+    "dataset_ost_assignments.png": "Number of input files assigned to each OST; not bytes or traffic."
+  }
+}

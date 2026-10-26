@@ -36,6 +36,20 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   and CosmoFlow have separate small runners; the DLIO-imported checkpoint
   class lives in each runner rather than in a separate file. Added a folder-local
   README with the generate → pilot → full-run commands and metric definitions.
+- Added color-coded Mermaid diagrams for the refactored ResNet runner call chain,
+  the DLIO 2.0.0 TensorFlow TFRecord ingestion/checkpoint path, and the distinct
+  owners of native DLIO JSON versus the runner's combined CSV. The diagrams
+  distinguish the local refactor from a sweep already running from older code.
+- Added an offline parser for a copied nine-run ResNet DLIO sweep. It validates
+  native output against the runner CSV, extracts all rank/epoch load and process
+  timings and checkpoint placement, and reports pool summaries without calling
+  nominal training rate a measured POSIX/backend read rate. Flagged one native
+  epoch with a 60-second pre-checkpoint timing gap; no benchmark was rerun.
+- Added an offline DLIO plotter for per-epoch modeled training and wall time,
+  rank-0 checkpoint saves, repetition trends, per-rank loading tails, and
+  dataset OST file assignments. Rendered five figures from the copied sweep,
+  with the anomalous epoch marked and per-run values separated from run-level
+  mean/error bars.
 
 ---
 

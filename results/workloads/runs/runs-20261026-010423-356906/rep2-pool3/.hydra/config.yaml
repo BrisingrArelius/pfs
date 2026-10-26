@@ -1,0 +1,36 @@
+workload:
+  model: resnet50
+  framework: tensorflow
+  workflow:
+    generate_data: false
+    train: true
+    checkpoint: true
+  dataset:
+    num_files_train: 1024
+    num_samples_per_file: 1251
+    record_length: 114660.07
+    record_length_resize: 150528
+    data_folder: /mnt/beegfs/pfs/tejas/dlio/resnet50/pool3/dataset
+    format: tfrecord
+  train:
+    computation_time: 0
+    epochs: 5
+  reader:
+    data_loader: tensorflow
+    read_threads: 8
+    computation_threads: 8
+    batch_size: 64
+    batch_size_eval: 128
+    dont_use_mmap: true
+    file_shuffle: seed
+    sample_shuffle: seed
+    prefetch_size: 2
+  checkpoint:
+    checkpoint_folder: /mnt/beegfs/pfs/tejas/dlio/resnet50/pool3/checkpoints/rep2-runs-20261026-010423-356906
+    type: all_ranks
+    checkpoint_mechanism_classname: dlio_resnet_checkpoint.ResNetCheckpointing
+    checkpoint_after_epoch: 2
+    epochs_between_checkpoints: 2
+    model_size: 100000000
+    num_layers: 0
+    layer_parameters: []

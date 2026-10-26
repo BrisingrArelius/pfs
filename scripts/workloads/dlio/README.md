@@ -42,3 +42,141 @@ factor matrix or checkpoint-recovery suite in `docs/specs/DL_Experiment.md`.
 `pool_common.py` contains the mechanics shared by the three small runners.
 Each checkpoint class remains inside its workload runner so DLIO can import
 it in every MPI rank without changing the installed DLIO package.
+
+## Parse a copied ResNet sweep offline
+
+Copy the completed `runs-.../` directory (including `metrics.csv`, the nine
+`rep*-pool*/` directories, and placement TSVs) to your local machine. From
+the repository root, with PyYAML installed:
+
+```bash
+python3 scripts/workloads/dlio/parse_results.py results/workloads/runs/runs-20261026-010423-356906
+```
+
+The parser validates nine completed runs and writes `analysis/report.md`,
+`pool_summary.csv`, `epochs.csv`, `rank_epochs.csv`, `checkpoints.csv`,
+`runs.csv`, and `dataset_ost_counts.csv` inside that copied run directory.
+Use `--overwrite` to deliberately regenerate existing parser outputs.
+The parser uses local `rep*-pool*/` files rather than the CSV's original
+absolute cluster paths. `rank_epochs.csv` contains application-level step
+load and processing times; these are **not** POSIX read/write counters.
+`checkpoints.csv` reports rank-0 save-completion time and rate, not an
+eight-rank aggregate or fsync-inclusive rate. Training MiB/s is derived
+from DLIO's samples/s and configured bytes per record, not measured device
+traffic. The original checkpoint payloads were removed after each successful
+run; the copied directory contains their recorded sizes and OST placement.
+
+### Plot a parsed ResNet sweep
+
+On your local machine, with Matplotlib installed:
+
+```bash
+python3 scripts/workloads/dlio/plot_results.py results/workloads/runs/runs-20261026-010423-356906
+```
+
+Open `analysis/plots/README.md` in the copied run directory to view five
+figures: modeled training rate and training-block wall time per epoch, rank-0
+checkpoint saves, training rate by repetition, per-rank loading-time tail,
+and input-file assignments per OST. Thin lines/points show individual runs;
+error bars summarize **three independent repetitions**, not eight ranks as
+independent trials. The training figure flags one SSD run's 60-second gap
+*before* its checkpoint timer. Checkpoint figures do not claim fsync/durable
+rates; the OST plot counts assigned files, not bytes or device traffic.
+
+## ResNet call chain
+
+This diagram describes the **new local refactor**, not the earlier ResNet
+script already running on `anjuna2`. The measurement intent is the same, but
+the Python call chain and import path have changed. Do not update that checkout
+while its existing multi-run sweep is active: subsequent DLIO invocations may
+still import the old checkpoint module path.
+
+**Color key:** blue = runner control; cyan = preparation/placement; purple =
+DLIO executing the workload; green = results/analysis; gray = cleanup.
+
+```mermaid
+flowchart TD
+    CLI["Run run_resnet50_pools.py<br/>--model-size-bytes 100000000"]
+    MAIN["main()<br/>parse model size and optional --pilot"]
+    COMMON["pool_common.run()<br/>check version and count existing TFRecords"]
+    INPUT_OST["placement()<br/>record input files' actual OSTs"]
+    LOOP{"Next repetition and pool?<br/>3 × pools 1, 3, 6"}
+    DIRS["Create this run's checkpoint<br/>and raw-output directories"]
+    CACHE["sync + drop client caches<br/>outside DLIO timing"]
+    MPI["subprocess.run()<br/>mpirun -np 8 dlio_benchmark<br/>workload=resnet50_v100"]
+    RAW["DLIO saves summary.json,<br/>per_epoch_stats.json and rank output<br/>runner captures console.log"]
+    FILES["checkpoint_sizes()<br/>verify 8 rank payloads"]
+    OST["placement()<br/>record checkpoint OSTs"]
+    CSV["metrics() reads DLIO JSON<br/>csv.writer writes metrics.csv"]
+    CLEAN["Delete only this run's checkpoint files<br/>after results have been recorded"]
+    DONE["All 9 runs complete<br/>native DLIO files + metrics.csv remain"]
+
+    CLI --> MAIN --> COMMON --> INPUT_OST --> LOOP
+    LOOP -- yes --> DIRS --> CACHE --> MPI --> RAW --> FILES --> OST --> CSV --> CLEAN --> LOOP
+    LOOP -- no --> DONE
+
+    classDef runner fill:#bfdbfe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px
+    classDef prep fill:#a5f3fc,stroke:#0891b2,color:#0f172a,stroke-width:2px
+    classDef dlio fill:#ddd6fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px
+    classDef result fill:#bbf7d0,stroke:#15803d,color:#0f172a,stroke-width:2px
+    classDef cleanup fill:#e5e7eb,stroke:#6b7280,color:#0f172a,stroke-width:2px
+    class CLI,MAIN,COMMON,LOOP runner
+    class INPUT_OST,DIRS,CACHE,OST prep
+    class MPI dlio
+    class RAW,FILES,CSV,DONE result
+    class CLEAN cleanup
+```
+
+`--pilot` takes the same path but runs only pool 1, two steps in each of two
+epochs, with a 16-MiB model state per rank. It keeps its checkpoint files for
+inspection. Neither path generates training data during the measurement.
+
+## Inside each DLIO ResNet process: input and checkpoints
+
+The launched `mpirun` creates eight processes on the client. DLIO, not the
+outer runner, performs the training reads and checkpoint saves:
+
+```mermaid
+flowchart TD
+    MPI["mpirun -np 8<br/>eight DLIO processes on anjuna2"]
+    INIT["DLIOBenchmark.initialize()<br/>LoadConfig + discover 1,024 TFRecords"]
+    HOOK["CheckpointingFactory imports<br/>ResNetCheckpointing from the runner<br/>inside each MPI rank"]
+    STATE["Trackable tf.Variable state<br/>~100 MB per rank"]
+    START["DLIOBenchmark.run()<br/>start TensorFlow data loader"]
+    EPOCH{"Next epoch?<br/>1–5"}
+    SHARD["TFReader.next()<br/>shard existing file list by rank"]
+    READ["tf.data.TFRecordDataset<br/>8 parallel readers per rank"]
+    BATCH["Seeded sample shuffle<br/>batch 64 → prefetch 2"]
+    TRAIN["Parse TFRecord examples<br/>emit emulated resized images<br/>record training timings"]
+    SAVE{"Epoch 2 or 4?"}
+    CKPT["Each rank saves checkpoint files<br/>rank 0's save is timed; no fsync"]
+    STATS["DLIOBenchmark.finalize()<br/>StatsCounter.save_data()"]
+    NATIVE["DLIO writes summary.json,<br/>per_epoch_stats.json and per-rank outputs<br/>logging also writes dlio.log"]
+    PARSE["After DLIO exits: runner reads JSON<br/>and writes combined metrics.csv"]
+
+    MPI --> INIT --> HOOK --> STATE --> START --> EPOCH
+    EPOCH -- yes --> SHARD --> READ --> BATCH --> TRAIN --> SAVE
+    SAVE -- yes --> CKPT --> EPOCH
+    SAVE -- no --> EPOCH
+    EPOCH -- no --> STATS --> NATIVE --> PARSE
+
+    classDef runner fill:#bfdbfe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px
+    classDef prep fill:#a5f3fc,stroke:#0891b2,color:#0f172a,stroke-width:2px
+    classDef dlio fill:#ddd6fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px
+    classDef result fill:#bbf7d0,stroke:#15803d,color:#0f172a,stroke-width:2px
+    class MPI,PARSE runner
+    class INIT,HOOK,STATE prep
+    class START,EPOCH,SHARD,READ,BATCH,TRAIN,SAVE,CKPT dlio
+    class STATS,NATIVE result
+```
+
+**Who writes each metric file?** DLIO's `StatsCounter.save_data()` writes the
+native `summary.json`, `per_epoch_stats.json`, and `<rank>_output.json` files;
+DLIO's logger also writes `dlio.log`.
+The runner redirects DLIO's terminal output to `console.log`. After DLIO
+returns, the runner's `pool_common.metrics()` reads the native JSON and
+`csv.writer` appends rows to `metrics.csv`. The `training_input_block` row
+uses DLIO's training-block duration and samples/s; `checkpoint_save_rank0`
+divides rank 0's actual file bytes by DLIO's rank-0 save duration. DLIO
+parses TFRecords but substitutes an emulated resized image; it does not
+train ResNet.
