@@ -66,7 +66,7 @@ it in every MPI rank without changing the installed DLIO package.
 Copy the completed `runs-.../` directory (including `metrics.csv`, the nine
 `rep*-pool*/` directories, and placement TSVs) to your local machine. From
 the repository root, with PyYAML and Matplotlib installed, use **one command**
-for tables, report, and plots:
+for tables and plots:
 
 ```bash
 python3 scripts/workloads/dlio/analyze.py --unet results/workloads/runs/runs-20261026-164248-962399 --overwrite
@@ -74,26 +74,19 @@ python3 scripts/workloads/dlio/analyze.py --resnet results/workloads/runs/runs-2
 ```
 
 Use `--cosmoflow` for a completed CosmoFlow sweep. The analyzer validates
-nine completed runs and writes `analysis/report.md`, `comparison.csv` and
-`comparison_runs.csv` (three run-level values per pool), plus
+nine runs and writes `analysis/comparison.csv`, `comparison_runs.csv`,
 `pool_summary.csv`, `epochs.csv`, `rank_epochs.csv`, `checkpoints.csv`,
-`runs.csv`, `dataset_ost_counts.csv`, and six PNGs in `analysis/plots/`.
-Open `analysis/plots/README.md` to view all figures. `--overwrite` deliberately
-replaces previous analysis outputs; the native run files remain unchanged.
+`runs.csv`, `dataset_ost_counts.csv`, and five PNGs in `analysis/plots/`.
+`--overwrite` replaces previous analysis outputs; native run files remain.
 The analyzer uses local `rep*-pool*/` files rather than absolute paths from
 the cluster CSV. `rank_epochs.csv` contains application-level step loading
 and processing times, **not** POSIX read/write counters. Checkpoint rates
 are rank-0 save completion without fsync or an eight-rank aggregate timer.
-For U-Net, absent native training rates in epochs 1, 3, and 5 are left blank:
-the report compares epoch wall time across all five and native sample rates
-only for epochs 2 and 4. The original checkpoint payloads were removed by the
-runner; their rank-0 size and OST placement records were retained.
-For a presentation-friendly navigation path, curated copies of the completed
-ResNet and U-Net figures are indexed under
-[results/workloads/plots/dlio/](../../../results/workloads/plots/dlio/README.md).
-Those copies retain links to their raw run directories. This analyzer keeps
-its own run-specific plots beside the source analysis; it does not modify the
-BeeGFS training datasets or rerun DLIO.
+U-Net's missing native training rates remain blank; its plotted training
+throughput uses expected samples × configured mean record size divided by
+available training-block time or, for epochs 1/3/5, epoch wall time. This is
+an estimate, not measured read traffic. Curated PNGs and comparison CSVs are
+in `results/workloads/plots/dlio/{unet,resnet}/`.
 
 ## ResNet call chain
 

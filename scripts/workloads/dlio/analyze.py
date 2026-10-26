@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate copied DLIO 2.0.0 pool runs; emit tables, a report, and plots.
+"""Validate copied DLIO 2.0.0 pool runs; emit tables and plots.
 
 Use --resnet, --unet, or --cosmoflow. No DLIO workload is launched here.
 """
@@ -110,7 +110,6 @@ def parse(root, profile):
         source_osts[pool] = entries
 
     epoch_rows, rank_rows, ckpt_rows, run_rows = [], [], [], []
-    gaps, host_discrepancies = [], []
     for repetition in REPETITIONS:
         for pool in POOLS:
             raw = root / f"rep{repetition}-pool{pool}"
@@ -139,8 +138,6 @@ def parse(root, profile):
             hosts = sorted({data["hostname"] for data in rank_data.values()})
             if len(hosts) != 1:
                 raise ValueError(f"Different client hosts in one run: {raw}: {hosts}")
-            if summary["num_hosts"] != len(hosts):
-                host_discrepancies.append((pool, repetition, summary["num_hosts"], len(hosts)))
             ckpt_targets = checkpoint_placements(placements(raw / "checkpoint-osts.tsv"), profile)
             missing_epochs = []
             run_epoch_wall = []
@@ -208,13 +205,16 @@ def parse(root, profile):
                 if available:
                     wall_consistency = 100 * (rate * float(block["duration"])
                                               / (expected_steps * profile.batch_size * RANKS) - 1)
-                if (gap != "" and gap > 10) or (wall_consistency != "" and abs(wall_consistency) > 2):
-                    gaps.append((pool, repetition, epoch, gap, wall_consistency))
+                elapsed_input = float(block["duration"] if available else duration)
+                throughput = (expected_steps * profile.batch_size * RANKS * record_bytes
+                              / elapsed_input / 1048576 if profile.profile == "unet3d_v100"
+                              else nominal)
                 epoch_rows.append({"pool": pool, "repetition": repetition, "epoch": epoch,
                                    "epoch_wall_s": duration,
                                    "training_block_wall_s": block.get("duration", ""),
                                    "training_samples_per_s_DLIO": rate,
                                    "nominal_training_MiB_s_DLIO": nominal,
+                                   "training_throughput_MiB_s": throughput,
                                    "training_rate_status": "native" if available else "unavailable",
                                    "block_to_checkpoint_gap_s": gap,
                                    "DLIO_rate_vs_wall_pct": wall_consistency,
@@ -237,7 +237,7 @@ def parse(root, profile):
         tally = Counter(target for _, ids in source_osts[pool] for target in ids)
         for ost, count in sorted(tally.items()):
             counts.append({"pool": pool, "ost": ost, "input_files_assigned": count})
-    return epoch_rows, rank_rows, ckpt_rows, run_rows, counts, gaps, host_discrepancies
+    return epoch_rows, rank_rows, ckpt_rows, run_rows, counts
 
 
 def pool_summary(profile, epochs, checkpoints, runs):
@@ -317,99 +317,6 @@ def comparison(profile, root, epochs, ranks, checkpoints, runs):
     return values, aggregates
 
 
-def make_report(profile, epochs, runs, groups, gaps, host_discrepancies):
-    by_key = {(r["pool"], r["metric"]): r for r in groups}
-    metric = ("native_training_mean_MiB_s" if profile.profile != "unet3d_v100"
-              else "native_epoch2_4_samples_per_s")
-    label = ("DLIO training MiB/s" if profile.profile != "unet3d_v100"
-             else "Native epochs 2/4 samples/s")
-    def fmt(pool, key):
-        item = by_key[pool, key]
-        return f"{item['mean']:.2f} ± {item['stddev']:.2f}"
-    lines = [f"# {profile.profile} · DLIO pool comparison", "",
-             "Nine runs: three per pool, eight MPI ranks per run.", "",
-             f"| Pool | Mean epoch wall (s) | Epoch 1 wall (s) | {label} | "
-             "Checkpoint 2 rank-0 (MiB/s) | Checkpoint 4 rank-0 (MiB/s) |",
-             "|---|---:|---:|---:|---:|---:|"]
-    for pool in POOLS:
-        lines.append("| " + str(pool) + " | " + " | ".join(fmt(pool, key) for key in (
-            "epoch_mean_wall_s", "epoch1_wall_s", metric,
-            "checkpoint2_rank0_MiB_s", "checkpoint4_rank0_MiB_s")) + " |")
-    lines.extend(["", "Mean ± sample SD across three independent runs. Epoch wall time includes",
-                  "checkpoints in epochs 2 and 4; checkpoint rate is rank-0 save completion",
-                  "without fsync, not durable or eight-rank aggregate throughput.",
-                  "Modeled training MiB/s is samples/s × configured mean record length, not",
-                  "measured POSIX read bytes or backend device traffic.",
-                  "The pool order was Default → HDD → SSD each repetition; Default uses colva4",
-                  "while HDD/SSD span colva1–3. These are configured-pool comparisons.", ""])
-    if profile.profile == "unet3d_v100":
-        lines.extend(["**U-Net DLIO 2.0.0 reporting gap:** training-block duration and throughput",
-                      "are absent in epochs 1, 3, and 5 although every rank loaded the expected",
-                      "number of batches. Its native five-epoch mean includes zeros for those",
-                      "epochs and is not used here. Epoch wall times cover all five epochs; the",
-                      "native rate column uses only epochs 2 and 4, not a five-epoch mean.",
-                      "NPZ record lengths vary; mean-size-based MiB/s is only nominal.", ""])
-        for pool in POOLS:
-            first = [row for row in epochs if row["pool"] == pool and row["epoch"] == 1]
-            typical = statistics.median(row["epoch_wall_s"] for row in first)
-            for row in first:
-                if row["epoch_wall_s"] - typical > 10:
-                    lines.append(f"Epoch-1 wall-time outlier: pool {pool}, repetition "
-                                 f"{row['repetition']} took {row['epoch_wall_s']:.2f} s "
-                                 f"({row['epoch_wall_s'] - typical:.2f} s above that pool's median). "
-                                 "Its cause is not established.")
-                    lines.append("")
-    else:
-        lines.extend(["All five native per-epoch training rates are present.", ""])
-    if gaps:
-        lines.extend(["## Timing observations", ""])
-        for pool, repetition, epoch, gap, mismatch in gaps:
-            text = f"- Pool {pool}, repetition {repetition}, epoch {epoch}:"
-            if gap != "":
-                text += f" {gap:.2f} s between training block end and checkpoint start;"
-            if mismatch != "":
-                text += f" DLIO rate differs from block-wall-implied rate by {mismatch:+.2f}%."
-            lines.append(text)
-        lines.extend(["", "Gaps before checkpoint start are not checkpoint-save time.", ""])
-    if host_discrepancies:
-        lines.append(f"Per-rank hostnames indicate one client; DLIO summary reported eight hosts "
-                     f"in {len(host_discrepancies)}/9 runs. Use per-rank hostnames for topology.")
-    lines.append("")
-    return "\n".join(lines)
-
-
-def comparison_report(profile, aggregates):
-    lines = ["## Pool comparison at a glance", "",
-             "| Metric | Highest-performing observed mean | Default | HDD | SSD |",
-             "|---|---|---:|---:|---:|"]
-    descriptions = (
-        ("training_input_MiB_s", "Training input (MiB/s)"),
-        ("checkpoint_rank0_MiB_s_no_fsync", "Checkpoint rank 0 (MiB/s)"),
-        ("whole_run_minutes", "Whole-run time (min; lower is better)"),
-    )
-    for metric, label in descriptions:
-        values = {row["pool"]: row for row in aggregates if row["metric"] == metric}
-        winner = (min if metric == "whole_run_minutes" else max)(
-            POOLS, key=lambda pool: values[pool]["mean"])
-        cells = [f"{values[pool]['mean']:.2f} ± {values[pool]['stddev']:.2f}" for pool in POOLS]
-        lines.append(f"| {label} | {LABELS[winner]} | " + " | ".join(cells) + " |")
-    lines.extend(["", "Winners here mean only the numerically best mean across **three** runs;",
-                  "they are not significance claims or isolated HDD/SSD effects.",
-                  "Input and checkpoint are different I/O phases and must not be added as throughput.",
-                  "The run timer includes startup, reads, and checkpoint saves."])
-    if profile.profile == "unet3d_v100":
-        lines.extend(["U-Net training input MiB/s is a **nominal proxy**, not DLIO's invalid",
-                      "five-epoch mean: validated batches × configured mean NPZ record size",
-                      "divided by the sum of training-block times where available and epoch",
-                      "wall times for checkpoint-free epochs 1, 3, and 5. The latter can",
-                      "include non-read overhead; individual NPZ file sizes vary."])
-    else:
-        lines.append("Training input MiB/s is DLIO's modeled sample-based five-epoch mean.")
-    lines.extend(["Checkpoint MiB/s is rank-0 file bytes / rank-0 DLIO save time across",
-                  "two dependent saves within each run; it has no fsync or eight-rank barrier.", ""])
-    return "\n".join(lines)
-
-
 def style(ax, ylabel):
     ax.set_ylabel(ylabel)
     ax.grid(axis="y", alpha=.22)
@@ -426,8 +333,8 @@ def save(fig, path):
 def plot_comparison(profile, aggregates, out):
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.9))
     entries = (
-        ("training_input_MiB_s", "Training input", "Nominal MiB/s · higher is better"),
-        ("checkpoint_rank0_MiB_s_no_fsync", "Checkpoint save", "Rank-0 MiB/s · higher is better"),
+        ("training_input_MiB_s", "Training throughput", "Estimated MiB/s · higher is better"),
+        ("checkpoint_rank0_MiB_s_no_fsync", "Checkpoint write throughput", "Rank-0 MiB/s · higher is better"),
         ("whole_run_minutes", "Whole run", "Minutes · lower is better"),
     )
     for ax, (metric, title, xlabel) in zip(axes, entries):
@@ -443,7 +350,7 @@ def plot_comparison(profile, aggregates, out):
             ax.errorbar(item["mean"], position, xerr=item["stddev"], fmt="none",
                         color="#243447", capsize=4)
             ax.text(item["mean"] - ceiling * .015, position,
-                    f"{item['mean']:.2f} ± {item['stddev']:.2f}" + ("  ★" if pool == winner else ""),
+                    f"{item['mean']:.2f} ± {item['stddev']:.2f}",
                     ha="right", va="center", fontsize=8.5, color="#162334",
                     bbox={"facecolor": "white", "alpha": .88, "edgecolor": "none", "pad": 1})
         ax.set_yticks(range(3), [LABELS[pool] for pool in POOLS])
@@ -452,91 +359,65 @@ def plot_comparison(profile, aggregates, out):
         ax.set_xlabel(xlabel)
         ax.set_title(title, fontweight="bold")
         ax.spines[["top", "right"]].set_visible(False)
-    fig.suptitle(f"{profile.profile}: which configured pool leads for each metric?",
-                 fontweight="bold")
-    note = ("U-Net input is a nominal wall-time proxy; " if profile.profile == "unet3d_v100"
-            else "DLIO-modeled input rate; ")
-    fig.text(.5, -.015, "Bars = mean ± SD across 3 runs; ★ = best observed mean. " + note +
-             "rank-0 checkpoint saves have no fsync.", ha="center", fontsize=9)
-    save(fig, out / "pool_comparison.png")
+    fig.suptitle(f"{profile.profile}: pool performance · mean ± SD (3 runs)", fontweight="bold")
+    save(fig, out / "pool_performance.png")
 
 
 def plot_training(profile, epochs, out):
     unet = profile.profile == "unet3d_v100"
-    fields = (("epoch_wall_s", "Epoch completion time (s)") if unet else
-              ("nominal_training_MiB_s_DLIO", "DLIO-modeled training I/O (MiB/s)"))
-    second = (("training_samples_per_s_DLIO", "Available native training rate (samples/s)") if unet
-              else ("training_block_wall_s", "Training block wall time (s)"))
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8))
-    for ax, (column, ylabel) in zip(axes, (fields, second)):
-        valid_epochs = (2, 4) if unet and column == "training_samples_per_s_DLIO" else EPOCHS
-        for pool in POOLS:
-            for repetition in REPETITIONS:
-                ys = [next(float(row[column]) for row in epochs if
-                           row["pool"] == pool and row["repetition"] == repetition
-                           and row["epoch"] == epoch) for epoch in valid_epochs]
-                ax.plot(valid_epochs, ys, color=COLORS[pool], alpha=.2, linewidth=1)
-            means, errors = zip(*(mean_std([float(row[column]) for row in epochs if
-                row["pool"] == pool and row["epoch"] == epoch]) for epoch in valid_epochs))
-            ax.errorbar(valid_epochs, means, yerr=errors, fmt="o-", capsize=3,
-                        color=COLORS[pool], linewidth=2, label=LABELS[pool])
-        ax.set_xticks(EPOCHS)
-        ax.set_xlabel("Epoch")
-        style(ax, ylabel)
-    axes[0].legend(frameon=False, fontsize=8)
-    if unet:
-        axes[1].set_ylim(bottom=0)
-        axes[1].text(.5, .04, "Epochs 1, 3, 5: DLIO rate unavailable, not zero I/O",
-                     transform=axes[1].transAxes, ha="center", fontsize=8, color="#7d3641")
-    else:
-        flagged = [row for row in epochs if row["block_to_checkpoint_gap_s"] != ""
-                   and float(row["block_to_checkpoint_gap_s"]) > 10]
-        for row in flagged:
-            axes[0].scatter(row["epoch"], row["nominal_training_MiB_s_DLIO"],
-                            marker="*", s=130, color="#B23C48", edgecolor="white", zorder=5)
-        if flagged:
-            axes[0].text(.98, .04, "★ pre-checkpoint gap flagged in report",
-                         transform=axes[0].transAxes, ha="right", fontsize=8, color="#7d3641")
-    fig.suptitle(f"{profile.profile}: training by epoch · three runs per pool", fontweight="bold")
-    save(fig, out / "training_epochs.png")
+    fig, ax = plt.subplots(figsize=(8.3, 4.5))
+    for pool in POOLS:
+        for repetition in REPETITIONS:
+            ys = [next(float(row["training_throughput_MiB_s"]) for row in epochs if
+                       row["pool"] == pool and row["repetition"] == repetition
+                       and row["epoch"] == epoch) for epoch in EPOCHS]
+            ax.plot(EPOCHS, ys, color=COLORS[pool], alpha=.2, linewidth=1)
+        means, errors = zip(*(mean_std([float(row["training_throughput_MiB_s"])
+            for row in epochs if row["pool"] == pool and row["epoch"] == epoch])
+            for epoch in EPOCHS))
+        ax.errorbar(EPOCHS, means, yerr=errors, fmt="o-", capsize=3,
+                    color=COLORS[pool], linewidth=2, label=LABELS[pool])
+    ax.set_xticks(EPOCHS)
+    ax.set_xlabel("Epoch")
+    style(ax, "Estimated training input throughput (MiB/s)" if unet else
+          "DLIO-modeled training input throughput (MiB/s)")
+    ax.legend(frameon=False, fontsize=8)
+    ax.set_title(f"{profile.profile}: training throughput by epoch", fontweight="bold")
+    save(fig, out / "training_throughput_by_epoch.png")
 
 
 def plot_checkpoints(profile, checkpoints, out):
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
-    for ax, key, ylabel in ((axes[0], "rank0_save_s_DLIO", "Rank-0 save duration (s)"),
-                            (axes[1], "rank0_MiB_s_no_fsync", "Rank-0 save rate (MiB/s)")):
-        for offset, pool in zip((-.19, 0, .19), POOLS):
-            for epoch in (2, 4):
-                values = [row[key] for row in checkpoints if row["pool"] == pool and row["epoch"] == epoch]
-                mean, deviation = mean_std(values)
-                x = epoch + offset
-                ax.errorbar(x, mean, yerr=deviation, fmt="o", markersize=7, capsize=4,
-                            color=COLORS[pool], label=LABELS[pool] if epoch == 2 else None)
-                ax.scatter([x - .065, x, x + .065], values, color=COLORS[pool], s=15, alpha=.6)
-        ax.set_xticks((2, 4), ("After epoch 2", "After epoch 4"))
-        style(ax, ylabel)
-    axes[0].legend(frameon=False, fontsize=8)
-    fig.suptitle(f"{profile.profile}: rank-0 checkpoint save · no fsync", fontweight="bold")
-    fig.text(.5, -.01, "Three runs per pool; not a synchronized eight-rank rate or durable-write result.",
-             ha="center", fontsize=9)
-    save(fig, out / "checkpoint_rank0.png")
+    fig, ax = plt.subplots(figsize=(8.3, 4.5))
+    for offset, pool in zip((-.19, 0, .19), POOLS):
+        for epoch in (2, 4):
+            values = [row["rank0_MiB_s_no_fsync"] for row in checkpoints
+                      if row["pool"] == pool and row["epoch"] == epoch]
+            mean, deviation = mean_std(values)
+            x = epoch + offset
+            ax.errorbar(x, mean, yerr=deviation, fmt="o", markersize=7, capsize=4,
+                        color=COLORS[pool], label=LABELS[pool] if epoch == 2 else None)
+            ax.scatter([x - .065, x, x + .065], values, color=COLORS[pool], s=15, alpha=.6)
+    ax.set_xticks((2, 4), ("After epoch 2", "After epoch 4"))
+    style(ax, "Checkpoint write throughput (MiB/s, rank 0; no fsync)")
+    ax.legend(frameon=False, fontsize=8)
+    ax.set_title(f"{profile.profile}: checkpoint write throughput", fontweight="bold")
+    save(fig, out / "checkpoint_write_throughput.png")
 
 
 def plot_repetitions(profile, runs, out):
     unet = profile.profile == "unet3d_v100"
-    column = "mean_epoch_wall_s" if unet else "native_training_mean_MiB_s"
     fig, ax = plt.subplots(figsize=(8.3, 4.5))
     for pool in POOLS:
-        vals = [next(row[column] for row in runs if row["pool"] == pool and
-                     row["repetition"] == repetition) for repetition in REPETITIONS]
+        vals = [next(row["training_input_MiB_s"] for row in runs if row["pool"] == pool and
+                      row["repetition"] == repetition) for repetition in REPETITIONS]
         ax.plot(REPETITIONS, vals, "o-", color=COLORS[pool], label=LABELS[pool], linewidth=2)
     ax.set_xticks(REPETITIONS)
     ax.set_xlabel("Repetition · pool order: Default → HDD → SSD")
-    style(ax, "Mean epoch wall (s; lower is faster)" if unet else
-          "DLIO-modeled mean training I/O (MiB/s)")
+    style(ax, "Estimated training input throughput (MiB/s)" if unet else
+          "DLIO-modeled training input throughput (MiB/s)")
     ax.legend(frameon=False)
-    ax.set_title(f"{profile.profile}: run-to-run comparison", fontweight="bold")
-    save(fig, out / "training_repetitions.png")
+    ax.set_title(f"{profile.profile}: training throughput by run", fontweight="bold")
+    save(fig, out / "training_throughput_by_run.png")
 
 
 def plot_load_tail(profile, ranks, out):
@@ -554,34 +435,14 @@ def plot_load_tail(profile, ranks, out):
                     linewidth=2, capsize=3, label=LABELS[pool])
     ax.set_xticks(EPOCHS)
     ax.set_xlabel("Epoch")
-    style(ax, "Mean within-run rank p95 load-step time (s)")
+    style(ax, "Data loading time per step (s, rank p95)")
     ax.legend(frameon=False, fontsize=8)
-    ax.set_title("Application-level load timing · not POSIX read latency", fontweight="bold")
-    save(fig, out / "rank_load_p95.png")
-
-
-def plot_placement(profile, counts, out):
-    fig, axes = plt.subplots(3, 1, figsize=(10, 7.2))
-    input_count = min(profile.files, 65) if profile.files > 1024 else profile.files
-    for ax, pool in zip(axes, POOLS):
-        records = sorted((row for row in counts if row["pool"] == pool), key=lambda row: row["ost"])
-        positions = list(range(len(records)))
-        ax.bar(positions, [r["input_files_assigned"] for r in records],
-               color=COLORS[pool], alpha=.83)
-        ax.axhline(input_count * 4 / len(records), color="#526278", linestyle="--", linewidth=1)
-        ax.set_xticks(positions, [str(r["ost"]) for r in records])
-        style(ax, "File assignments")
-        ax.set_title(LABELS[pool], loc="left", fontsize=10)
-    axes[-1].set_xlabel("BeeGFS storage target ID")
-    fig.suptitle(f"{profile.profile}: {input_count} input files × four OSTs"
-                 + (" (placement sample)" if profile.files > 1024 else ""), fontweight="bold")
-    fig.text(.5, -.01, "Dashed: even file assignment; counts are not byte or device traffic.",
-             ha="center", fontsize=9)
-    save(fig, out / "dataset_ost_assignments.png")
+    ax.set_title(f"{profile.profile}: data loading time by epoch", fontweight="bold")
+    save(fig, out / "data_loading_time.png")
 
 
 def analyze(root, profile, output, overwrite=False):
-    epochs, ranks, checkpoints, runs, counts, gaps, hosts = parse(root, profile)
+    epochs, ranks, checkpoints, runs, counts = parse(root, profile)
     if output.exists() and not overwrite:
         raise FileExistsError(f"{output} exists; choose --output or pass --overwrite")
     output.mkdir(parents=True, exist_ok=True)
@@ -595,34 +456,24 @@ def analyze(root, profile, output, overwrite=False):
     run_values, comparison_groups = comparison(profile, root, epochs, ranks, checkpoints, runs)
     write_csv(output / "comparison_runs.csv", run_values)
     write_csv(output / "comparison.csv", comparison_groups)
-    (output / "report.md").write_text(make_report(profile, epochs, runs, groups, gaps, hosts)
-                                      + "\n" + comparison_report(profile, comparison_groups))
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10,
                          "axes.titlesize": 12, "figure.facecolor": "white"})
     figures = output / "plots"
     figures.mkdir(exist_ok=True)
+    if overwrite:
+        for old in (output / "report.md", *(figures / name for name in (
+            "README.md", "plot_manifest.json", "pool_comparison.png", "training_epochs.png",
+            "checkpoint_rank0.png", "training_repetitions.png", "rank_load_p95.png",
+            "data_loading_p95.png",
+            "dataset_ost_assignments.png"))):
+            old.unlink(missing_ok=True)
     plot_comparison(profile, comparison_groups, figures)
     plot_training(profile, epochs, figures)
     plot_checkpoints(profile, checkpoints, figures)
-    plot_repetitions(profile, runs, figures)
+    plot_repetitions(profile, run_values, figures)
     plot_load_tail(profile, ranks, figures)
-    plot_placement(profile, counts, figures)
-    captions = {
-        "pool_comparison.png": "Pool ranking by input, checkpoint, and whole-run metrics; read the phase-specific caveats.",
-        "training_epochs.png": "Per-epoch training measurements; absent U-Net native rates are not plotted as zeros.",
-        "checkpoint_rank0.png": "Rank-0 checkpoint save completion without fsync.",
-        "training_repetitions.png": "Run-to-run comparison across the fixed pool order.",
-        "rank_load_p95.png": "Application-level per-rank loading-step p95, summarized by run.",
-        "dataset_ost_assignments.png": "Input file assignments per OST; not bytes or traffic.",
-    }
-    (figures / "README.md").write_text(f"# {profile.profile} figures\n\n" + "\n\n".join(
-        f"## {name.removesuffix('.png').replace('_', ' ').title()}\n\n![{caption}]({name})\n\n{caption}"
-        for name, caption in captions.items()) + "\n")
-    (figures / "plot_manifest.json").write_text(json.dumps({
-        "source": str(root), "inputs": list(tables), "figures": captions,
-    }, indent=2) + "\n")
     print(f"Validated {len(runs)} runs, {len(epochs)} epochs, {len(ranks)} rank-epochs, "
-          f"{len(checkpoints)} checkpoints; tables, report, and plots: {output}")
+          f"{len(checkpoints)} checkpoints; tables and plots: {output}")
 
 
 def main():

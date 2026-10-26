@@ -62,14 +62,19 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   datasets remain reusable.
 - Replaced the separate ResNet-only result parser and plotter entrypoints with
   one workload-selectable offline `analyze.py` command. It validates native
-  output and runner evidence and writes tables, report, and six figures in
+  output and runner evidence and writes tables and five figures in
   one invocation for ResNet, U-Net, or a completed CosmoFlow suite. U-Net's
   missing native odd-epoch rates remain unavailable instead of becoming zeros.
 - Added a run-level three-metric pool comparison (nominal training input,
   rank-0 checkpoint save completion, and whole-run time), with three-run error
-  bars and metric-specific caveats. Published six curated figures and the
+  bars. Published five curated figures and the
   comparison tables for each completed workload under
-  `results/workloads/plots/dlio/{unet,resnet}/`, linked from the results index.
+  `results/workloads/plots/dlio/{unet,resnet}/`.
+- Simplified the generated plot sets to training and checkpoint throughput,
+  pool performance, run-to-run throughput, and data loading time. Removed
+  generated results READMEs and narrative reports and named each PNG for its
+  measurement. U-Net's missing native rates are plotted only as explicitly
+  estimated sample-size/time throughput, not as measured filesystem traffic.
 - Reduced the CosmoFlow variant to 131,072 files per pool (one quarter of its
   DLIO preset). Both dataset generation and the pool runner now explicitly
   override DLIO's file count so generated inputs match measured runs; this is

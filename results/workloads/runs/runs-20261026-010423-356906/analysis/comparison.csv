@@ -1,0 +1,10 @@
+metric,pool,n_runs,mean,stddev,unit,better
+training_input_MiB_s,1,3,275.57126572426085,0.7895082678513264,MiB/s,higher
+training_input_MiB_s,3,3,259.79344429808776,3.8672823578174604,MiB/s,higher
+training_input_MiB_s,6,3,276.5709278745081,3.329850583095666,MiB/s,higher
+checkpoint_rank0_MiB_s_no_fsync,1,3,36.28897138229188,0.49160885584258174,MiB/s,higher
+checkpoint_rank0_MiB_s_no_fsync,3,3,35.96631289214316,0.23795268573964168,MiB/s,higher
+checkpoint_rank0_MiB_s_no_fsync,6,3,35.62294648227049,0.9137374572942584,MiB/s,higher
+whole_run_minutes,1,3,42.5838078,0.12046001646795101,min,lower
+whole_run_minutes,3,3,45.218236499999996,0.6542028702974451,min,lower
+whole_run_minutes,6,3,42.4599496,0.5603680925419127,min,lower

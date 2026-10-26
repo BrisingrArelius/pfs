@@ -1,4 +1,4 @@
-pool,repetition,epoch,rank0_save_s_DLIO,rank0_bytes_from_runner,rank0_MiB_s_no_fsync,rank0_data_OSTs,all_data_OSTs
+pool,repetition,epoch,rank0_save_s_DLIO,rank0_bytes,rank0_MiB_s_no_fsync,rank0_data_OSTs,all_data_OSTs
 1,1,2,2.7,100000478,35.321439813684535,"402,403,404,405","401,402,403,404,405,406,407"
 1,1,4,2.57,100000478,37.108127430719165,"404,405,406,407","401,402,403,404,405,406,407"
 3,1,2,2.72,100000478,35.061723344466266,"203,204,301,302","101,102,103,201,202,203,204,301,302,303,304"
