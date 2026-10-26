@@ -31,7 +31,9 @@ It also creates an empty `dataset/valid/` directory in every pool: DLIO 2.0.0
 lists that path at startup even when evaluation is disabled. Re-running the
 generator repairs a missing `valid/` without regenerating complete training
 datasets.
-CosmoFlow has 524,288 files of roughly 2.83 MB **per pool**; confirm time,
+This CosmoFlow variant uses 131,072 files of roughly 2.83 MB **per pool**
+(one quarter of the native file count, approximately 370 GB per pool). The
+generator and runner both override DLIO's default file count. Confirm time,
 free space, and inode availability before preparing it.
 
 The full-run `metrics.csv` contains DLIO training rates and rank-0 checkpoint
@@ -59,53 +61,45 @@ and start a fresh sweep with `python3 scripts/workloads/dlio/run_unet3d_pools.py
 Each checkpoint class remains inside its workload runner so DLIO can import
 it in every MPI rank without changing the installed DLIO package.
 
-## Parse a copied ResNet sweep offline
+## Analyze a copied sweep offline
 
 Copy the completed `runs-.../` directory (including `metrics.csv`, the nine
 `rep*-pool*/` directories, and placement TSVs) to your local machine. From
-the repository root, with PyYAML installed:
+the repository root, with PyYAML and Matplotlib installed, use **one command**
+for tables, report, and plots:
 
 ```bash
-python3 scripts/workloads/dlio/parse_results.py results/workloads/runs/runs-20261026-010423-356906
+python3 scripts/workloads/dlio/analyze.py --unet results/workloads/runs/runs-20261026-164248-962399 --overwrite
+python3 scripts/workloads/dlio/analyze.py --resnet results/workloads/runs/runs-20261026-010423-356906 --overwrite
 ```
 
-The parser validates nine completed runs and writes `analysis/report.md`,
+Use `--cosmoflow` for a completed CosmoFlow sweep. The analyzer validates
+nine completed runs and writes `analysis/report.md`, `comparison.csv` and
+`comparison_runs.csv` (three run-level values per pool), plus
 `pool_summary.csv`, `epochs.csv`, `rank_epochs.csv`, `checkpoints.csv`,
-`runs.csv`, and `dataset_ost_counts.csv` inside that copied run directory.
-Use `--overwrite` to deliberately regenerate existing parser outputs.
-The parser uses local `rep*-pool*/` files rather than the CSV's original
-absolute cluster paths. `rank_epochs.csv` contains application-level step
-load and processing times; these are **not** POSIX read/write counters.
-`checkpoints.csv` reports rank-0 save-completion time and rate, not an
-eight-rank aggregate or fsync-inclusive rate. Training MiB/s is derived
-from DLIO's samples/s and configured bytes per record, not measured device
-traffic. The original checkpoint payloads were removed after each successful
-run; the copied directory contains their recorded sizes and OST placement.
-
-### Plot a parsed ResNet sweep
-
-On your local machine, with Matplotlib installed:
-
-```bash
-python3 scripts/workloads/dlio/plot_results.py results/workloads/runs/runs-20261026-010423-356906
-```
-
-Open `analysis/plots/README.md` in the copied run directory to view five
-figures: modeled training rate and training-block wall time per epoch, rank-0
-checkpoint saves, training rate by repetition, per-rank loading-time tail,
-and input-file assignments per OST. Thin lines/points show individual runs;
-error bars summarize **three independent repetitions**, not eight ranks as
-independent trials. The training figure flags one SSD run's 60-second gap
-*before* its checkpoint timer. Checkpoint figures do not claim fsync/durable
-rates; the OST plot counts assigned files, not bytes or device traffic.
+`runs.csv`, `dataset_ost_counts.csv`, and six PNGs in `analysis/plots/`.
+Open `analysis/plots/README.md` to view all figures. `--overwrite` deliberately
+replaces previous analysis outputs; the native run files remain unchanged.
+The analyzer uses local `rep*-pool*/` files rather than absolute paths from
+the cluster CSV. `rank_epochs.csv` contains application-level step loading
+and processing times, **not** POSIX read/write counters. Checkpoint rates
+are rank-0 save completion without fsync or an eight-rank aggregate timer.
+For U-Net, absent native training rates in epochs 1, 3, and 5 are left blank:
+the report compares epoch wall time across all five and native sample rates
+only for epochs 2 and 4. The original checkpoint payloads were removed by the
+runner; their rank-0 size and OST placement records were retained.
+For a presentation-friendly navigation path, curated copies of the completed
+ResNet and U-Net figures are indexed under
+[results/workloads/plots/dlio/](../../../results/workloads/plots/dlio/README.md).
+Those copies retain links to their raw run directories. This analyzer keeps
+its own run-specific plots beside the source analysis; it does not modify the
+BeeGFS training datasets or rerun DLIO.
 
 ## ResNet call chain
 
-This diagram describes the **new local refactor**, not the earlier ResNet
-script already running on `anjuna2`. The measurement intent is the same, but
-the Python call chain and import path have changed. Do not update that checkout
-while its existing multi-run sweep is active: subsequent DLIO invocations may
-still import the old checkpoint module path.
+This diagram describes the reorganized runner, not the older ResNet script
+used for the first completed cluster sweep. Its Python call chain and
+checkpoint-class import path changed; the measurement intent is the same.
 
 **Color key:** blue = runner control; cyan = preparation/placement; purple =
 DLIO executing the workload; green = results/analysis; gray = cleanup.

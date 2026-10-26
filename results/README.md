@@ -7,6 +7,8 @@ not retroactively establish missing transport, capacity, placement or cache meta
   BeeGFS-pool FIO, network snapshots and placement/capacity evidence.
 - [Workload evidence](workloads/legacy/README.md): Darshan CSVs/figures and
   historical execution records.
+- [DLIO application figures](workloads/plots/dlio/README.md): per-workload
+  pool comparisons for ResNet-50 and U-Net 3D, with links to their raw runs.
 - [Trace-characterization evidence](trace_analysis/legacy/README.md): contiguity
   and frequency distributions from external Polaris Darshan logs.
 - [`cluster-inventory/20260921/`](cluster-inventory/20260921/): normalized

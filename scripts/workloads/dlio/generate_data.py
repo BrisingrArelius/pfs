@@ -62,6 +62,7 @@ def main():
             output.mkdir(parents=True)
             command = ("mpirun", "-np", str(RANKS), "dlio_benchmark",
                        f"workload={profile.profile}",
+                       f"++workload.dataset.num_files_train={profile.files}",
                        "++workload.workflow.generate_data=True",
                        "++workload.workflow.train=False",
                        "++workload.workflow.checkpoint=False",

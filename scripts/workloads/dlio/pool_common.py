@@ -145,6 +145,7 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
                 size = min(model_bytes, 16 * 1024 * 1024) if pilot else model_bytes
                 command = [
                     "mpirun", "-np", str(RANKS), "dlio_benchmark", f"workload={profile.profile}",
+                    f"++workload.dataset.num_files_train={profile.files}",
                     "++workload.workflow.generate_data=False",
                     "++workload.workflow.train=True",
                     "++workload.workflow.checkpoint=True",

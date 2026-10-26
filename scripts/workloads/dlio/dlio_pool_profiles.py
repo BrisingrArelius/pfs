@@ -34,7 +34,7 @@ WORKLOADS = {
                        100000000, 64, 8, True),
     "unet": Workload("unet3d", "unet3d_v100", "npz", 168,
                      499153191, 4, 4, False),
-    "cosmoflow": Workload("cosmoflow", "cosmoflow_v100", "tfrecord", 524288,
+    "cosmoflow": Workload("cosmoflow", "cosmoflow_v100", "tfrecord", 131072,
                           100000000, 1, 4, True),
 }
 

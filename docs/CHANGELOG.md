@@ -60,6 +60,20 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   generator previously copied only `train/`. Create the empty directory in
   every pool and check for it before starting measured MPI runs; completed
   datasets remain reusable.
+- Replaced the separate ResNet-only result parser and plotter entrypoints with
+  one workload-selectable offline `analyze.py` command. It validates native
+  output and runner evidence and writes tables, report, and six figures in
+  one invocation for ResNet, U-Net, or a completed CosmoFlow suite. U-Net's
+  missing native odd-epoch rates remain unavailable instead of becoming zeros.
+- Added a run-level three-metric pool comparison (nominal training input,
+  rank-0 checkpoint save completion, and whole-run time), with three-run error
+  bars and metric-specific caveats. Published six curated figures and the
+  comparison tables for each completed workload under
+  `results/workloads/plots/dlio/{unet,resnet}/`, linked from the results index.
+- Reduced the CosmoFlow variant to 131,072 files per pool (one quarter of its
+  DLIO preset). Both dataset generation and the pool runner now explicitly
+  override DLIO's file count so generated inputs match measured runs; this is
+  a reduced-scale variant, not the native full-size CosmoFlow workload.
 
 ---
 
