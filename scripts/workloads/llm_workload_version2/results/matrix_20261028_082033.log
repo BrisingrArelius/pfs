@@ -1,0 +1,1167 @@
+
+=== rep 1 order: balanced allF onefast D unbalanced allS ===
+
+=== [balanced rep 1] v2_balanced_r1_20261028_082033 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_balanced
+  files 0-7  S S S S F F F F
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 5220836 -> 2266880 kB
+  dropped page cache on colva1: Cached 5688168 -> 261132 kB
+  dropped page cache on colva2: Cached 8728412 -> 2520108 kB
+  dropped page cache on colva3: Cached 6301116 -> 1144200 kB
+  dropped page cache on colva4: Cached 5100032 -> 177392 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 08:20:40.676000 3756760 torch/distributed/run.py:793] 
+W1028 08:20:40.676000 3756760 torch/distributed/run.py:793] *****************************************
+W1028 08:20:40.676000 3756760 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 08:20:40.676000 3756760 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_balanced
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     481.98 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r1_20261028_082033.summary.json
+
+real	8m23.315s
+user	0m18.607s
+sys	0m54.555s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3756760)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3756802->0, 3756803->1
+targets          12 of 4 used
+  target 104        1.056 GB (  5.9%)  810 ops touching it
+  target 105        1.908 GB ( 10.6%)  1,490 ops touching it
+  target 106        1.198 GB (  6.6%)  808 ops touching it
+  target 107        1.562 GB (  8.7%)  933 ops touching it
+  target 205        1.589 GB (  8.8%)  1,482 ops touching it
+  target 305        1.699 GB (  9.4%)  927 ops touching it
+  target 306        1.892 GB ( 10.5%)  1,509 ops touching it
+  target 307        1.615 GB (  9.0%)  1,506 ops touching it
+  target 404        1.560 GB (  8.7%)  926 ops touching it
+  target 405        1.200 GB (  6.7%)  813 ops touching it
+  target 406        1.711 GB (  9.5%)  901 ops touching it
+  target 407        1.035 GB (  5.7%)  791 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r1_20261028_082033.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r1_20261028_082033.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r1_20261028_082033.darshan.json
+  [allF rep 1] already done, skipping
+
+=== [onefast rep 1] v2_onefast_r1_20261028_082904 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_onefast
+  files 0-7  S S S S F S S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 3672824 -> 1588292 kB
+  dropped page cache on colva1: Cached 5188480 -> 261340 kB
+  dropped page cache on colva2: Cached 4958652 -> 1865372 kB
+  dropped page cache on colva3: Cached 6624028 -> 484636 kB
+  dropped page cache on colva4: Cached 5097900 -> 177168 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 08:29:16.508000 3760677 torch/distributed/run.py:793] 
+W1028 08:29:16.508000 3760677 torch/distributed/run.py:793] *****************************************
+W1028 08:29:16.508000 3760677 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 08:29:16.508000 3760677 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_onefast
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     685.02 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r1_20261028_082904.summary.json
+
+real	11m46.661s
+user	0m20.317s
+sys	0m54.625s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3760677)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3760717->0, 3760718->1
+targets          10 of 4 used
+  target 105        0.709 GB (  3.9%)  677 ops touching it
+  target 106        2.257 GB ( 12.5%)  1,618 ops touching it
+  target 107        2.761 GB ( 15.3%)  1,746 ops touching it
+  target 205        0.532 GB (  2.9%)  672 ops touching it
+  target 305        0.502 GB (  2.8%)  114 ops touching it
+  target 306        2.949 GB ( 16.4%)  2,319 ops touching it
+  target 307        2.815 GB ( 15.6%)  2,319 ops touching it
+  target 404        0.502 GB (  2.8%)  116 ops touching it
+  target 406        2.767 GB ( 15.4%)  1,711 ops touching it
+  target 407        2.233 GB ( 12.4%)  1,604 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r1_20261028_082904.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r1_20261028_082904.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r1_20261028_082904.darshan.json
+
+=== [D rep 1] v2_D_r1_20261028_084103 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_D
+  files 0-7  D D D D D D D D
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2512840 -> 1586400 kB
+  dropped page cache on colva1: Cached 5189396 -> 261200 kB
+  dropped page cache on colva2: Cached 2924032 -> 1866680 kB
+  dropped page cache on colva3: Cached 6499528 -> 616860 kB
+  dropped page cache on colva4: Cached 5101784 -> 177400 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 08:41:15.069000 3765826 torch/distributed/run.py:793] 
+W1028 08:41:15.069000 3765826 torch/distributed/run.py:793] *****************************************
+W1028 08:41:15.069000 3765826 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 08:41:15.069000 3765826 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_D
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     675.60 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r1_20261028_084103.summary.json
+
+real	11m37.363s
+user	0m19.281s
+sys	0m56.634s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3765826)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3765878->0, 3765879->1
+targets          12 of 4 used
+  target 104        1.505 GB (  8.4%)  345 ops touching it
+  target 105        1.009 GB (  5.6%)  242 ops touching it
+  target 106        1.403 GB (  7.8%)  1,374 ops touching it
+  target 107        1.086 GB (  6.0%)  1,364 ops touching it
+  target 205        1.003 GB (  5.6%)  226 ops touching it
+  target 305        1.897 GB ( 10.5%)  1,518 ops touching it
+  target 306        1.806 GB ( 10.0%)  2,085 ops touching it
+  target 307        1.560 GB (  8.7%)  921 ops touching it
+  target 404        1.505 GB (  8.4%)  345 ops touching it
+  target 405        1.910 GB ( 10.6%)  1,496 ops touching it
+  target 406        1.784 GB (  9.9%)  2,061 ops touching it
+  target 407        1.557 GB (  8.6%)  919 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r1_20261028_084103.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r1_20261028_084103.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r1_20261028_084103.darshan.json
+
+=== [unbalanced rep 1] v2_unbalanced_r1_20261028_085253 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_unbalanced
+  files 0-7  F F S S F F S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2414424 -> 1588840 kB
+  dropped page cache on colva1: Cached 4698644 -> 261120 kB
+  dropped page cache on colva2: Cached 3308464 -> 1869172 kB
+  dropped page cache on colva3: Cached 5358948 -> 485376 kB
+  dropped page cache on colva4: Cached 6080992 -> 177436 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 08:53:00.491000 3771627 torch/distributed/run.py:793] 
+W1028 08:53:00.491000 3771627 torch/distributed/run.py:793] *****************************************
+W1028 08:53:00.491000 3771627 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 08:53:00.491000 3771627 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_unbalanced
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     399.09 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r1_20261028_085253.summary.json
+
+real	7m0.661s
+user	0m19.317s
+sys	0m51.608s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3771627)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3771657->0, 3771658->1
+targets          12 of 4 used
+  target 104        1.904 GB ( 10.6%)  1,488 ops touching it
+  target 105        1.798 GB ( 10.0%)  2,043 ops touching it
+  target 106        1.198 GB (  6.6%)  811 ops touching it
+  target 107        1.754 GB (  9.7%)  1,510 ops touching it
+  target 205        1.535 GB (  8.5%)  900 ops touching it
+  target 305        1.197 GB (  6.6%)  813 ops touching it
+  target 306        1.753 GB (  9.7%)  1,504 ops touching it
+  target 307        1.755 GB (  9.7%)  1,506 ops touching it
+  target 404        1.059 GB (  5.9%)  810 ops touching it
+  target 405        1.510 GB (  8.4%)  354 ops touching it
+  target 406        1.558 GB (  8.6%)  923 ops touching it
+  target 407        1.006 GB (  5.6%)  234 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r1_20261028_085253.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r1_20261028_085253.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r1_20261028_085253.darshan.json
+
+=== [allS rep 1] v2_allS_r1_20261028_090001 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allS
+  files 0-7  S S S S S S S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2373696 -> 1587224 kB
+  dropped page cache on colva1: Cached 5679884 -> 261028 kB
+  dropped page cache on colva2: Cached 3727452 -> 1870608 kB
+  dropped page cache on colva3: Cached 4875896 -> 487684 kB
+  dropped page cache on colva4: Cached 5099616 -> 177192 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 09:00:10.498000 3774962 torch/distributed/run.py:793] 
+W1028 09:00:10.498000 3774962 torch/distributed/run.py:793] *****************************************
+W1028 09:00:10.498000 3774962 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 09:00:10.498000 3774962 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allS
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     772.73 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r1_20261028_090001.summary.json
+
+real	13m14.103s
+user	0m20.069s
+sys	0m55.906s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3774962)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3775013->0, 3775014->1
+targets          6 of 4 used
+  target 106        2.788 GB ( 15.5%)  2,290 ops touching it
+  target 107        3.263 GB ( 18.1%)  1,860 ops touching it
+  target 306        3.451 GB ( 19.1%)  2,435 ops touching it
+  target 307        2.815 GB ( 15.6%)  2,319 ops touching it
+  target 406        2.767 GB ( 15.4%)  1,711 ops touching it
+  target 407        2.942 GB ( 16.3%)  2,281 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r1_20261028_090001.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r1_20261028_090001.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r1_20261028_090001.darshan.json
+
+=== rep 2 order: balanced D unbalanced allF onefast allS ===
+
+=== [balanced rep 2] v2_balanced_r2_20261028_091325 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_balanced
+  files 0-7  S S S S F F F F
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2446728 -> 1585776 kB
+  dropped page cache on colva1: Cached 5688904 -> 261124 kB
+  dropped page cache on colva2: Cached 2411952 -> 1869496 kB
+  dropped page cache on colva3: Cached 6422800 -> 488860 kB
+  dropped page cache on colva4: Cached 5102396 -> 177280 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 09:13:35.385000 3780900 torch/distributed/run.py:793] 
+W1028 09:13:35.385000 3780900 torch/distributed/run.py:793] *****************************************
+W1028 09:13:35.385000 3780900 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 09:13:35.385000 3780900 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_balanced
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     482.08 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r2_20261028_091325.summary.json
+
+real	8m23.746s
+user	0m19.304s
+sys	0m54.217s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3780900)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3780928->0, 3780929->1
+targets          12 of 4 used
+  target 104        1.056 GB (  5.9%)  810 ops touching it
+  target 105        1.908 GB ( 10.6%)  1,490 ops touching it
+  target 106        1.198 GB (  6.6%)  808 ops touching it
+  target 107        1.562 GB (  8.7%)  933 ops touching it
+  target 205        1.589 GB (  8.8%)  1,482 ops touching it
+  target 305        1.699 GB (  9.4%)  927 ops touching it
+  target 306        1.892 GB ( 10.5%)  1,509 ops touching it
+  target 307        1.615 GB (  9.0%)  1,506 ops touching it
+  target 404        1.560 GB (  8.7%)  926 ops touching it
+  target 405        1.200 GB (  6.7%)  813 ops touching it
+  target 406        1.711 GB (  9.5%)  901 ops touching it
+  target 407        1.035 GB (  5.7%)  791 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r2_20261028_091325.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r2_20261028_091325.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r2_20261028_091325.darshan.json
+
+=== [D rep 2] v2_D_r2_20261028_092159 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_D
+  files 0-7  D D D D D D D D
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2357636 -> 1584000 kB
+  dropped page cache on colva1: Cached 5189552 -> 261768 kB
+  dropped page cache on colva2: Cached 3682848 -> 1869556 kB
+  dropped page cache on colva3: Cached 5333844 -> 478280 kB
+  dropped page cache on colva4: Cached 5099012 -> 177188 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 09:22:11.190000 3784795 torch/distributed/run.py:793] 
+W1028 09:22:11.190000 3784795 torch/distributed/run.py:793] *****************************************
+W1028 09:22:11.190000 3784795 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 09:22:11.190000 3784795 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_D
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     673.30 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.summary.json
+
+real	11m34.766s
+user	0m20.666s
+sys	0m54.076s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3784795)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3784836->0, 3784837->1
+targets          12 of 4 used
+  target 104        1.505 GB (  8.4%)  345 ops touching it
+  target 105        1.009 GB (  5.6%)  242 ops touching it
+  target 106        1.403 GB (  7.8%)  1,374 ops touching it
+  target 107        1.086 GB (  6.0%)  1,364 ops touching it
+  target 205        1.003 GB (  5.6%)  226 ops touching it
+  target 305        1.897 GB ( 10.5%)  1,518 ops touching it
+  target 306        1.806 GB ( 10.0%)  2,085 ops touching it
+  target 307        1.560 GB (  8.7%)  921 ops touching it
+  target 404        1.505 GB (  8.4%)  345 ops touching it
+  target 405        1.910 GB ( 10.6%)  1,496 ops touching it
+  target 406        1.784 GB (  9.9%)  2,061 ops touching it
+  target 407        1.557 GB (  8.6%)  919 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.darshan.json
+
+=== [unbalanced rep 2] v2_unbalanced_r2_20261028_093346 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_unbalanced
+  files 0-7  F F S S F F S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2327684 -> 1588104 kB
+  dropped page cache on colva1: Cached 4705996 -> 261504 kB
+  dropped page cache on colva2: Cached 3242232 -> 1868852 kB
+  dropped page cache on colva3: Cached 5304980 -> 481580 kB
+  dropped page cache on colva4: Cached 6080704 -> 177528 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 09:33:57.639000 3789873 torch/distributed/run.py:793] 
+W1028 09:33:57.639000 3789873 torch/distributed/run.py:793] *****************************************
+W1028 09:33:57.639000 3789873 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 09:33:57.639000 3789873 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_unbalanced
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     400.84 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r2_20261028_093346.summary.json
+
+real	7m2.341s
+user	0m18.949s
+sys	0m52.515s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3789873)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3789895->0, 3789896->1
+targets          12 of 4 used
+  target 104        1.904 GB ( 10.6%)  1,488 ops touching it
+  target 105        1.798 GB ( 10.0%)  2,043 ops touching it
+  target 106        1.198 GB (  6.6%)  811 ops touching it
+  target 107        1.754 GB (  9.7%)  1,510 ops touching it
+  target 205        1.535 GB (  8.5%)  900 ops touching it
+  target 305        1.197 GB (  6.6%)  813 ops touching it
+  target 306        1.753 GB (  9.7%)  1,504 ops touching it
+  target 307        1.755 GB (  9.7%)  1,506 ops touching it
+  target 404        1.059 GB (  5.9%)  810 ops touching it
+  target 405        1.510 GB (  8.4%)  354 ops touching it
+  target 406        1.558 GB (  8.6%)  923 ops touching it
+  target 407        1.006 GB (  5.6%)  234 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r2_20261028_093346.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r2_20261028_093346.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r2_20261028_093346.darshan.json
+
+=== [allF rep 2] v2_allF_r2_20261028_094100 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allF
+  files 0-7  F F F F F F F F
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2489568 -> 1590648 kB
+  dropped page cache on colva1: Cached 5679816 -> 261456 kB
+  dropped page cache on colva2: Cached 3682864 -> 1874124 kB
+  dropped page cache on colva3: Cached 4870388 -> 478612 kB
+  dropped page cache on colva4: Cached 5099812 -> 177176 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 09:41:12.118000 3793478 torch/distributed/run.py:793] 
+W1028 09:41:12.118000 3793478 torch/distributed/run.py:793] *****************************************
+W1028 09:41:12.118000 3793478 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 09:41:12.118000 3793478 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allF
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     192.16 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r2_20261028_094100.summary.json
+
+real	3m33.624s
+user	0m18.687s
+sys	0m54.248s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3793478)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3793519->0, 3793520->1
+targets          6 of 4 used
+  target 104        2.960 GB ( 16.4%)  2,295 ops touching it
+  target 105        3.500 GB ( 19.4%)  2,976 ops touching it
+  target 205        3.288 GB ( 18.2%)  2,407 ops touching it
+  target 305        2.758 GB ( 15.3%)  1,740 ops touching it
+  target 404        2.758 GB ( 15.3%)  1,734 ops touching it
+  target 405        2.761 GB ( 15.3%)  1,744 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r2_20261028_094100.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r2_20261028_094100.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r2_20261028_094100.darshan.json
+
+=== [onefast rep 2] v2_onefast_r2_20261028_094446 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_onefast
+  files 0-7  S S S S F S S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2299780 -> 1592024 kB
+  dropped page cache on colva1: Cached 5678932 -> 261548 kB
+  dropped page cache on colva2: Cached 5041016 -> 1863916 kB
+  dropped page cache on colva3: Cached 3335956 -> 480848 kB
+  dropped page cache on colva4: Cached 5098884 -> 177604 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 09:44:57.896000 3795209 torch/distributed/run.py:793] 
+W1028 09:44:57.896000 3795209 torch/distributed/run.py:793] *****************************************
+W1028 09:44:57.896000 3795209 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 09:44:57.896000 3795209 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_onefast
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     683.99 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r2_20261028_094446.summary.json
+
+real	11m45.567s
+user	0m19.244s
+sys	0m55.117s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3795209)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3795250->0, 3795251->1
+targets          10 of 4 used
+  target 105        0.709 GB (  3.9%)  677 ops touching it
+  target 106        2.257 GB ( 12.5%)  1,618 ops touching it
+  target 107        2.761 GB ( 15.3%)  1,746 ops touching it
+  target 205        0.532 GB (  2.9%)  672 ops touching it
+  target 305        0.502 GB (  2.8%)  114 ops touching it
+  target 306        2.949 GB ( 16.4%)  2,319 ops touching it
+  target 307        2.815 GB ( 15.6%)  2,319 ops touching it
+  target 404        0.502 GB (  2.8%)  116 ops touching it
+  target 406        2.767 GB ( 15.4%)  1,711 ops touching it
+  target 407        2.233 GB ( 12.4%)  1,604 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r2_20261028_094446.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r2_20261028_094446.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r2_20261028_094446.darshan.json
+
+=== [allS rep 2] v2_allS_r2_20261028_095644 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allS
+  files 0-7  S S S S S S S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2449316 -> 1589812 kB
+  dropped page cache on colva1: Cached 5190184 -> 261556 kB
+  dropped page cache on colva2: Cached 2861064 -> 1863764 kB
+  dropped page cache on colva3: Cached 6413576 -> 622668 kB
+  dropped page cache on colva4: Cached 5100200 -> 177384 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 09:56:55.667000 3800346 torch/distributed/run.py:793] 
+W1028 09:56:55.667000 3800346 torch/distributed/run.py:793] *****************************************
+W1028 09:56:55.667000 3800346 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 09:56:55.667000 3800346 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allS
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     772.64 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r2_20261028_095644.summary.json
+
+real	13m14.401s
+user	0m19.553s
+sys	0m55.251s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3800346)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3800386->0, 3800387->1
+targets          6 of 4 used
+  target 106        2.788 GB ( 15.5%)  2,290 ops touching it
+  target 107        3.263 GB ( 18.1%)  1,860 ops touching it
+  target 306        3.451 GB ( 19.1%)  2,435 ops touching it
+  target 307        2.815 GB ( 15.6%)  2,319 ops touching it
+  target 406        2.767 GB ( 15.4%)  1,711 ops touching it
+  target 407        2.942 GB ( 16.3%)  2,281 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r2_20261028_095644.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r2_20261028_095644.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r2_20261028_095644.darshan.json
+
+=== rep 3 order: unbalanced onefast balanced D allS allF ===
+
+=== [unbalanced rep 3] v2_unbalanced_r3_20261028_101010 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_unbalanced
+  files 0-7  F F S S F F S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2907264 -> 1592040 kB
+  dropped page cache on colva1: Cached 5687672 -> 261472 kB
+  dropped page cache on colva2: Cached 2434740 -> 1874512 kB
+  dropped page cache on colva3: Cached 6386896 -> 484252 kB
+  dropped page cache on colva4: Cached 5099768 -> 177876 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 10:10:22.034000 3807809 torch/distributed/run.py:793] 
+W1028 10:10:22.034000 3807809 torch/distributed/run.py:793] *****************************************
+W1028 10:10:22.034000 3807809 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 10:10:22.034000 3807809 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_unbalanced
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     401.36 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r3_20261028_101010.summary.json
+
+real	7m2.810s
+user	0m18.807s
+sys	0m51.841s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3807809)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3807831->0, 3807832->1
+targets          12 of 4 used
+  target 104        1.904 GB ( 10.6%)  1,488 ops touching it
+  target 105        1.798 GB ( 10.0%)  2,043 ops touching it
+  target 106        1.198 GB (  6.6%)  811 ops touching it
+  target 107        1.754 GB (  9.7%)  1,510 ops touching it
+  target 205        1.535 GB (  8.5%)  900 ops touching it
+  target 305        1.197 GB (  6.6%)  813 ops touching it
+  target 306        1.753 GB (  9.7%)  1,504 ops touching it
+  target 307        1.755 GB (  9.7%)  1,506 ops touching it
+  target 404        1.059 GB (  5.9%)  810 ops touching it
+  target 405        1.510 GB (  8.4%)  354 ops touching it
+  target 406        1.558 GB (  8.6%)  923 ops touching it
+  target 407        1.006 GB (  5.6%)  234 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r3_20261028_101010.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r3_20261028_101010.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_unbalanced_r3_20261028_101010.darshan.json
+
+=== [onefast rep 3] v2_onefast_r3_20261028_101725 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_onefast
+  files 0-7  S S S S F S S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2362720 -> 1590564 kB
+  dropped page cache on colva1: Cached 5679072 -> 261184 kB
+  dropped page cache on colva2: Cached 3688816 -> 1868252 kB
+  dropped page cache on colva3: Cached 4881516 -> 485408 kB
+  dropped page cache on colva4: Cached 5098932 -> 177284 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 10:17:36.661000 3810902 torch/distributed/run.py:793] 
+W1028 10:17:36.661000 3810902 torch/distributed/run.py:793] *****************************************
+W1028 10:17:36.661000 3810902 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 10:17:36.661000 3810902 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_onefast
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     683.52 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r3_20261028_101725.summary.json
+
+real	11m45.036s
+user	0m19.270s
+sys	0m54.402s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3810902)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3810942->0, 3810943->1
+targets          10 of 4 used
+  target 105        0.709 GB (  3.9%)  677 ops touching it
+  target 106        2.257 GB ( 12.5%)  1,618 ops touching it
+  target 107        2.761 GB ( 15.3%)  1,746 ops touching it
+  target 205        0.532 GB (  2.9%)  672 ops touching it
+  target 305        0.502 GB (  2.8%)  114 ops touching it
+  target 306        2.949 GB ( 16.4%)  2,319 ops touching it
+  target 307        2.815 GB ( 15.6%)  2,319 ops touching it
+  target 404        0.502 GB (  2.8%)  116 ops touching it
+  target 406        2.767 GB ( 15.4%)  1,711 ops touching it
+  target 407        2.233 GB ( 12.4%)  1,604 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r3_20261028_101725.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r3_20261028_101725.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_onefast_r3_20261028_101725.darshan.json
+
+=== [balanced rep 3] v2_balanced_r3_20261028_102922 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_balanced
+  files 0-7  S S S S F F F F
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2502444 -> 1590860 kB
+  dropped page cache on colva1: Cached 5189732 -> 261576 kB
+  dropped page cache on colva2: Cached 2946100 -> 1868972 kB
+  dropped page cache on colva3: Cached 6484608 -> 484428 kB
+  dropped page cache on colva4: Cached 5099248 -> 177168 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 10:29:33.736000 3815955 torch/distributed/run.py:793] 
+W1028 10:29:33.736000 3815955 torch/distributed/run.py:793] *****************************************
+W1028 10:29:33.736000 3815955 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 10:29:33.736000 3815955 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_balanced
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     480.23 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r3_20261028_102922.summary.json
+
+real	8m21.628s
+user	0m19.307s
+sys	0m53.573s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3815955)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3815986->0, 3815987->1
+targets          12 of 4 used
+  target 104        1.056 GB (  5.9%)  810 ops touching it
+  target 105        1.908 GB ( 10.6%)  1,490 ops touching it
+  target 106        1.198 GB (  6.6%)  808 ops touching it
+  target 107        1.562 GB (  8.7%)  933 ops touching it
+  target 205        1.589 GB (  8.8%)  1,482 ops touching it
+  target 305        1.699 GB (  9.4%)  927 ops touching it
+  target 306        1.892 GB ( 10.5%)  1,509 ops touching it
+  target 307        1.615 GB (  9.0%)  1,506 ops touching it
+  target 404        1.560 GB (  8.7%)  926 ops touching it
+  target 405        1.200 GB (  6.7%)  813 ops touching it
+  target 406        1.711 GB (  9.5%)  901 ops touching it
+  target 407        1.035 GB (  5.7%)  791 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r3_20261028_102922.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r3_20261028_102922.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_balanced_r3_20261028_102922.darshan.json
+
+=== [D rep 3] v2_D_r3_20261028_103756 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_D
+  files 0-7  D D D D D D D D
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 2472576 -> 1590164 kB
+  dropped page cache on colva1: Cached 5190316 -> 262548 kB
+  dropped page cache on colva2: Cached 3758988 -> 1866908 kB
+  dropped page cache on colva3: Cached 5417408 -> 490164 kB
+  dropped page cache on colva4: Cached 5099260 -> 177600 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 10:38:05.082000 3819780 torch/distributed/run.py:793] 
+W1028 10:38:05.082000 3819780 torch/distributed/run.py:793] *****************************************
+W1028 10:38:05.082000 3819780 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 10:38:05.082000 3819780 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_D
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     675.55 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r3_20261028_103756.summary.json
+
+real	11m38.140s
+user	0m20.480s
+sys	0m56.435s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3819780)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3819802->0, 3819803->1
+targets          12 of 4 used
+  target 104        1.505 GB (  8.4%)  345 ops touching it
+  target 105        1.009 GB (  5.6%)  242 ops touching it
+  target 106        1.403 GB (  7.8%)  1,374 ops touching it
+  target 107        1.086 GB (  6.0%)  1,364 ops touching it
+  target 205        1.003 GB (  5.6%)  226 ops touching it
+  target 305        1.897 GB ( 10.5%)  1,518 ops touching it
+  target 306        1.806 GB ( 10.0%)  2,085 ops touching it
+  target 307        1.560 GB (  8.7%)  921 ops touching it
+  target 404        1.505 GB (  8.4%)  345 ops touching it
+  target 405        1.910 GB ( 10.6%)  1,496 ops touching it
+  target 406        1.784 GB (  9.9%)  2,061 ops touching it
+  target 407        1.557 GB (  8.6%)  919 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r3_20261028_103756.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r3_20261028_103756.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r3_20261028_103756.darshan.json
+
+=== [allS rep 3] v2_allS_r3_20261028_104944 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allS
+  files 0-7  S S S S S S S S
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 4612344 -> 1928820 kB
+  dropped page cache on colva1: Cached 4699768 -> 262568 kB
+  dropped page cache on colva2: Cached 5396352 -> 2196056 kB
+  dropped page cache on colva3: Cached 8123448 -> 820720 kB
+  dropped page cache on colva4: Cached 6083732 -> 177496 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 10:49:53.327000 3838226 torch/distributed/run.py:793] 
+W1028 10:49:53.327000 3838226 torch/distributed/run.py:793] *****************************************
+W1028 10:49:53.327000 3838226 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 10:49:53.327000 3838226 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allS
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     771.36 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r3_20261028_104944.summary.json
+
+real	13m14.434s
+user	0m20.446s
+sys	1m0.031s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3838226)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3838258->0, 3838259->1
+targets          6 of 4 used
+  target 106        2.788 GB ( 15.5%)  2,290 ops touching it
+  target 107        3.263 GB ( 18.1%)  1,860 ops touching it
+  target 306        3.451 GB ( 19.1%)  2,435 ops touching it
+  target 307        2.815 GB ( 15.6%)  2,319 ops touching it
+  target 406        2.767 GB ( 15.4%)  1,711 ops touching it
+  target 407        2.942 GB ( 16.3%)  2,281 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r3_20261028_104944.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r3_20261028_104944.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allS_r3_20261028_104944.darshan.json
+
+=== [allF rep 3] v2_allF_r3_20261028_110308 ===
+  checkpoint /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allF
+  files 0-7  F F F F F F F F
+  throttles: 6 F + 6 S devices limited
+
+=== cold cache ===
+  dropped page cache on anjuna2: Cached 3667456 -> 1931960 kB
+  dropped page cache on colva1: Cached 5680852 -> 261936 kB
+  dropped page cache on colva2: Cached 3627560 -> 2349596 kB
+  dropped page cache on colva3: Cached 7802540 -> 1055800 kB
+  dropped page cache on colva4: Cached 5100212 -> 177764 kB
+
+=== tracing ===
+  Darshan: /home/pfs/darshan-nompi/lib/libdarshan.so -> /mnt/beegfs/pfs/ckpt_experiment/darshan
+  (preloaded onto the workload only, not this shell)
+  MODMEM 64 MiB/module, excluding the interpreter's dirs
+
+=== running ===
+W1028 11:03:17.987000 3907418 torch/distributed/run.py:793] 
+W1028 11:03:17.987000 3907418 torch/distributed/run.py:793] *****************************************
+W1028 11:03:17.987000 3907418 torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1028 11:03:17.987000 3907418 torch/distributed/run.py:793] *****************************************
+
+=== eval load: llama31_8b 32L  TP2/PP1/DP1 (2 ranks)  mode=load ===
+checkpoint          /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_allF
+.metadata           667,414 B, read by all 2 ranks (1.3 MB of fan-out)
+shard files present 8
+shard files opened  8   never opened: 0
+total requests      1,034
+total bytes read    16.06 GB (avg request 15.53 MB)
+slowest rank io     192.15 s
+checksum            2047793041164
+summary             /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r3_20261028_110308.summary.json
+
+real	3m33.869s
+user	0m19.438s
+sys	0m54.572s
+
+=== darshan ===
+=== darshan: 3 log(s), 2 process(es) touched the checkpoint ===
+modules          DXT_POSIX, HEATMAP, POSIX, STDIO
+  ignoring 1 log(s) that touched no checkpoint file (pids 3907418)
+exe              /usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --ma
+shard files      8 of 8 opened    never opened 0 (0.0 GB)
+.metadata        read   (every rank reads it before any data read)
+read ops         5,558              bytes read 18.026 GB
+vs DCP logical   16.062 GB  ->  1.12x   (over-fetch +1.963 GB)
+request sizes    p50 524.3 KB   p95 28.84 MB   max 262.14 MB
+amplification    1.12x   (distinct bytes 16.066 GB)
+pid->rank        3907479->0, 3907480->1
+targets          6 of 4 used
+  target 104        2.960 GB ( 16.4%)  2,295 ops touching it
+  target 105        3.500 GB ( 19.4%)  2,976 ops touching it
+  target 205        3.288 GB ( 18.2%)  2,407 ops touching it
+  target 305        2.758 GB ( 15.3%)  1,740 ops touching it
+  target 404        2.758 GB ( 15.3%)  1,734 ops touching it
+  target 405        2.761 GB ( 15.3%)  1,744 ops touching it
+bytes by kind    index=0.00 GB  mixed=18.02 GB
+
+wrote /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r3_20261028_110308.files.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r3_20261028_110308.ops.csv
+      /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_allF_r3_20261028_110308.darshan.json
+
+=== matrix done ===
+config      rep  tag                               start_epoch  end_epoch   status
+allF        1    v2_allF_r1_20261028_074535        1793153743   1793153960  ok
+balanced    1    v2_balanced_r1_20261028_082033    1793155839   1793156344  ok
+onefast     1    v2_onefast_r1_20261028_082904     1793156355   1793157063  ok
+D           1    v2_D_r1_20261028_084103           1793157073   1793157773  ok
+unbalanced  1    v2_unbalanced_r1_20261028_085253  1793157779   1793158201  ok
+allS        1    v2_allS_r1_20261028_090001        1793158209   1793159005  ok
+balanced    2    v2_balanced_r2_20261028_091325    1793159014   1793159519  ok
+D           2    v2_D_r2_20261028_092159           1793159530   1793160226  ok
+unbalanced  2    v2_unbalanced_r2_20261028_093346  1793160236   1793160660  ok
+allF        2    v2_allF_r2_20261028_094100        1793160670   1793160886  ok
+onefast     2    v2_onefast_r2_20261028_094446     1793160896   1793161604  ok
+allS        2    v2_allS_r2_20261028_095644        1793161614   1793162410  ok
+unbalanced  3    v2_unbalanced_r3_20261028_101010  1793162420   1793162845  ok
+onefast     3    v2_onefast_r3_20261028_101725     1793162855   1793163562  ok
+balanced    3    v2_balanced_r3_20261028_102922    1793163572   1793164076  ok
+D           3    v2_D_r3_20261028_103756           1793164083   1793164784  ok
+allS        3    v2_allS_r3_20261028_104944        1793164792   1793165588  ok
+allF        3    v2_allF_r3_20261028_110308        1793165596   1793165813  ok
+
+next: ./06_analyze.sh

@@ -1,0 +1,43 @@
+{
+  "logs": [
+    "/mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.darshanlogs/pfs_python3_id3784795-3784795_10-28-33730-3521527978837524211_1.darshan",
+    "/mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.darshanlogs/pfs_python3_id3784836-3784836_10-28-33731-15091216871411797344_1.darshan",
+    "/mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.darshanlogs/pfs_python3_id3784837-3784837_10-28-33731-15091216871411797344_1.darshan"
+  ],
+  "processes": [
+    "3784795",
+    "3784836",
+    "3784837"
+  ],
+  "dxt": true,
+  "job": {
+    "darshan log version": "3.41",
+    "exe": "/usr/bin/python3 /home/pfs/.local/bin/torchrun --nproc_per_node=2 --master_port=29570 /home/pfs/advay/pfs/scripts/workloads/llm_workload/eval_load.py --ckpt /mnt/beegfs/pfs/ckpt_experiment/llmv2_ckpt/cfg_D --model llama31_8b --load-config TP2 --read-set eval --optimizer adam --mode load --device cpu --only-layers 32 --summary /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.summary.json --emit-reads /mnt/beegfs/pfs/ckpt_experiment/llmv2_results/v2_D_r2_20261028_092159.reads.csv",
+    "jobid": "3784795",
+    "start_time": "1793159530",
+    "nprocs": "1",
+    "run time": "694.7405"
+  },
+  "files_touched": 9,
+  "files_never_opened": [],
+  "never_opened_bytes": 0,
+  "read_ops": 5558,
+  "bytes_read": 18025712684,
+  "distinct_bytes": 16066484314,
+  "amplification": 1.1219450585273822,
+  "logical_bytes": 16062275096,
+  "pid_to_rank": {
+    "3784836": "0",
+    "3784837": "1"
+  },
+  "warnings": [],
+  "proc_start_time": {
+    "3784795": 1793159530.0,
+    "3784836": 1793159531.0,
+    "3784837": 1793159531.0
+  },
+  "clock_skew_s": 1.0,
+  "chunksize": 524288,
+  "numtargets": 4,
+  "target_map": true
+}

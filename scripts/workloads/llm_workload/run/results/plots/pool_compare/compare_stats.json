@@ -1,0 +1,95 @@
+{
+  "runs": {
+    "Default (pool 1)": "/mnt/beegfs/pfs/ckpt_experiment/results/eval_llama31_8b_adam_per-rank_pool1_TP2_load_183817",
+    "HDD (pool 3)": "/mnt/beegfs/pfs/ckpt_experiment/results_pool3/eval_llama31_8b_adam_per-rank_pool3_TP2_load_202401",
+    "SSD (pool 6)": "/mnt/beegfs/pfs/ckpt_experiment/results_pool6/eval_llama31_8b_adam_per-rank_pool6_TP2_load_111751"
+  },
+  "C1_bandwidth": {
+    "Default (pool 1)": {
+      "MB_per_s": 251.7,
+      "total_bytes": 16062275096,
+      "slowest_rank_io_s": 63.803,
+      "per_rank_io_s": [
+        63.803,
+        63.803
+      ]
+    },
+    "HDD (pool 3)": {
+      "MB_per_s": 246.8,
+      "total_bytes": 16062275096,
+      "slowest_rank_io_s": 65.084,
+      "per_rank_io_s": [
+        65.084,
+        65.084
+      ]
+    },
+    "SSD (pool 6)": {
+      "MB_per_s": 279.2,
+      "total_bytes": 16062275096,
+      "slowest_rank_io_s": 57.537,
+      "per_rank_io_s": [
+        57.537,
+        57.537
+      ]
+    }
+  },
+  "C2_read_latency": {
+    "Default (pool 1)": {
+      "n": 5558,
+      "p50_ms": 4.8,
+      "p95_ms": 168.2,
+      "p99_ms": 199.329,
+      "mean_ms": 21.8327,
+      "frac_below_10us_cache_hits": 0.0
+    },
+    "HDD (pool 3)": {
+      "n": 5558,
+      "p50_ms": 5.2,
+      "p95_ms": 165.015,
+      "p99_ms": 200.343,
+      "mean_ms": 22.2162,
+      "frac_below_10us_cache_hits": 0.0
+    },
+    "SSD (pool 6)": {
+      "n": 3736,
+      "p50_ms": 4.2,
+      "p95_ms": 176.05,
+      "p99_ms": 199.6,
+      "mean_ms": 28.6967,
+      "frac_below_10us_cache_hits": 0.0
+    }
+  },
+  "_notes": {
+    "C3_source_trustworthy": true
+  },
+  "C3_open_latency": {
+    "per_run": {
+      "Default (pool 1)": {
+        "n": 16,
+        "p50_ms": 1.322,
+        "p95_ms": 2.2862,
+        "p99_ms": 2.3349,
+        "mean_ms": 1.4699
+      },
+      "HDD (pool 3)": {
+        "n": 16,
+        "p50_ms": 1.147,
+        "p95_ms": 3.9278,
+        "p99_ms": 4.676,
+        "mean_ms": 1.6373
+      },
+      "SSD (pool 6)": {
+        "n": 16,
+        "p50_ms": 1.5925,
+        "p95_ms": 7.4018,
+        "p99_ms": 7.4084,
+        "mean_ms": 2.5129
+      }
+    },
+    "source": {
+      "Default (pool 1)": "open() interval, 16 files opened once",
+      "HDD (pool 3)": "open() interval, 16 files opened once",
+      "SSD (pool 6)": "open() interval, 16 files opened once"
+    }
+  }
+}
