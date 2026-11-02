@@ -171,6 +171,10 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
                     command.insert(-1, "++workload.train.total_training_steps=2")
                 print(f"{profile.profile}: repetition {repetition}, pool {pool}", flush=True)
                 subprocess.run(("sync",), check=True)
+                for host in ("colva1", "colva2", "colva3", "colva4"):
+                    subprocess.run(("ssh", host,
+                                    "sudo -n sh -c 'sync && printf 3 > /proc/sys/vm/drop_caches'"),
+                                   check=True)
                 subprocess.run(("sudo", "tee", "/proc/sys/vm/drop_caches"),
                                input="3\n", text=True, stdout=subprocess.DEVNULL, check=True)
                 with (run_dir / "console.log").open("w") as log:

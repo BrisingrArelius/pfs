@@ -19,8 +19,11 @@ First prepare the data, then inspect the pilot's checkpoint files and native
 pool 1, two steps in each of two epochs, and retains its checkpoint files.
 The full runner uses eight MPI ranks and five epochs; it executes three
 repetitions of pools 1, 3, and 6 sequentially, checkpointing after epochs
-2 and 4. `sync` and a client cache drop precede each measured run, and its
-checkpoint files are removed only after the raw results and OST placements
+2 and 4. Before each new invocation, the runner calls `sync` on the client,
+then `sync` and drops Linux page caches on `colva1–4` over SSH, then drops
+the client cache. These steps precede DLIO timing. Earlier completed sweeps
+did not include the server-cache drop. Checkpoint files are removed only
+after the raw results and OST placements
 have been recorded. OST and cache commands require `sudo` access.
 
 `generate_data.py` uses DLIO to generate pool 1's data, then copies the same

@@ -42,7 +42,10 @@ older files on those devices until cleared. Record original properties and
 restore them when finished. Never change membership or caps during a run.
 
 For each condition: stage identical inputs outside timing; pilot both DLIO
-workloads; measure a sustained read/write probe with backend device counters
+workloads; before each invocation, `sync` and drop Linux page caches on the
+four storage hosts and on the client outside DLIO timing. This does not clear
+application buffers or cache between epochs. Measure a sustained read/write
+probe with backend device counters
 and client-network counters; then run the three full repetitions. The new
 runner verifies configured pool members and limits, preserves native DLIO
 evidence, and reports the same rank-0 checkpoint metric as the normal suite.

@@ -152,6 +152,10 @@ def run(name, pool, pilot=False):
             if pilot:
                 command.insert(-1, "++workload.train.total_training_steps=2")
             subprocess.run(["sync"], check=True)
+            for host in ("colva1", "colva2", "colva3", "colva4"):
+                subprocess.run(["ssh", host,
+                                "sudo -n sh -c 'sync && printf 3 > /proc/sys/vm/drop_caches'"],
+                               check=True)
             subprocess.run(["sudo", "tee", "/proc/sys/vm/drop_caches"], input="3\n",
                            text=True, stdout=subprocess.DEVNULL, check=True)
             with (directory / "console.log").open("w") as log:

@@ -44,6 +44,10 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   four-stripe direct-I/O fio write/read through BeeGFS, reporting application
   and physical-device rates separately. The probe cleans up after success
   and runs only on a configured condition pool between DLIO measurements.
+- Added pre-invocation `sync` and Linux page-cache drops over SSH on
+  `colva1–4` to both normal and throttled-SSD DLIO runners, followed by the
+  existing `anjuna2` cache drop. This applies to future runs, not previously
+  collected evidence; failure on a storage host stops the run before DLIO.
 
 ---
 

@@ -23,7 +23,11 @@ This moves the four selected SSD targets from pool 6 into pool 14, applies
 the 4:0 caps, and runs three full U-Net repetitions. It then moves through
 pools 15–18 in order, setting their read/write caps and doing three runs in
 each; after a successful sweep it returns the targets to pool 6 and clears
-the runtime limits. Dataset copies are outside measured runs. If a move,
+the runtime limits. Dataset copies are outside measured runs. Before each
+DLIO invocation, the runner syncs and drops Linux page caches on
+`colva1–4` over SSH, then drops the client cache on `anjuna2`; the drop is
+outside timing and requires noninteractive remote `sudo`. This does not clear
+DLIO's own buffers or caches within an epoch. If a move,
 copy, or run fails, execution stops at that condition **without moving the
 targets again**; inspect the pool and any still-running processes before
 resuming. `--all-pools` cannot be combined with `--pilot`.

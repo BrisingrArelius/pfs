@@ -50,12 +50,20 @@ for device in devices:
     partition = parent + 'p1'
     ids = [os.stat(path).st_rdev for path in (parent, partition)]
     kernel_caps = [kernel.get(f'{os.major(number)}:{os.minor(number)}', {}) for number in ids]
-    active = next((entry for entry in kernel_caps if 'rbps' in entry or 'wbps' in entry), {})
+    configured_read = limits['IOReadBandwidthMax'].get(partition)
+    configured_write = limits['IOWriteBandwidthMax'].get(partition)
+    active = next((entry for entry in kernel_caps
+                   if entry.get('rbps') == str(configured_read)
+                   and entry.get('wbps') == str(configured_write)), None)
+    if active is None:
+        active = next((entry for entry in kernel_caps
+                       if entry.get('rbps') not in (None, 'max')
+                       or entry.get('wbps') not in (None, 'max')), {})
     results[device] = {
         'read_MiB_s': (after[device][2] - before[device][2]) * 512 / 1048576 / elapsed,
         'write_MiB_s': (after[device][6] - before[device][6]) * 512 / 1048576 / elapsed,
-        'configured_read': limits['IOReadBandwidthMax'].get(partition),
-        'configured_write': limits['IOWriteBandwidthMax'].get(partition),
+        'configured_read': configured_read,
+        'configured_write': configured_write,
         'kernel_read': active.get('rbps'), 'kernel_write': active.get('wbps')}
 print(json.dumps(results))
 """
@@ -146,9 +154,17 @@ def native_check(pool):
         raise RuntimeError("fio is required for --native")
     verify(pool)
     _, configured = remote_samples(SAMPLE, 1)
-    if any(limit_status(configured[host][Path(path).name.rsplit("p", 1)[0]]) != "matched"
-           for host, path in DEVICES.values()):
-        raise RuntimeError("Configured limits do not match the kernel io.max; probe not started")
+    mismatches = []
+    for target, (host, path) in DEVICES.items():
+        device = Path(path).name.rsplit("p", 1)[0]
+        item = configured[host][device]
+        if limit_status(item) != "matched":
+            mismatches.append(f"{target} ({host}/{device}): systemd read/write "
+                              f"{item['configured_read']}/{item['configured_write']} B/s, "
+                              f"kernel io.max read/write {item['kernel_read']}/{item['kernel_write']} B/s")
+    if mismatches:
+        raise RuntimeError("Configured limits do not match kernel io.max; probe not started:\n"
+                           + "\n".join(mismatches))
 
     base = DATA_ROOT / "throttled_ssd" / "throughput_checks"
     base.mkdir(parents=True, exist_ok=True)
