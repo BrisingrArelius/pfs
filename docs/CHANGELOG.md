@@ -48,6 +48,11 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   `colva1–4` to both normal and throttled-SSD DLIO runners, followed by the
   existing `anjuna2` cache drop. This applies to future runs, not previously
   collected evidence; failure on a storage host stops the run before DLIO.
+- Found that colva1's target-104 partition path appeared in systemd but
+  installed no `io.max` rule. Set its cap on the whole NVMe device instead,
+  clear stale limit entries before each condition, and require all four
+  physical-device read/write limits in runner preflight. The standalone
+  probe now accepts the physical-device path as its configured limit.
 
 ---
 

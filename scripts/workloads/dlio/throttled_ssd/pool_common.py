@@ -20,7 +20,7 @@ from normal.pool_common import FIELDS, checkpoint_sizes, metrics  # noqa: E402
 
 TARGETS = (104, 205, 305, 306)
 FAST = {14: TARGETS, 15: (104, 205, 305), 16: (104, 205), 17: (104,), 18: ()}
-DEVICES = {104: ("colva1", "/dev/nvme1n1p1"),
+DEVICES = {104: ("colva1", "/dev/nvme1n1"),
            205: ("colva2", "/dev/nvme1n1p1"),
            305: ("colva3", "/dev/nvme1n1p1"),
            306: ("colva3", "/dev/nvme2n1p1")}
@@ -44,6 +44,7 @@ def verify(pool):
         text = subprocess.run(["ssh", host, shlex.join(("systemctl", "show",
             "beegfs-storage.service", "-p", "IOReadBandwidthMax", "-p", "IOWriteBandwidthMax"))],
             check=True, capture_output=True, text=True).stdout
+        selected = [(target, device) for target, (node, device) in DEVICES.items() if node == host]
         for direction in ("IOReadBandwidthMax", "IOWriteBandwidthMax"):
             seen = {}
             for line in text.splitlines():
@@ -51,9 +52,27 @@ def verify(pool):
                     device, rate = line.split("=", 1)[1].split()
                     seen[device] = int(rate)
             expected = {device: (45 if target in FAST[pool] else 15) * 1048576
-                        for target, (node, device) in DEVICES.items() if node == host}
+                        for target, device in selected}
             if seen != expected:
                 raise RuntimeError(f"{host}: {direction}={seen}, expected {expected}")
+        physical = [Path(device).name.rsplit("p", 1)[0] for _, device in selected]
+        ids = subprocess.run(["ssh", host, shlex.join(("cat", *(
+            f"/sys/class/block/{device}/dev" for device in physical)))],
+            check=True, capture_output=True, text=True).stdout.splitlines()
+        if len(ids) != len(physical):
+            raise RuntimeError(f"{host}: missing physical SSD device IDs")
+        command = ('cg=$(systemctl show -P ControlGroup beegfs-storage.service); '
+                   'sudo -n cat "/sys/fs/cgroup${cg}/io.max"')
+        kernel = subprocess.run(["ssh", host, command], check=True,
+                                capture_output=True, text=True).stdout
+        limits = {line.split()[0]: dict(field.split("=", 1) for field in line.split()[1:])
+                  for line in kernel.splitlines()}
+        for (target, _), device_id in zip(selected, ids):
+            expected_rate = str((45 if target in FAST[pool] else 15) * 1048576)
+            actual = limits.get(device_id, {})
+            if actual.get("rbps") != expected_rate or actual.get("wbps") != expected_rate:
+                raise RuntimeError(f"{host} target {target}: io.max {device_id} is {actual}, "
+                                   f"expected read/write {expected_rate} B/s")
 
 
 def pattern(path, pool):

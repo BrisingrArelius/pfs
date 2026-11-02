@@ -14,7 +14,11 @@ in the normal suite. Cap both read and write throughput per target to
 45 MiB/s (fast) or 15 MiB/s (slow), a 3:1 ratio. The nominal aggregate
 four-fast ceiling is 180 MiB/s, below the ~280 MiB/s measured client TCP
 path. These limits must be verified on backend devices; merely configuring
-`systemd` limits is not proof they affected application reads.
+`systemd` limits is not proof they affected application reads. On `colva1`,
+target 104's XFS filesystem is on `/dev/nvme1n1p1`, but its enforced
+service-cgroup cap must reference the whole `/dev/nvme1n1` device; the
+partition path produced no `io.max` rule. Check effective `io.max` for every
+target before a new sweep.
 
 | Pool | Fast | Slow | Fast target IDs |
 |---:|---:|---:|---|

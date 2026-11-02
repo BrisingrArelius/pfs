@@ -22,6 +22,18 @@ after each move; if either operation fails, stop rather than running DLIO
 against a partially configured pool. The cap changes are runtime-only
 `beegfs-storage.service` settings on the storage nodes.
 
+Target 104 on `colva1` needs its cap on the **whole** `/dev/nvme1n1`:
+setting `/dev/nvme1n1p1` appeared in systemd but installed no kernel
+`io.max` rule. If both paths remain in systemd after a previous attempt,
+clear the duplicate before continuing a pool-14 run:
+
+```bash
+ssh colva1 'sudo systemctl set-property --runtime beegfs-storage.service "IOReadBandwidthMax=" "IOWriteBandwidthMax=" && sudo systemctl set-property --runtime beegfs-storage.service "IOReadBandwidthMax=/dev/nvme1n1 47185920" "IOWriteBandwidthMax=/dev/nvme1n1 47185920"'
+```
+
+The transition script clears old per-device entries before installing each
+condition and verifies the resulting kernel limits on all four devices.
+
 For each pool, copy the **script commands** first. The manual BeeGFS/systemd
 commands immediately below them are an alternative; **do not run both**.
 Each workload command performs three full repetitions; the first invocation
@@ -91,7 +103,7 @@ Manual alternative:
 sudo beegfs-ctl --modifystoragepool --id=17 --rmtargets=104,205,305,306 &&
 sudo beegfs-ctl --modifystoragepool --id=18 --addtargets=104,205,305,306 &&
 sudo beegfs-ctl --liststoragepools &&
-ssh colva1 'sudo systemctl set-property --runtime beegfs-storage.service "IOReadBandwidthMax=/dev/nvme1n1p1 15728640" "IOWriteBandwidthMax=/dev/nvme1n1p1 15728640"' &&
+ssh colva1 'sudo systemctl set-property --runtime beegfs-storage.service "IOReadBandwidthMax=" "IOWriteBandwidthMax=" && sudo systemctl set-property --runtime beegfs-storage.service "IOReadBandwidthMax=/dev/nvme1n1 15728640" "IOWriteBandwidthMax=/dev/nvme1n1 15728640"' &&
 python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --pool 18
 ```
 

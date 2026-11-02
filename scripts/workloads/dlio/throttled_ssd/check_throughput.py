@@ -50,8 +50,8 @@ for device in devices:
     partition = parent + 'p1'
     ids = [os.stat(path).st_rdev for path in (parent, partition)]
     kernel_caps = [kernel.get(f'{os.major(number)}:{os.minor(number)}', {}) for number in ids]
-    configured_read = limits['IOReadBandwidthMax'].get(partition)
-    configured_write = limits['IOWriteBandwidthMax'].get(partition)
+    configured_read = limits['IOReadBandwidthMax'].get(parent, limits['IOReadBandwidthMax'].get(partition))
+    configured_write = limits['IOWriteBandwidthMax'].get(parent, limits['IOWriteBandwidthMax'].get(partition))
     active = next((entry for entry in kernel_caps
                    if entry.get('rbps') == str(configured_read)
                    and entry.get('wbps') == str(configured_write)), None)

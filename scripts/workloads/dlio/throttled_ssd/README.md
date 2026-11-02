@@ -7,8 +7,11 @@ cluster paths; this suite stages copies in `dlio/throttled_ssd/` only.
 
 For a single `--pool` run, the four targets must already be in that pool,
 and `systemd` must report **45 MiB/s** read/write limits for its fast IDs
-and **15 MiB/s** for the other IDs. `pool_common.py` checks both before a
-run. Complete existing pool-6 jobs first.
+and **15 MiB/s** for the other IDs. `pool_common.py` checks pool membership,
+systemd settings, and the kernel's actual `io.max` before a run. On `colva1`,
+the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
+the partition setting appeared in systemd but installed no kernel limit.
+Complete existing pool-6 jobs first.
 
 ## Entire U-Net sweep from the normal pool
 

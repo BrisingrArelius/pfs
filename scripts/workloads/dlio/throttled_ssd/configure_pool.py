@@ -52,6 +52,10 @@ def move(source, destination):
 
 def apply_limits(pool):
     for host in ("colva1", "colva2", "colva3"):
+        # Replacing a per-device property otherwise leaves stale entries on
+        # the old path (colva1's partition was configured but not enforced).
+        remote(host, "sudo", "systemctl", "set-property", "--runtime", SERVICE,
+               "IOReadBandwidthMax=", "IOWriteBandwidthMax=")
         settings = [f"{direction}={device} {(45 if target in FAST[pool] else 15) * 1048576}"
                     for direction in ("IOReadBandwidthMax", "IOWriteBandwidthMax")
                     for target, (node, device) in DEVICES.items() if node == host]
