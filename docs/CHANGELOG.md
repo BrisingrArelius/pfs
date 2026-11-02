@@ -6,6 +6,10 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-02 — Separate DLIO normal and throttled-SSD suites
 
+- Collected the older POSIX synthetic workload, IOR wrapper, profiles, runners,
+  compiled binary, and Darshan analysis under `scripts/workloads/legacy/`.
+  Updated their repository-root path calculations and active entrypoint links;
+  DLIO and LLM workload code remain separate.
 - Moved the existing DLIO generator, workload runners, analyzer and shared
   profiles unchanged into `scripts/workloads/dlio/normal/`; updated their
   documented invocations. Specified a new four-target, four-stripe SSD
@@ -207,7 +211,7 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-08-03 — Fix `nd_strided` access pattern collapsing into sequential I/O
 
-**File:** [`scripts/workloads/posix_synthetic_workload.c`](../scripts/workloads/posix_synthetic_workload.c)
+**File:** [`scripts/workloads/legacy/posix_synthetic_workload.c`](../scripts/workloads/legacy/posix_synthetic_workload.c)
 
 ### What was wrong
 

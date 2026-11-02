@@ -53,7 +53,7 @@ Excluded:
 ## 3. Fixed IOR protocol
 
 Use the installed MPI-enabled IOR binary directly, not
-`scripts/workloads/posix_synthetic_workload_IOR.py`. The application wrapper is
+`scripts/workloads/legacy/posix_synthetic_workload_IOR.py`. The application wrapper is
 single-rank and does not own NetBench state or multi-client lifecycle.
 
 | Setting | Value |

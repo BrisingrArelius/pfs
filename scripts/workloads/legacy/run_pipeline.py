@@ -35,7 +35,7 @@ POOL_SSD = 3
 
 # Base directories
 BASE_DIR = Path(__file__).resolve().parent
-REPO_ROOT = BASE_DIR.parents[1]
+REPO_ROOT = BASE_DIR.parents[2]
 BEEGFS_BASE = Path("/mnt/beegfs/advay")
 
 # Workload directories (files are created here)

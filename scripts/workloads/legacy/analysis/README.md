@@ -1,4 +1,4 @@
-# Analysis pipeline
+# Legacy POSIX synthetic analysis pipeline
 
 ## Darshan parsing
 
@@ -9,7 +9,7 @@ At least one of `--posix`, `--mpi`, and `--stdio` is required. Aggregation uses
 sum, minimum, maximum, or first value according to each counter's definition.
 
 ```bash
-python3 scripts/workloads/analysis/parse_darshan.py --log logs/run.darshan --label example --posix --output-dir results/workloads/runs/example/metrics
+python3 scripts/workloads/legacy/analysis/parse_darshan.py --log logs/run.darshan --label example --posix --output-dir results/workloads/runs/example/metrics
 ```
 
 Without `--output-dir`, output uses a timestamped directory under
@@ -27,7 +27,7 @@ directory under `results/workloads/runs/`.
 Single-file mode analyzes one aggregate CSV:
 
 ```bash
-python3 scripts/workloads/analysis/analyze_darshan.py \
+python3 scripts/workloads/legacy/analysis/analyze_darshan.py \
   --input results/workloads/legacy/darshan/ssd/global.csv \
   --output-dir results/workloads/runs/example/ssd-analysis
 ```
@@ -35,7 +35,7 @@ python3 scripts/workloads/analysis/analyze_darshan.py \
 Comparison mode analyzes HDD and SSD aggregate CSVs together:
 
 ```bash
-python3 scripts/workloads/analysis/analyze_darshan.py \
+python3 scripts/workloads/legacy/analysis/analyze_darshan.py \
   --hdd results/workloads/legacy/darshan/hdd/global.csv \
   --ssd results/workloads/legacy/darshan/ssd/global.csv \
   --output-dir results/workloads/runs/example/comparison

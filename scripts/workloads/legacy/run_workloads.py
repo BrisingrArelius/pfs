@@ -42,7 +42,7 @@ from pathlib import Path
 # =============================================================================
 
 SCRIPT_DIR       = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT     = str(Path(SCRIPT_DIR).parents[1])
+PROJECT_ROOT     = str(Path(SCRIPT_DIR).parents[2])
 WORKLOADS_DIR    = SCRIPT_DIR
 PROFILES_JSON    = os.path.join(WORKLOADS_DIR, "profiles.json")
 WORKLOAD_SRC     = os.path.join(WORKLOADS_DIR, "posix_synthetic_workload.c")

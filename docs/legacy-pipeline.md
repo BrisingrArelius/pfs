@@ -46,7 +46,7 @@ python3 run_pipeline.py --analyze-only
 
 ## Documentation
 
-- `scripts/workloads/README.md` — workload profile and execution details
+- `scripts/workloads/legacy/README.md` — workload profile and execution details
 - `scripts/fio/README.md` — FIO benchmark matrix documentation
 - `scripts/parse_darshan_README.md` — Darshan parser documentation
 - `scripts/analysis/analysis_README.md` — analysis methodology and interpretation

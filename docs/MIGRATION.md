@@ -21,9 +21,9 @@ and completed without modifying recovered source/configuration contents.
 | `scripts/parse_ost_logs.py`, companion README | `scripts/microbenchmarks/analysis/parse_ost_logs.py`, companion README |
 | `scripts/parse_du.py`, companion README | `scripts/microbenchmarks/analysis/parse_du.py`, companion README |
 | `scripts/analysis/generate_heatmap.py` | `scripts/microbenchmarks/analysis/generate_heatmap.py` |
-| `scripts/run_workloads.py` | `scripts/workloads/run_workloads.py` |
-| `run_pipeline.py` | `scripts/workloads/run_pipeline.py` |
-| `scripts/parse_darshan.py`, companion README | `scripts/analysis/parse_darshan.py`, companion README |
+| `scripts/run_workloads.py` | `scripts/workloads/legacy/run_workloads.py` |
+| `run_pipeline.py` | `scripts/workloads/legacy/run_pipeline.py` |
+| `scripts/parse_darshan.py`, companion README | `scripts/workloads/legacy/analysis/parse_darshan.py`, companion README |
 | `scripts/fio/ost_results/*.json` | `results/microbenchmarks/legacy/fio-local/20260404/` |
 | `results/ost_plots/` | `results/microbenchmarks/legacy/fio-local/20260404/plots/` |
 | `scripts/fio/r.txt` | `results/microbenchmarks/legacy/fio-local/20260404/analysis-summary.txt` |
@@ -75,7 +75,7 @@ Their original filenames are restored under `analysis/`, with identical contents
 ## Current analysis locations
 
 Later organization moved workload-owned Darshan tools to
-`scripts/workloads/analysis/` and renamed the analyzer to `analyze_darshan.py`.
+`scripts/workloads/legacy/analysis/` and renamed the analyzer to `analyze_darshan.py`.
 External trace-corpus tools are under `scripts/trace_characterization/`.
 Preserved trace outputs remain under `results/trace_analysis/legacy/`.
 

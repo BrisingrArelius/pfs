@@ -22,7 +22,7 @@ import pandas as pd
 # OUTPUT CONFIGURATION
 # =============================================================================
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 OUTPUT_DIR = REPO_ROOT / "results" / "workloads" / "runs" / datetime.now().strftime("darshan-%Y%m%d_%H%M%S") / "metrics"
 GLOBAL_CSV = "global.csv"
 
