@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Print one quiet read/write throughput sample for the four selected SSDs."""
+"""Check SSD throughput quietly; optionally probe a selected pool through BeeGFS."""
 
 import argparse
 import json
 import shlex
+import shutil
 import subprocess
+import time
+from datetime import datetime
 from pathlib import Path
 
-from pool_common import DEVICES, TARGETS
+from pool_common import DATA_ROOT, DEVICES, FAST, TARGETS, pattern, verify
 
 
 SAMPLE = r"""
@@ -58,28 +61,48 @@ print(json.dumps(results))
 """
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--seconds", type=int, default=10, help="Sample duration (default: 10 seconds)")
-    args = parser.parse_args()
-    if args.seconds < 1:
-        parser.error("--seconds must be positive")
+COUNTERS = r"""
+import json, pathlib, sys
+result = {}
+for device in sys.argv[1].split(','):
+    fields = list(map(int, (pathlib.Path('/sys/class/block') / device / 'stat').read_text().split()))
+    result[device] = {'read_bytes': fields[2] * 512, 'write_bytes': fields[6] * 512}
+print(json.dumps(result))
+"""
 
+
+def remote_samples(program, seconds=None):
     jobs = {}
     for host in ("colva1", "colva2", "colva3"):
         devices = [Path(device).name.rsplit("p", 1)[0]
                    for node, device in DEVICES.values() if node == host]
-        command = shlex.join(("python3", "-c", SAMPLE, ",".join(devices), str(args.seconds)))
-        jobs[host] = subprocess.Popen(["ssh", host, command], stdout=subprocess.PIPE,
+        arguments = ["python3", "-c", program, ",".join(devices)]
+        if seconds is not None:
+            arguments.append(str(seconds))
+        jobs[host] = subprocess.Popen(["ssh", host, shlex.join(arguments)], stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE, text=True)
     measurements = {}
     for host, process in jobs.items():
-        stdout, stderr = process.communicate(timeout=args.seconds + 30)
+        stdout, stderr = process.communicate(timeout=(seconds or 0) + 30)
         if process.returncode:
             raise RuntimeError(f"{host} failed to sample its SSDs: {stderr.strip()}")
         measurements[host] = json.loads(stdout)
+    return time.monotonic(), measurements
 
-    print(f"Selected SSDs · {args.seconds}-second physical-device sample (MiB/s)")
+
+def limit_status(item):
+    if item["configured_read"] is None and item["configured_write"] is None \
+            and item["kernel_read"] is None and item["kernel_write"] is None:
+        return "none"
+    if (item["configured_read"] is not None and item["configured_write"] is not None
+            and item["kernel_read"] == str(item["configured_read"])
+            and item["kernel_write"] == str(item["configured_write"])):
+        return "matched"
+    return "MISMATCH"
+
+
+def show_sample(seconds, measurements):
+    print(f"Selected SSDs · {seconds}-second physical-device sample (MiB/s)")
     print("Target  Host    SSD       Read / cap       Write / cap      Kernel limit")
     for target in TARGETS:
         host, path = DEVICES[target]
@@ -87,19 +110,94 @@ def main():
         item = measurements[host][device]
         def cap(key):
             return f"{item[key] / 1048576:.0f}" if item[key] is not None else "—"
-        if item["configured_read"] is None and item["configured_write"] is None \
-                and item["kernel_read"] is None and item["kernel_write"] is None:
-            status = "none"
-        elif (item["configured_read"] is not None and item["configured_write"] is not None
-              and item["kernel_read"] == str(item["configured_read"])
-              and item["kernel_write"] == str(item["configured_write"])):
-            status = "matched"
-        else:
-            status = "MISMATCH"
         print(f"{target:<7} {host:<7} {device:<9} {item['read_MiB_s']:>5.1f} / {cap('configured_read'):<5} "
               f"{item['write_MiB_s']:>5.1f} / {cap('configured_write'):<5} "
-              f"{status}")
+              f"{limit_status(item)}")
     print("Device-wide counters; zero I/O does not test a cap. Sample during DLIO reads/writes.")
+
+
+def rates(before, after, direction):
+    start, old = before
+    end, new = after
+    elapsed = end - start
+    if elapsed <= 0:
+        raise RuntimeError("Invalid device sample interval")
+    result = {}
+    for target, (host, path) in DEVICES.items():
+        device = Path(path).name.rsplit("p", 1)[0]
+        key = f"{direction}_bytes"
+        amount = new[host][device][key] - old[host][device][key]
+        if amount < 0:
+            raise RuntimeError(f"Device counter reset on {host}:{device}")
+        result[target] = (amount / 1048576, amount / 1048576 / elapsed)
+    return result
+
+
+def fio(command):
+    result = subprocess.run(command, check=True, capture_output=True, text=True)
+    job = json.loads(result.stdout)["jobs"][0]
+    if job["error"]:
+        raise RuntimeError(f"fio returned error {job['error']}: {result.stderr}")
+    return job
+
+
+def native_check(pool):
+    if shutil.which("fio") is None:
+        raise RuntimeError("fio is required for --native")
+    verify(pool)
+    _, configured = remote_samples(SAMPLE, 1)
+    if any(limit_status(configured[host][Path(path).name.rsplit("p", 1)[0]]) != "matched"
+           for host, path in DEVICES.values()):
+        raise RuntimeError("Configured limits do not match the kernel io.max; probe not started")
+
+    base = DATA_ROOT / "throttled_ssd" / "throughput_checks"
+    base.mkdir(parents=True, exist_ok=True)
+    directory = base / f"pool{pool}-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}"
+    pattern(directory, pool)
+    filename = directory / "probe.bin"
+    print(f"Pool {pool}: probing a temporary four-stripe BeeGFS file ({filename})", flush=True)
+    try:
+        for operation in ("write", "read"):
+            command = ["fio", f"--name=pool{pool}-{operation}", f"--filename={filename}",
+                       f"--rw={operation}", "--ioengine=sync", "--direct=1", "--bs=1m",
+                       "--size=2G", "--numjobs=1", "--iodepth=1", "--output-format=json"]
+            if operation == "write":
+                command.append("--end_fsync=1")
+            before = remote_samples(COUNTERS)
+            job = fio(command)
+            after = remote_samples(COUNTERS)
+            device_rates = rates(before, after, operation)
+            app = job[operation]["bw_bytes"] / 1048576
+            print(f"{operation}: fio {app:.1f} MiB/s; physical SSD read/write by target:")
+            for target in TARGETS:
+                amount, rate = device_rates[target]
+                cap = 45 if target in FAST[pool] else 15
+                print(f"  {target}: {amount:.0f} MiB, {rate:.1f} MiB/s (configured cap {cap})")
+            if operation == "read" and sum(value[0] for value in device_rates.values()) < 1024:
+                print("  SSD reads were below half the 2-GiB input; caching masks this cap check.")
+    except BaseException:
+        print(f"Probe failed; inspect temporary file before removal: {directory}")
+        raise
+    shutil.rmtree(directory)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--native", action="store_true", help="Actively write/read a temporary BeeGFS file")
+    parser.add_argument("--pool", type=int, choices=FAST, help="Required with --native (14–18)")
+    parser.add_argument("--seconds", type=int, default=10, help="Passive sample duration (default: 10)")
+    args = parser.parse_args()
+    if args.seconds < 1:
+        parser.error("--seconds must be positive")
+    if args.native:
+        if args.pool is None:
+            parser.error("--native requires --pool 14–18")
+        native_check(args.pool)
+        return
+    if args.pool is not None:
+        verify(args.pool)
+    _, measurements = remote_samples(SAMPLE, args.seconds)
+    show_sample(args.seconds, measurements)
 
 
 if __name__ == "__main__":

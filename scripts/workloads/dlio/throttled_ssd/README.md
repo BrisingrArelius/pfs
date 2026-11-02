@@ -87,6 +87,23 @@ read/write caps, and whether the limits match the storage service's kernel
 cap with zero device activity means the cap was not exercised; it cannot
 explain DLIO's nominal training rate.
 
+For an **active native BeeGFS I/O check** of one currently configured pool,
+run between DLIO runs (example: all-slow pool 18):
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/check_throughput.py --native --pool 18
+```
+
+This writes and reads a temporary **2-GiB**, four-target/512-KiB-striped
+file using `fio --direct=1`, printing fio throughput and actual backend MiB/s
+per target. It removes the probe file after success; on failure it prints
+the path for inspection. `fio` must be installed. This is I/O **through
+BeeGFS**, so it exercises the throttled storage service; running fio directly
+on `/dev/nvme*` would bypass those service limits. A read served from server
+cache can still bypass the SSD cap, so compare fio bytes with device-read
+bytes before claiming the cap was exercised. Do not run the probe alongside
+a timed DLIO repetition.
+
 ## Plot copied full runs locally
 
 Copy each completed `runs-pool*-.../` directory from `anjuna2` into

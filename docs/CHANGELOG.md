@@ -40,6 +40,10 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   It takes one bounded simultaneous sample of the four physical SSD read/write
   counters and displays their configured versus effective cgroup limits as
   four terminal rows; workload execution is unchanged.
+- Extended the throughput checker with `--native --pool N`: a temporary
+  four-stripe direct-I/O fio write/read through BeeGFS, reporting application
+  and physical-device rates separately. The probe cleans up after success
+  and runs only on a configured condition pool between DLIO measurements.
 
 ---
 
