@@ -4,6 +4,20 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-11-02 — Separate DLIO normal and throttled-SSD suites
+
+- Moved the existing DLIO generator, workload runners, analyzer and shared
+  profiles unchanged into `scripts/workloads/dlio/normal/`; updated their
+  documented invocations. Specified a new four-target, four-stripe SSD
+  speed-mix experiment in `docs/specs/DL_Throttled_SSD.md`.
+- Added separate ResNet-50 and U-Net 3D runners in
+  `scripts/workloads/dlio/throttled_ssd/`, using one shared helper to validate
+  pool membership and configured device caps, stage identical inputs outside
+  timing, and retain the same native DLIO evidence. Backend and client-network
+  telemetry are required separately before claiming a device bottleneck.
+
+---
+
 ## 2026-10-26 — Prepare narrow DLIO pool comparison
 
 - Added an eight-rank ResNet-50 runner for three serial repetitions on each of
