@@ -74,6 +74,19 @@ there were no pre-existing service I/O limits. Moving targets does not
 restripe previous files: this suite stages fresh copies under each pool's
 pattern. Results go to `~/tejas/dlio/throttled_ssd/`.
 
+To check actual physical SSD read/write MiB/s without flooding the terminal,
+run this on `anjuna2` in a second terminal **while DLIO is active**:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/check_throughput.py --seconds 10
+```
+
+It prints one line per selected target with measured device rates, configured
+read/write caps, and whether the limits match the storage service's kernel
+`io.max`. The device counters include other I/O on the same drive. A matched
+cap with zero device activity means the cap was not exercised; it cannot
+explain DLIO's nominal training rate.
+
 ## Plot copied full runs locally
 
 Copy each completed `runs-pool*-.../` directory from `anjuna2` into

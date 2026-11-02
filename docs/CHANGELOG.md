@@ -36,6 +36,10 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   now verifies the uncapped state, runs the five pool configurations with
   three repetitions apiece, and restores pool 6 only after full success;
   failures leave the current condition in place for inspection.
+- Added a standalone `check_throughput.py` in the throttled-SSD code folder.
+  It takes one bounded simultaneous sample of the four physical SSD read/write
+  counters and displays their configured versus effective cgroup limits as
+  four terminal rows; workload execution is unchanged.
 
 ---
 
