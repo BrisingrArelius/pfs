@@ -3,8 +3,10 @@
 This is a new, separate speed-mix experiment; the completed normal
 Default/HDD/SSD runs remain unchanged. Compare DLIO ResNet-50 and U-Net 3D
 on `anjuna2`, eight ranks, five epochs, synthetic all-rank checkpoints after
-epochs 2 and 4, three repetitions per condition. Do not include CosmoFlow
-until its normal comparison has completed.
+epochs 2 and 4, three repetitions per condition. Reduced CosmoFlow (8,192
+files per pool) follows this same protocol once its normal datasets and
+three-pool comparison are complete; it is not the 524,288-file upstream
+CosmoFlow workload.
 
 ## Controlled conditions
 

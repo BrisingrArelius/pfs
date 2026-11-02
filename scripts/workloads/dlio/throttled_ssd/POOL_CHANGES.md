@@ -8,8 +8,16 @@ and empty pools 14–18:
 python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --all-pools
 ```
 
-It runs three full U-Net repetitions per condition and restores pool 6
-after all five conditions succeed. If any step fails, it stops at the current
+After CosmoFlow's normal datasets and three-pool sweep are complete, use
+the same original pool-6 state for its three-condition sweep (4/0, 2/2, 0/4):
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_cosmoflow_pools.py --all-pools
+```
+
+Each command runs three full repetitions per condition and restores pool 6
+after all selected conditions succeed. CosmoFlow moves directly 6→14→16→18→6;
+U-Net uses all five conditions. If any step fails, it stops at the current
 pool without restoring or launching further runs; inspect processes and pool
 membership before retrying.
 

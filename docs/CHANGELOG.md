@@ -62,6 +62,14 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   whole-run rates per target after input staging and before checkpoint-file
   cleanup; delayed writeback can overlap. Older runs have no retrospective
   backend counts.
+- Added a workload-specific throttled CosmoFlow runner using the same
+  14–18 transitions, three repetitions per pool, cache preparation and
+  pool-6 restoration as the U-Net runner. CosmoFlow dataset placement
+  inspection samples 65 of its 8,192 files per condition; the offline
+  throttled plotter accepts completed CosmoFlow sweeps.
+- Added flushed per-run start/completion messages in both DLIO suites after
+  successful evidence capture and checkpoint cleanup. The throttled suite
+  also announces the start and end of first-time dataset copies.
 
 ---
 

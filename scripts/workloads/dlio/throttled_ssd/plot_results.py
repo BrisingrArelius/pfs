@@ -235,6 +235,7 @@ def main():
     choice = parser.add_mutually_exclusive_group(required=True)
     choice.add_argument("--unet", action="store_const", dest="workload", const="unet")
     choice.add_argument("--resnet", action="store_const", dest="workload", const="resnet")
+    choice.add_argument("--cosmoflow", action="store_const", dest="workload", const="cosmoflow")
     parser.add_argument("run_directories", type=Path, nargs="+", help="Completed runs-pool14-... etc. directories")
     parser.add_argument("--output", type=Path, help="Default: results/workloads/plots/dlio/throttled_ssd/WORKLOAD")
     args = parser.parse_args()

@@ -63,8 +63,9 @@ def apply_limits(pool):
 
 
 def transition(source, destination):
-    if (source, destination) != (6, 14) and (source not in FAST or destination != source + 1):
-        raise ValueError("Expected 6→14 or the next experiment pool (14→15→16→17→18)")
+    if (source, destination) not in ((6, 14), (14, 16), (16, 18)) and (
+            source not in FAST or destination not in FAST or destination != source + 1):
+        raise ValueError("Expected 6→14, the next experiment pool, or CosmoFlow's 14→16→18")
     verify_normal() if source == 6 else verify(source)
     listing = beegfs("--liststoragepools")
     fast = len(FAST[destination])

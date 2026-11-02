@@ -26,6 +26,12 @@ Earlier completed sweeps
 did not include the server-cache drop. Checkpoint files are removed only
 after the raw results and OST placements
 have been recorded. OST and cache commands require `sudo` access.
+The normal pools are already configured: the full runner selects their
+dataset directories but does not move target membership, so no pool
+restoration is needed. Restore pool 6's original targets before starting
+normal CosmoFlow if a throttled run moved them out.
+The runner prints a flushed `pool N, run X/3 complete` line only after that
+run's checkpoint validation, metrics, and cleanup succeed; pilots use `X/1`.
 
 `generate_data.py` uses DLIO to generate pool 1's data, then copies the same
 bytes to pools 3 and 6 under their BeeGFS patterns. It reuses existing

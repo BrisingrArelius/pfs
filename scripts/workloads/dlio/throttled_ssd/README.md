@@ -13,7 +13,7 @@ the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
 the partition setting appeared in systemd but installed no kernel limit.
 Complete existing pool-6 jobs first.
 
-## Entire U-Net sweep from the normal pool
+## Entire U-Net or CosmoFlow sweep from the normal pool
 
 With the original nine SSD targets in pool 6, no storage-service bandwidth
 limits, and empty pools 14–18, run on `anjuna2`:
@@ -21,6 +21,22 @@ limits, and empty pools 14–18, run on `anjuna2`:
 ```bash
 python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --all-pools
 ```
+
+For reduced CosmoFlow, first prepare its normal pool-1/3/6 datasets with
+`python3 scripts/workloads/dlio/normal/generate_data.py --cosmoflow`
+and complete its normal pilot/full comparison. When pool 6 again has its
+original nine targets and no caps, run its three-condition protocol:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_cosmoflow_pools.py --all-pools
+```
+
+CosmoFlow runs **only pools 14 → 16 → 18 (4/0, 2/2, 0/4)**, three repetitions
+each, then restores pool 6. It uses **8,192 TFRecords per pool**; the first invocation in each
+condition copies the inputs before timing. Like the normal runner, it
+inspects a 65-file sample of OST assignments rather than querying all
+8,192 files. For a short pilot in a currently configured pool, use
+`run_cosmoflow_pools.py --pool 14 --pilot`.
 
 This moves the four selected SSD targets from pool 6 into pool 14, applies
 the 4:0 caps, and runs three full U-Net repetitions. It then moves through
@@ -36,6 +52,10 @@ DLIO's own buffers or caches within an epoch. If a move,
 copy, or run fails, execution stops at that condition **without moving the
 targets again**; inspect the pool and any still-running processes before
 resuming. `--all-pools` cannot be combined with `--pilot`.
+Input staging announces its start and completion. Each run prints a flushed
+`pool N, run X/3 complete` line only after its metrics and checkpoint checks
+succeed; pilots use `X/1`. The final pool-6 restoration happens after the
+last completed condition.
 
 For the currently configured **pool 14** (all four fast), pilot one workload
 at a time:
@@ -133,9 +153,10 @@ python3 scripts/workloads/dlio/throttled_ssd/plot_results.py --unet \
 ```
 
 When pool 15 finishes, rerun the same command with its copied directory
-appended; continue through pool 18. Use `--resnet` with completed ResNet sweeps.
+appended; continue through pool 18. Use `--resnet` or `--cosmoflow` with
+completed sweeps of those workloads.
 The plotter validates three
 full repetitions per supplied pool, writes five PNGs and source CSVs to
-`results/workloads/plots/dlio/throttled_ssd/{unet,resnet}/`, and never runs
+`results/workloads/plots/dlio/throttled_ssd/{unet,resnet,cosmoflow}/`, and never runs
 DLIO. U-Net's throughput is an estimated sample-size/time proxy where native
 rates are missing; checkpoint write throughput times rank 0 without `fsync`.

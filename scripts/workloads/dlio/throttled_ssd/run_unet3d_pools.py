@@ -3,8 +3,7 @@
 
 import argparse
 
-from pool_common import FAST, run
-from configure_pool import restore, transition
+from pool_common import FAST, run, run_all
 
 
 def main():
@@ -18,11 +17,7 @@ def main():
     if args.all_pools:
         if args.pilot:
             parser.error("--pilot requires a single --pool")
-        for pool in FAST:
-            transition(6 if pool == 14 else pool - 1, pool)
-            print(f"Starting three full U-Net runs on pool {pool}", flush=True)
-            run("unet", pool)
-        restore(18)
+        run_all("unet")
     else:
         run("unet", args.pool, args.pilot)
 

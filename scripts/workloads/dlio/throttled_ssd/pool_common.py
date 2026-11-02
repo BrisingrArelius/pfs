@@ -26,7 +26,8 @@ DEVICES = {104: ("colva1", "/dev/nvme1n1"),
            305: ("colva3", "/dev/nvme1n1p1"),
            306: ("colva3", "/dev/nvme2n1p1")}
 CLASSES = {"resnet": "normal.run_resnet50_pools.ResNetCheckpointing",
-           "unet": "normal.run_unet3d_pools.SeededPyTorchCheckpointing"}
+           "unet": "normal.run_unet3d_pools.SeededPyTorchCheckpointing",
+           "cosmoflow": "normal.run_cosmoflow_pools.CosmoFlowCheckpointing"}
 
 
 def beegfs(*args):
@@ -150,17 +151,23 @@ def prepare(profile, pool):
                     or any((train / file.name).stat().st_size != file.stat().st_size for file in inputs)):
         raise RuntimeError(f"Partial or changed dataset: {train}")
     if not present:
+        print(f"{profile.profile}: copying {len(inputs)} inputs into pool {pool}", flush=True)
         for file in inputs:
             shutil.copyfile(file, train / file.name)
+        print(f"{profile.profile}: pool {pool} input copy complete", flush=True)
     if any((train / file.name).stat().st_size != file.stat().st_size for file in inputs):
         raise RuntimeError(f"Incomplete dataset copy: {train}")
-    placement((train / file.name for file in inputs), root / "dataset-osts.tsv")
+    observed = inputs
+    if len(inputs) > 1024:
+        stride = max(1, len(inputs) // 64)
+        observed = list(dict.fromkeys(inputs[::stride][:64] + inputs[-1:]))
+    placement((train / file.name for file in observed), root / "dataset-osts.tsv")
     return root
 
 
 def run(name, pool, pilot=False):
     if pool not in FAST or name not in CLASSES:
-        raise ValueError("Expected ResNet/U-Net and a condition pool 14–18")
+        raise ValueError("Expected ResNet, U-Net or CosmoFlow and a condition pool 14–18")
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
         raise RuntimeError("DLIO 2.0.0 required")
     verify(pool)
@@ -187,6 +194,8 @@ def run(name, pool, pilot=False):
             directory.mkdir()
             checkpoint_dir = root / "checkpoints" / f"{output.name}-rep{repetition}"
             checkpoint_dir.mkdir()
+            print(f"{profile.profile}: pool {pool}, run {repetition}/"
+                  f"{1 if pilot else 3} starting", flush=True)
             size = min(profile.model_bytes, 16 * 1048576) if pilot else profile.model_bytes
             command = ["mpirun", "-np", str(RANKS), "dlio_benchmark", f"workload={profile.profile}",
                        f"++workload.dataset.num_files_train={profile.files}",
@@ -234,4 +243,26 @@ def run(name, pool, pilot=False):
                                          ",".join(map(str, TARGETS)), checkpoint_osts, sizes))
                 csvfile.flush()
                 shutil.rmtree(checkpoint_dir)
+            print(f"{profile.profile}: pool {pool}, run {repetition}/"
+                  f"{1 if pilot else 3} complete", flush=True)
     print(f"Output: {output}")
+
+
+def run_all(name):
+    """Run the workload's conditions, restoring pool 6 after full success."""
+    from configure_pool import restore, transition
+
+    if name not in CLASSES:
+        raise ValueError(f"Unsupported workload: {name}")
+    profile = WORKLOADS[name]
+    source = DATA_ROOT / profile.folder / "pool1/dataset/train"
+    if len(list(source.glob(f"*.{profile.extension}"))) != profile.files:
+        raise RuntimeError(f"Expected {profile.files} prepared input files in {source}")
+    pools = (14, 16, 18) if name == "cosmoflow" else tuple(FAST)
+    previous = 6
+    for pool in pools:
+        transition(previous, pool)
+        print(f"Starting three full {name} runs on pool {pool}", flush=True)
+        run(name, pool)
+        previous = pool
+    restore(previous)

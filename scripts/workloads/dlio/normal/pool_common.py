@@ -122,6 +122,7 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
     pools = (1,) if pilot else POOLS
     targets = {}
     for pool in pools:
+        print(f"{profile.profile}: checking pool {pool} inputs", flush=True)
         files = data_files(profile, pool)
         if len(files) != profile.files:
             raise RuntimeError(f"Pool {pool}: expected {profile.files} input files; found {len(files)}")
@@ -195,4 +196,6 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
                                              targets[pool], observed, sizes))
                     report.flush()
                     shutil.rmtree(checkpoint_dir)
+                print(f"{profile.profile}: pool {pool}, run {repetition}/"
+                      f"{1 if pilot else 3} complete", flush=True)
     print(f"Output: {output}")
