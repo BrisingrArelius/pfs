@@ -19,6 +19,15 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   pool membership and configured device caps, stage identical inputs outside
   timing, and retain the same native DLIO evidence. Backend and client-network
   telemetry are required separately before claiming a device bottleneck.
+- Recorded the pool 14–18 target moves and per-device cap commands in the
+  throttled-SSD folder. Added `configure_pool.py` to perform one verified
+  condition transition or restore pool 6 and clear the experiment's runtime
+  limits; workload execution remains a separate command.
+- Added an offline `plot_results.py` for completed throttled-SSD U-Net and
+  ResNet sweeps. It accepts available pool conditions incrementally and plots
+  training input, checkpoint writes, whole-run time, repetitions, and rank
+  loading from three-run native and runner evidence without creating results
+  READMEs.
 
 ---
 
