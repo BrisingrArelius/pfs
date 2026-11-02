@@ -170,7 +170,7 @@ def plot_summary(workload, pools, groups, output):
         ax.set_xlabel(unit)
         ax.set_title(title, fontweight="bold")
         ax.spines[["top", "right"]].set_visible(False)
-    fig.suptitle(f"{workload}: SSD speed mix · mean ± SD (3 runs)", fontweight="bold")
+    fig.suptitle(f"{workload}: configured SSD speed mix · mean ± SD (3 runs)", fontweight="bold")
     save(fig, output, "pool_performance.png")
 
 

@@ -28,6 +28,14 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   training input, checkpoint writes, whole-run time, repetitions, and rank
   loading from three-run native and runner evidence without creating results
   READMEs.
+- Corrected the throttled-SSD pool membership check so an empty pool's line
+  cannot consume the following pool ID as a target. A pool-17 U-Net input copy
+  failed with BeeGFS `Remote I/O error`; a later three-run sweep completed,
+  but the earlier error still requires storage-side diagnosis.
+- Added `--all-pools` to the throttled U-Net runner. From original pool 6 it
+  now verifies the uncapped state, runs the five pool configurations with
+  three repetitions apiece, and restores pool 6 only after full success;
+  failures leave the current condition in place for inspection.
 
 ---
 

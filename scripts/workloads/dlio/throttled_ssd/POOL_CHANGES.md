@@ -1,6 +1,20 @@
 # DLIO throttled-SSD pool changes
 
-Run these commands on `anjuna2` **between** completed DLIO runs. All five
+To run the **entire U-Net sweep in one command**, start on `anjuna2` with
+the original nine targets in pool 6, no storage-service bandwidth limits,
+and empty pools 14–18:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --all-pools
+```
+
+It runs three full U-Net repetitions per condition and restores pool 6
+after all five conditions succeed. If any step fails, it stops at the current
+pool without restoring or launching further runs; inspect processes and pool
+membership before retrying.
+
+For manual condition-by-condition execution, run the commands below on
+`anjuna2` **between** completed DLIO runs. All five
 conditions use the same targets `104,205,305,306`, with four targets and
 512-KiB chunks per file. Only one condition pool can contain them at a time.
 `--rmtargets` is the removal flag on this cluster. Inspect the pool listing

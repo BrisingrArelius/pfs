@@ -36,7 +36,7 @@ def beegfs(*args):
 def verify(pool):
     listing = beegfs("--liststoragepools")
     fast = len(FAST[pool])
-    match = re.search(rf"^\s*{pool}\s+dlio_ssd_f{fast}_s{4-fast}\s+([\d,]+)", listing, re.M)
+    match = re.search(rf"^[ \t]*{pool}[ \t]+dlio_ssd_f{fast}_s{4-fast}[ \t]+([\d,]+)", listing, re.M)
     members = set(map(int, match[1].split(","))) if match else set()
     if members != set(TARGETS):
         raise RuntimeError(f"Pool {pool} must contain {TARGETS}; found {members}")
