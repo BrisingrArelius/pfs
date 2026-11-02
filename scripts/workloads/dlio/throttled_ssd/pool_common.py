@@ -9,6 +9,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -98,6 +99,39 @@ def placement(files, output):
     return ",".join(map(str, TARGETS))
 
 
+def physical_counters():
+    """Snapshot each selected SSD's physical read/write sectors on its OSS."""
+    result = {}
+    for host in ("colva1", "colva2", "colva3"):
+        targets = [(target, Path(device).name.rsplit("p", 1)[0])
+                   for target, (node, device) in DEVICES.items() if node == host]
+        paths = [f"/sys/class/block/{device}/stat" for _, device in targets]
+        lines = subprocess.run(["ssh", host, shlex.join(("cat", *paths))],
+                               check=True, capture_output=True, text=True).stdout.splitlines()
+        if len(lines) != len(targets):
+            raise RuntimeError(f"{host}: incomplete physical SSD counters")
+        observed_at = time.monotonic()
+        for (target, device), line in zip(targets, lines):
+            fields = list(map(int, line.split()))
+            result[target] = (observed_at, fields[2] * 512, fields[6] * 512, device)
+    return result
+
+
+def physical_io(pool, repetition, before, after):
+    rows = []
+    for target in TARGETS:
+        start, read0, write0, device = before[target]
+        end, read1, write1, _ = after[target]
+        if end <= start or read1 < read0 or write1 < write0:
+            raise RuntimeError(f"Pool {pool}, repetition {repetition}: SSD counter reset on target {target}")
+        seconds = end - start
+        rows.append((pool, repetition, target, DEVICES[target][0], device, seconds,
+                     read1 - read0, write1 - write0,
+                     (read1 - read0) / 1048576 / seconds,
+                     (write1 - write0) / 1048576 / seconds))
+    return rows
+
+
 def prepare(profile, pool):
     source = DATA_ROOT / profile.folder / "pool1/dataset/train"
     inputs = sorted(source.glob(f"*.{profile.extension}"))
@@ -141,9 +175,13 @@ def run(name, pool, pilot=False):
     env = os.environ.copy()
     env["PYTHONPATH"] = os.pathsep.join((str(NORMAL.parent), str(NORMAL),
                                          env.get("PYTHONPATH", "")))
-    with (output / "metrics.csv").open("w", newline="") as csvfile:
+    with (output / "metrics.csv").open("w", newline="") as csvfile, \
+            (output / "device_io.csv").open("w", newline="") as devicefile:
         writer = csv.writer(csvfile)
         writer.writerow(FIELDS)
+        devices = csv.writer(devicefile)
+        devices.writerow(("pool", "repetition", "target", "host", "device", "duration_s",
+                          "read_bytes", "write_bytes", "read_MiB_s", "write_MiB_s"))
         for repetition in range(1, 2 if pilot else 4):
             directory = output / f"rep{repetition}-pool{pool}"
             directory.mkdir()
@@ -177,8 +215,12 @@ def run(name, pool, pilot=False):
                                check=True)
             subprocess.run(["sudo", "tee", "/proc/sys/vm/drop_caches"], input="3\n",
                            text=True, stdout=subprocess.DEVNULL, check=True)
+            time.sleep(30)
+            before = physical_counters()
             with (directory / "console.log").open("w") as log:
                 subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+            devices.writerows(physical_io(pool, repetition, before, physical_counters()))
+            devicefile.flush()
             files = sorted(file for file in checkpoint_dir.rglob("*") if file.is_file())
             sizes = checkpoint_sizes(files, profile, (2,) if pilot else (2, 4), size)
             checkpoint_osts = placement(files, directory / "checkpoint-osts.tsv")

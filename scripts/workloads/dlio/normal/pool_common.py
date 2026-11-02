@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -177,6 +178,7 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
                                    check=True)
                 subprocess.run(("sudo", "tee", "/proc/sys/vm/drop_caches"),
                                input="3\n", text=True, stdout=subprocess.DEVNULL, check=True)
+                time.sleep(30)
                 with (run_dir / "console.log").open("w") as log:
                     subprocess.run(command, env=env, stdout=log,
                                    stderr=subprocess.STDOUT, check=True)

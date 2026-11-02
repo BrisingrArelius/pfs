@@ -53,6 +53,15 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   clear stale limit entries before each condition, and require all four
   physical-device read/write limits in runner preflight. The standalone
   probe now accepts the physical-device path as its configured limit.
+- Added a 30-second wait after both server and client cache drops before
+  each future DLIO invocation in the normal and throttled suites. Full-run
+  checkpoint cleanup remains after evidence capture; pilots retain their
+  checkpoint files for inspection.
+- Added per-repetition snapshots of physical SSD read/write counters around
+  each new throttled-SSD DLIO invocation. `device_io.csv` records bytes and
+  whole-run rates per target after input staging and before checkpoint-file
+  cleanup; delayed writeback can overlap. Older runs have no retrospective
+  backend counts.
 
 ---
 

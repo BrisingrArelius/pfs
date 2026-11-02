@@ -28,8 +28,10 @@ pools 15–18 in order, setting their read/write caps and doing three runs in
 each; after a successful sweep it returns the targets to pool 6 and clears
 the runtime limits. Dataset copies are outside measured runs. Before each
 DLIO invocation, the runner syncs and drops Linux page caches on
-`colva1–4` over SSH, then drops the client cache on `anjuna2`; the drop is
-outside timing and requires noninteractive remote `sudo`. This does not clear
+`colva1–4` over SSH, then drops the client cache on `anjuna2` and waits
+30 seconds; the preparation is outside timing and requires noninteractive
+remote `sudo`. Full-run checkpoints are removed after their evidence is
+recorded, while pilots retain checkpoint files for inspection. This does not clear
 DLIO's own buffers or caches within an epoch. If a move,
 copy, or run fails, execution stops at that condition **without moving the
 targets again**; inspect the pool and any still-running processes before
@@ -80,6 +82,14 @@ The restore command clears the experiment's runtime limits; use it only if
 there were no pre-existing service I/O limits. Moving targets does not
 restripe previous files: this suite stages fresh copies under each pool's
 pattern. Results go to `~/tejas/dlio/throttled_ssd/`.
+
+Each **new** throttled sweep writes `device_io.csv` beside `metrics.csv`:
+physical SSD read/write bytes and whole-invocation MiB/s for each of the
+four targets in each repetition. Counter snapshots bracket DLIO itself,
+after the cache preparation and before checkpoint-file cleanup. They cover
+training **and** checkpoint phases together, and device-wide counters can
+include unrelated activity or delayed writeback. They are not per-epoch or
+per-rank measurements. Existing sweeps have no retrospective device counts.
 
 To check actual physical SSD read/write MiB/s without flooding the terminal,
 run this on `anjuna2` in a second terminal **while DLIO is active**:

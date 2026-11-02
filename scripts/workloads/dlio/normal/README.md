@@ -21,7 +21,8 @@ The full runner uses eight MPI ranks and five epochs; it executes three
 repetitions of pools 1, 3, and 6 sequentially, checkpointing after epochs
 2 and 4. Before each new invocation, the runner calls `sync` on the client,
 then `sync` and drops Linux page caches on `colva1–4` over SSH, then drops
-the client cache. These steps precede DLIO timing. Earlier completed sweeps
+the client cache and waits 30 seconds. These steps precede DLIO timing.
+Earlier completed sweeps
 did not include the server-cache drop. Checkpoint files are removed only
 after the raw results and OST placements
 have been recorded. OST and cache commands require `sudo` access.

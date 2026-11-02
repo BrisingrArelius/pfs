@@ -47,15 +47,19 @@ restore them when finished. Never change membership or caps during a run.
 
 For each condition: stage identical inputs outside timing; pilot both DLIO
 workloads; before each invocation, `sync` and drop Linux page caches on the
-four storage hosts and on the client outside DLIO timing. This does not clear
+four storage hosts and on the client, then wait 30 seconds outside DLIO
+timing. This does not clear
 application buffers or cache between epochs. Measure a sustained read/write
 probe with backend device counters
 and client-network counters; then run the three full repetitions. The new
 runner verifies configured pool members and limits, preserves native DLIO
 evidence, and reports the same rank-0 checkpoint metric as the normal suite.
-**It does not itself measure backend bytes or network traffic.** Add those
-independent counters before claiming that the speed cap, rather than client
-or server caching or the network, caused any application difference.
+New runs also snapshot physical SSD read/write counters around each complete
+DLIO invocation in `device_io.csv`. These include training and checkpoints
+together and may include unrelated drive activity; they do not attribute
+bytes to epochs or ranks. Client-network bytes and phase-aligned backend
+counters remain separate evidence needed before claiming that the speed cap,
+rather than caching or the network, caused an application difference.
 
 All four targets are striped into every file. Mixed conditions may therefore
 be limited by a single slow member rather than improve monotonically with
