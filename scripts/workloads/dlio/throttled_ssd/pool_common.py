@@ -49,6 +49,23 @@ def remaining():
     return seconds
 
 
+def stop_group(process):
+    """Also stop orphaned local ranks if their MPI launcher has exited."""
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        process.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        pass
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    process.wait()
+
+
 def execute(command, **kwargs):
     if DEADLINE is None and not MANAGED:
         return subprocess.run(command, **kwargs)
@@ -64,23 +81,12 @@ def execute(command, **kwargs):
             stdout, stderr = process.communicate(input=data, timeout=seconds)
         except BaseException as error:
             # mpirun and its local rank processes must stop before pool moves.
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            try:
-                process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                pass
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait()
+            stop_group(process)
             if isinstance(error, subprocess.TimeoutExpired):
                 raise DeadlineReached("Reservation run budget exhausted") from error
             raise
         if check and process.returncode:
+            stop_group(process)
             raise subprocess.CalledProcessError(process.returncode, command, stdout, stderr)
         return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 

@@ -6,6 +6,11 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-03 — Distinguish reported and inferred DLIO throughput
 
+- Fixed managed command failure cleanup to terminate the local process group
+  after a nonzero launcher exit, not only on timeout/interruption. A cluster
+  MPICH Hydra proxy segfault left DLIO ranks alive after exit 144; the fix
+  cleans up those descendants on future failures without changing workload
+  parameters or claiming to fix the underlying MPI crash.
 - Added reservation-aware ResNet `--all-pools --deadline 6h` and
   `--continue --deadline 6h` launches. Managed commands have bounded
   process-group termination; progress is saved per repetition, partial
