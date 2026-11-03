@@ -1,10 +1,10 @@
-pool,repetition,training_input_MiB_s,training_input_source,checkpoint_rank0_MiB_s_no_fsync,whole_run_minutes
-1,1,271.0532254606959,nominal samples × mean record bytes / block-or-epoch wall time,38.14348288071461,7.375832583333334
-3,1,270.89566691072844,nominal samples × mean record bytes / block-or-epoch wall time,38.82794994708959,7.38188075
-6,1,269.99976573108404,nominal samples × mean record bytes / block-or-epoch wall time,40.56503334906846,7.4040405
-1,2,271.04008858164485,nominal samples × mean record bytes / block-or-epoch wall time,37.03077917941022,7.37671765
-3,2,271.0138186433283,nominal samples × mean record bytes / block-or-epoch wall time,39.58674980052543,7.3776127
-6,2,255.33604911446798,nominal samples × mean record bytes / block-or-epoch wall time,37.16086388378754,7.802978183333334
-1,3,271.0992145674711,nominal samples × mean record bytes / block-or-epoch wall time,36.3105008658519,7.374991783333333
-3,3,271.0663636132557,nominal samples × mean record bytes / block-or-epoch wall time,37.03077917941022,7.375995783333334
-6,3,270.00628368603117,nominal samples × mean record bytes / block-or-epoch wall time,36.379875151036934,7.402843783333334
+pool,repetition,training_input_MiB_s,total_processed_samples,whole_run_seconds,end_to_end_samples_s,native_samples_s,native_epochs_used,training_input_source,checkpoint_rank0_MiB_s_no_fsync,whole_run_minutes
+1,1,271.0532254606959,800,442.549955,1.8077055278426137,1.9425100855434114,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,38.14348288071461,7.375832583333334
+3,1,270.89566691072844,800,442.912845,1.8062244277426633,1.9407897455488898,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,38.82794994708959,7.38188075
+6,1,269.99976573108404,800,444.24243,1.8008185305487365,1.9352591397327097,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,40.56503334906846,7.4040405
+1,2,271.04008858164485,800,442.603059,1.8074886373525947,1.942702207730191,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,37.03077917941022,7.37671765
+3,2,271.0138186433283,800,442.656762,1.807269353314431,1.941540624806609,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,39.58674980052543,7.3776127
+6,2,255.33604911446798,800,468.178691,1.7087492775274558,1.9347890824807352,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,37.16086388378754,7.802978183333334
+1,3,271.0992145674711,800,442.499507,1.8079116187580295,1.9423106138352317,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,36.3105008658519,7.374991783333333
+3,3,271.0663636132557,800,442.559747,1.8076655308644687,1.9429601163629766,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,37.03077917941022,7.375995783333334
+6,3,270.00628368603117,800,444.170627,1.8011096442899182,1.9356348539038222,"2,4",nominal samples × mean record bytes / block-or-epoch wall time,36.379875151036934,7.402843783333334

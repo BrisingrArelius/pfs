@@ -156,7 +156,30 @@ When pool 15 finishes, rerun the same command with its copied directory
 appended; continue through pool 18. Use `--resnet` or `--cosmoflow` with
 completed sweeps of those workloads.
 The plotter validates three
-full repetitions per supplied pool, writes five PNGs and source CSVs to
+full repetitions per supplied pool, writes six PNGs and source CSVs to
 `results/workloads/plots/dlio/throttled_ssd/{unet,resnet,cosmoflow}/`, and never runs
-DLIO. U-Net's throughput is an estimated sample-size/time proxy where native
-rates are missing; checkpoint write throughput times rank 0 without `fsync`.
+DLIO. Pool performance and per-run plots use **end-to-end samples/s**:
+total processed samples across all epochs divided by DLIO's full-run
+`end - start` seconds. Counts come from full batches and are checked against
+each rank's recorded load-step counts. This includes checkpointing and all
+overhead within those timestamps; input staging and pre-run cache preparation
+are outside them. It is a derived completion-time rate, not an arithmetic
+average of DLIO's epoch rates or a physical-device byte rate. Pool error bars
+summarize three independent per-run rates. The redundant whole-run-time panel
+and inferred pool-summary figure are removed; timestamps and durations remain
+in the source data/CSVs.
+
+Per-epoch diagnostic plots retain DLIO-reported samples/s; zero-reported
+epochs are gaps, not interpolated. CSVs retain native and inferred fields.
+`training_throughput_inferred.png` separately shows the calculated MiB/s
+series with dotted lines; it is not a DLIO-reported byte rate. Checkpoint
+write throughput times rank 0 without `fsync`.
+
+For U-Net, the per-epoch inferred byte-rate numerator is
+5 steps × 4 samples/rank × 8 ranks × 146,600,628
+configured bytes/sample = 23,456,100,480 estimated bytes per epoch. This is
+160 processed samples, not all 168 input files; the remainder does not form
+a full global batch. Record sizes vary, so this is nominal sample volume,
+not measured file-read bytes. Its per-epoch denominator is training-block time
+where present and otherwise epoch wall time. `epochs.csv` records the
+sample count, configured bytes, estimated volume and timing source explicitly.

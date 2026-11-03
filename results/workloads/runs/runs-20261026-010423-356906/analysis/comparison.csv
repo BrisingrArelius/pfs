@@ -1,4 +1,7 @@
 metric,pool,n_runs,mean,stddev,unit,better
+end_to_end_samples_s,1,3,2506.8817246717254,7.092081593021252,samples/s (full run),higher
+end_to_end_samples_s,3,3,2361.145373819877,34.00386270970883,samples/s (full run),higher
+end_to_end_samples_s,6,3,2514.4707997072132,32.933958256599794,samples/s (full run),higher
 training_input_MiB_s,1,3,275.57126572426085,0.7895082678513264,MiB/s,higher
 training_input_MiB_s,3,3,259.79344429808776,3.8672823578174604,MiB/s,higher
 training_input_MiB_s,6,3,276.5709278745081,3.329850583095666,MiB/s,higher

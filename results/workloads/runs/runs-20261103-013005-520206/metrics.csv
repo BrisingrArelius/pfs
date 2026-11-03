@@ -1,0 +1,73 @@
+pool,repetition,phase,epoch,duration_s,bytes_written,throughput,throughput_unit,ost_ids,raw_output
+1,1,training_input_block,1,161.84,,50.71196736437477,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+1,1,training_input_block,2,157.77,,51.44241775867028,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+1,1,checkpoint_save_rank0,2,2.82,100000478,33.81839982161286,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+1,1,training_input_block,3,155.95,,52.04016693449584,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+1,1,training_input_block,4,158.05,,51.55629777884022,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+1,1,checkpoint_save_rank0,4,2.28,100000478,41.82802083199485,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+1,1,training_input_block,5,157.30,,51.89292695719583,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+1,1,training_summary,,,,138.99647057490486,MiB/s (DLIO mean),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool1
+3,1,training_input_block,1,160.39,,50.687001162168045,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+3,1,training_input_block,2,156.90,,51.58659409535494,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+3,1,checkpoint_save_rank0,2,2.54,100000478,37.54641240037332,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+3,1,training_input_block,3,158.63,,51.992067978046975,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+3,1,training_input_block,4,157.68,,51.61321453160528,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+3,1,checkpoint_save_rank0,4,2.61,100000478,36.539420496915035,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+3,1,training_input_block,5,157.76,,52.132164559573496,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+3,1,training_summary,,,,139.19460698444675,MiB/s (DLIO mean),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool3
+6,1,training_input_block,1,157.94,,52.47459975965356,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+6,1,training_input_block,2,158.14,,51.57335449597488,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+6,1,checkpoint_save_rank0,2,2.8,100000478,34.05995982033866,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+6,1,training_input_block,3,155.35,,52.23526670137565,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+6,1,training_input_block,4,154.98,,51.594240390050956,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+6,1,checkpoint_save_rank0,4,2.62,100000478,36.399957059903905,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+6,1,training_input_block,5,158.59,,52.090103869446395,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+6,1,training_summary,,,,140.25013326052883,MiB/s (DLIO mean),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep1-pool6
+1,2,training_input_block,1,158.81,,51.91231355167365,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+1,2,training_input_block,2,157.00,,51.582455524547676,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+1,2,checkpoint_save_rank0,2,2.71,100000478,35.19110239739788,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+1,2,training_input_block,3,157.47,,52.09164491436302,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+1,2,training_input_block,4,156.85,,51.58648610062546,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+1,2,checkpoint_save_rank0,4,2.66,100000478,35.852589284567,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+1,2,training_input_block,5,155.99,,51.803186920893886,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+1,2,training_summary,,,,139.715239801124,MiB/s (DLIO mean),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool1
+3,2,training_input_block,1,156.54,,51.97569141744174,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+3,2,training_input_block,2,158.25,,51.60743423841868,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+3,2,checkpoint_save_rank0,2,2.57,100000478,37.108127430719165,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+3,2,training_input_block,3,156.92,,52.03748048709039,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+3,2,training_input_block,4,158.38,,51.59091538805054,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+3,2,checkpoint_save_rank0,4,2.53,100000478,37.694817192469664,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+3,2,training_input_block,5,159.06,,51.814916691920295,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+3,2,training_summary,,,,139.7424038206861,MiB/s (DLIO mean),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool3
+6,2,training_input_block,1,158.79,,52.49499171975801,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+6,2,training_input_block,2,152.85,,51.598295036769045,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+6,2,checkpoint_save_rank0,2,2.62,100000478,36.399957059903905,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+6,2,training_input_block,3,158.14,,52.38826969726755,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+6,2,training_input_block,4,157.23,,51.59875772665609,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+6,2,checkpoint_save_rank0,4,2.47,100000478,38.610480767995234,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+6,2,training_input_block,5,157.82,,52.00436875897081,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+6,2,training_summary,,,,140.31331720516064,MiB/s (DLIO mean),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep2-pool6
+1,3,training_input_block,1,159.68,,51.658062745077885,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+1,3,training_input_block,2,157.25,,51.55250097427104,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+1,3,checkpoint_save_rank0,2,2.75,100000478,34.679231817072086,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+1,3,training_input_block,3,158.55,,52.032685896773486,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+1,3,training_input_block,4,158.15,,51.57581668937311,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+1,3,checkpoint_save_rank0,4,2.65,100000478,35.98788207432009,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+1,3,training_input_block,5,157.80,,51.78162106951958,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+1,3,training_summary,,,,139.51271511661662,MiB/s (DLIO mean),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool1
+3,3,training_input_block,1,158.25,,51.68896183733834,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+3,3,training_input_block,2,157.51,,40.55666968090658,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+3,3,checkpoint_save_rank0,2,3.0,100000478,31.789295832316082,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+3,3,training_input_block,3,158.66,,51.81202521307414,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+3,3,training_input_block,4,157.56,,51.57918818634761,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+3,3,checkpoint_save_rank0,4,2.52,100000478,37.84439980037629,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+3,3,training_input_block,5,158.20,,52.05662001024515,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+3,3,training_summary,,,,133.62836796571534,MiB/s (DLIO mean),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool3
+6,3,training_input_block,1,156.68,,52.476035861802835,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6
+6,3,training_input_block,2,158.62,,51.584852352010465,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6
+6,3,checkpoint_save_rank0,2,2.8,100000478,34.05995982033866,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6
+6,3,training_input_block,3,154.67,,52.24735255618037,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6
+6,3,training_input_block,4,154.77,,51.591709080749084,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6
+6,3,checkpoint_save_rank0,4,2.53,100000478,37.694817192469664,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6
+6,3,training_input_block,5,158.62,,52.09279390593348,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6
+6,3,training_summary,,,,140.26371685358927,MiB/s (DLIO mean),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/cosmoflow/runs-20261103-013005-520206/rep3-pool6

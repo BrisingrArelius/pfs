@@ -4,6 +4,31 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-11-03 — Distinguish reported and inferred DLIO throughput
+
+- Replaced pool/per-run arithmetic mean epoch rates with end-to-end
+  throughput for every workload: validated total processed sample count /
+  full-run DLIO timestamp duration, including checkpoints. Removed the
+  redundant whole-run-time panel and inferred pool-summary figure. Native
+  epoch and dotted inferred byte-rate plots remain diagnostic views; CSVs
+  retain sample counts and full durations for reproducing completion rates.
+- Switched primary training plots in both DLIO analyzers to reported
+  samples/s, averaging positive reported epochs per run and omitting
+  zero-reported epoch points without interpolation. U-Net's available
+  epochs are 2 and 4; these averages are not its zero-inclusive summary mean.
+- Kept calculated MiB/s in separate dotted-line inferred figures and CSV
+  fields. Regenerated normal and throttled U-Net galleries from copied runs.
+- Set all DLIO throughput/loading-time plots to zero baselines with upper
+  headroom and labelled U-Net's native pool comparison as epochs 2 and 4.
+  The recorded first-epoch duration differs (129.25 s for all-fast versus
+  386.52 s for all-slow, repetition 1), while reported epoch-2/4 durations
+  remain about 82.36 s, explaining the different comparison outcomes.
+- Added separate `pool_performance_inferred.png` figures for normal and
+  throttled U-Net. Epoch CSVs now record configured sample bytes, processed
+  sample count, nominal byte volume and the timing denominator/source, so
+  inferred throughput can be reproduced without confusing it with physical
+  file-read bandwidth or DLIO's reported samples/s.
+
 ## 2026-11-02 — Separate DLIO normal and throttled-SSD suites
 
 - Collected the older POSIX synthetic workload, IOR wrapper, profiles, runners,

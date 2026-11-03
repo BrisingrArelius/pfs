@@ -146,6 +146,21 @@ inspection. Neither path generates training data during the measurement.
 
 ## Inside each DLIO ResNet process: input and checkpoints
 
+The offline analyzer's pool-performance and per-run plots use end-to-end
+samples/s: total processed samples across all epochs divided by full-run
+`summary.json` end-minus-start seconds. Sample counts are checked against
+rank load-step counts. This includes checkpointing and overhead within the
+timestamps, excluding external staging and pre-run cache preparation. It is
+a derived completion-time rate, not an arithmetic mean of epoch rates.
+The redundant time panel and inferred pool-summary figure are removed;
+durations and numerator counts remain in the CSVs.
+
+Per-epoch diagnostics use DLIO-reported samples/s with zero-reported values
+omitted, without interpolation. The separate `training_throughput_inferred.png`
+retains calculated MiB/s with dotted lines: processed samples × configured
+record bytes / phase time, not physical file-read bandwidth. Epoch CSVs retain
+the numerator and denominator; source CSVs keep native and inferred fields.
+
 The launched `mpirun` creates eight processes on the client. DLIO, not the
 outer runner, performs the training reads and checkpoint saves:
 

@@ -22,7 +22,7 @@ COLORS = {14: "#335F87", 15: "#497E9B", 16: "#9B8A51", 17: "#D08734", 18: "#B44F
 EPOCHS = (1, 2, 3, 4, 5)
 PLOTS = ("pool_performance.png", "training_throughput_by_epoch.png",
          "checkpoint_write_throughput.png", "training_throughput_by_run.png",
-         "data_loading_time.png")
+         "data_loading_time.png", "training_throughput_inferred.png")
 
 
 def label(pool):
@@ -84,6 +84,9 @@ def parse_sweep(root, workload):
         rank_data = [json.loads((directory / f"{rank}_output.json").read_text())
                      for rank in range(RANKS)]
         input_bytes = input_seconds = save_bytes = save_seconds = 0.0
+        native_rates = summary["metric"]["train_throughput_samples_per_second"]
+        if len(native_rates) != len(EPOCHS) or not any(value > 0 for value in native_rates):
+            raise ValueError(f"Missing positive DLIO throughput: {directory}")
         for epoch in EPOCHS:
             native_epoch = native[str(epoch)]
             block = native_epoch.get("block1", {})
@@ -106,6 +109,14 @@ def parse_sweep(root, workload):
                     raise ValueError(f"Missing ResNet native rate: {directory}, epoch {epoch}")
                 rate = float(row["throughput"]) * record_bytes / 1048576
             epochs.append({"pool": pool, "repetition": repetition, "epoch": epoch,
+                           "configured_record_bytes": record_bytes,
+                           "processed_samples": steps * batch_size * RANKS,
+                           "estimated_logical_bytes": steps * batch_size * RANKS * record_bytes,
+                           "timing_phase": phase,
+                           "timing_duration_s": float(row["duration_s"]),
+                           "epoch_completion_s": float(native_epoch["duration"]),
+                           "native_samples_s_reported": native_rates[epoch - 1],
+                           "native_samples_s": native_rates[epoch - 1] if native_rates[epoch - 1] > 0 else math.nan,
                            "training_input_MiB_s": rate,
                            "rate_kind": "estimated from batches and time" if workload == "unet"
                            else "DLIO modeled samples/s × record bytes"})
@@ -125,35 +136,44 @@ def parse_sweep(root, workload):
         if (repetition, summary_phase, "") not in indexed:
             raise ValueError(f"Missing DLIO run summary: {directory}")
         elapsed = (datetime.fromisoformat(summary["end"])
-                   - datetime.fromisoformat(summary["start"])).total_seconds() / 60
+                   - datetime.fromisoformat(summary["start"])).total_seconds()
+        if elapsed <= 0:
+            raise ValueError(f"Invalid full-run duration: {directory}")
+        total_samples = steps * batch_size * RANKS * len(EPOCHS)
         runs.append({"pool": pool, "repetition": repetition, "source": str(directory),
+                     "total_processed_samples": total_samples,
+                     "whole_run_seconds": elapsed,
+                     "end_to_end_samples_s": total_samples / elapsed,
+                     "native_samples_s": statistics.mean(value for value in native_rates if value > 0),
+                     "native_epochs_used": ",".join(str(epoch) for epoch, value in zip(EPOCHS, native_rates) if value > 0),
+                     "native_summary_samples_s_reported": summary["metric"]["train_throughput_mean_samples_per_second"],
                      "training_input_MiB_s": input_bytes / input_seconds / 1048576
                      if workload == "unet" else float(summary["metric"]["train_io_mean_MB_per_second"]),
                      "checkpoint_rank0_MiB_s_no_fsync": save_bytes / save_seconds / 1048576,
-                     "whole_run_minutes": elapsed})
+                     "whole_run_minutes": elapsed / 60})
     return pool, runs, epochs, checkpoints, loading
 
 
 def style(ax, ylabel):
     ax.set_ylabel(ylabel)
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.1)
     ax.grid(axis="y", alpha=.22)
     ax.set_axisbelow(True)
     ax.spines[["top", "right"]].set_visible(False)
 
 
-def save(fig, output, name):
-    fig.tight_layout()
+def save(fig, output, name, bottom=0):
+    fig.tight_layout(rect=(0, bottom, 1, 1))
     fig.savefig(output / name, dpi=190, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
 
 def plot_summary(workload, pools, groups, output):
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.9))
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.9))
     for ax, metric, title, unit in zip(axes,
-            ("training_input_MiB_s", "checkpoint_rank0_MiB_s_no_fsync", "whole_run_minutes"),
-            ("Training throughput", "Checkpoint write throughput", "Whole run"),
-            ("Estimated MiB/s" if workload == "unet" else "DLIO-modeled MiB/s",
-             "Rank-0 MiB/s; no fsync", "Minutes; lower is better")):
+            ("end_to_end_samples_s", "checkpoint_rank0_MiB_s_no_fsync"),
+            ("End-to-end throughput", "Checkpoint write throughput"),
+            ("Samples/s · total processed / full run time", "Rank-0 MiB/s; no fsync")):
         records = {row["pool"]: row for row in groups if row["metric"] == metric}
         ceiling = max(records[pool]["mean"] + records[pool]["stddev"] for pool in pools) * 1.35
         for position, pool in enumerate(pools):
@@ -170,25 +190,40 @@ def plot_summary(workload, pools, groups, output):
         ax.set_xlabel(unit)
         ax.set_title(title, fontweight="bold")
         ax.spines[["top", "right"]].set_visible(False)
-    fig.suptitle(f"{workload}: configured SSD speed mix · mean ± SD (3 runs)", fontweight="bold")
-    save(fig, output, "pool_performance.png")
+    fig.suptitle(f"{workload}: configured SSD speed mix"
+                 " · mean ± SD (3 runs)", fontweight="bold")
+    fig.text(.5, .02, "End-to-end rate is derived from processed sample count and DLIO start/end timestamps;\n"
+             "includes all epochs, checkpointing and overhead within those timestamps, not dataset staging or cache preparation.",
+             ha="center", fontsize=8)
+    save(fig, output, "pool_performance.png", bottom=.12)
 
 
-def plot_epochs(workload, pools, rows, field, ylabel, title, filename, output):
+def plot_epochs(workload, pools, rows, field, ylabel, title, filename, output, inferred=False):
     fig, ax = plt.subplots(figsize=(8.3, 4.5))
     for pool in pools:
         for repetition in (1, 2, 3):
             values = [next(row[field] for row in rows if row["pool"] == pool
                            and row["repetition"] == repetition and row["epoch"] == epoch)
                       for epoch in EPOCHS]
-            ax.plot(EPOCHS, values, color=COLORS[pool], alpha=.2, linewidth=1)
+            ax.plot(EPOCHS, values, color=COLORS[pool], alpha=.2, linewidth=1,
+                    linestyle=":" if inferred else "-")
         means, errors = zip(*(mean_sd([row[field] for row in rows
-                           if row["pool"] == pool and row["epoch"] == epoch])
-                              for epoch in EPOCHS))
-        ax.errorbar(EPOCHS, means, yerr=errors, fmt="o-", capsize=3,
-                    color=COLORS[pool], linewidth=2, label=label(pool))
+                            if row["pool"] == pool and row["epoch"] == epoch])
+                            if all(math.isfinite(row[field]) for row in rows
+                                   if row["pool"] == pool and row["epoch"] == epoch)
+                            else (math.nan, math.nan)
+                               for epoch in EPOCHS))
+        ax.plot(EPOCHS, means, "o:" if inferred else "o-",
+                color=COLORS[pool], linewidth=2, label=label(pool))
+        measured = [(epoch, mean, error) for epoch, mean, error in zip(EPOCHS, means, errors)
+                    if math.isfinite(mean)]
+        if measured:
+            xs, ys, deviations = zip(*measured)
+            ax.errorbar(xs, ys, yerr=deviations, fmt="none", capsize=3, color=COLORS[pool])
     ax.set_xticks(EPOCHS)
     ax.set_xlabel("Epoch")
+    if field == "native_samples_s":
+        ax.set_xlabel("Epoch · zero-reported DLIO rates omitted; gaps are not interpolated")
     style(ax, ylabel)
     ax.legend(frameon=False, fontsize=8)
     ax.set_title(f"{workload}: {title}", fontweight="bold")
@@ -217,16 +252,15 @@ def plot_checkpoints(workload, pools, rows, output):
 def plot_runs(workload, pools, rows, output):
     fig, ax = plt.subplots(figsize=(8.3, 4.5))
     for pool in pools:
-        values = [next(row["training_input_MiB_s"] for row in rows
+        values = [next(row["end_to_end_samples_s"] for row in rows
                        if row["pool"] == pool and row["repetition"] == repetition)
                   for repetition in (1, 2, 3)]
         ax.plot((1, 2, 3), values, "o-", linewidth=2, color=COLORS[pool], label=label(pool))
     ax.set_xticks((1, 2, 3))
     ax.set_xlabel("Repetition")
-    style(ax, "Estimated training input throughput (MiB/s)" if workload == "unet"
-          else "DLIO-modeled training input throughput (MiB/s)")
+    style(ax, "End-to-end throughput (samples/s; full run including checkpoints)")
     ax.legend(frameon=False)
-    ax.set_title(f"{workload}: training throughput by run", fontweight="bold")
+    ax.set_title(f"{workload}: end-to-end throughput by run", fontweight="bold")
     save(fig, output, "training_throughput_by_run.png")
 
 
@@ -254,7 +288,8 @@ def main():
     output = args.output or ROOT / "results/workloads/plots/dlio/throttled_ssd" / args.workload
     output.mkdir(parents=True, exist_ok=True)
     groups = []
-    for metric, unit in (("training_input_MiB_s", "MiB/s"),
+    for metric, unit in (("end_to_end_samples_s", "samples/s (full run)"),
+                         ("training_input_MiB_s", "MiB/s (inferred for U-Net)"),
                          ("checkpoint_rank0_MiB_s_no_fsync", "MiB/s"),
                          ("whole_run_minutes", "min")):
         for pool in pools:
@@ -266,16 +301,21 @@ def main():
     write_csv(output / "epochs.csv", sorted(all_epochs, key=lambda row: (row["pool"], row["repetition"], row["epoch"])))
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "axes.titlesize": 12})
     plot_summary(args.workload, pools, groups, output)
+    (output / "pool_performance_inferred.png").unlink(missing_ok=True)
+    plot_epochs(args.workload, pools, all_epochs, "native_samples_s",
+                "DLIO training throughput (samples/s)",
+                "DLIO training throughput by epoch", "training_throughput_by_epoch.png", output)
     plot_epochs(args.workload, pools, all_epochs, "training_input_MiB_s",
-                "Estimated training input throughput (MiB/s)" if args.workload == "unet"
-                else "DLIO-modeled training input throughput (MiB/s)",
-                "training throughput by epoch", "training_throughput_by_epoch.png", output)
+                "Estimated input throughput (MiB/s; NOT a DLIO-reported byte rate)",
+                "inferred input throughput · dotted = calculated",
+                "training_throughput_inferred.png", output, inferred=True)
     plot_checkpoints(args.workload, pools, all_checkpoints, output)
     plot_runs(args.workload, pools, all_runs, output)
     plot_epochs(args.workload, pools, all_loading, "rank_load_p95_s",
                 "Data loading time per step (s, rank p95)",
                 "data loading time by epoch", "data_loading_time.png", output)
-    print(f"Validated {len(pools)} pool(s), {len(all_runs)} runs; five PNGs and CSVs: {output}")
+    print(f"Validated {len(pools)} pool(s), {len(all_runs)} runs; "
+          f"six PNGs and CSVs: {output}")
 
 
 if __name__ == "__main__":

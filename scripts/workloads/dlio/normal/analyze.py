@@ -210,6 +210,11 @@ def parse(root, profile):
                               / elapsed_input / 1048576 if profile.profile == "unet3d_v100"
                               else nominal)
                 epoch_rows.append({"pool": pool, "repetition": repetition, "epoch": epoch,
+                                   "configured_record_bytes": record_bytes,
+                                   "processed_samples": expected_steps * profile.batch_size * RANKS,
+                                   "estimated_logical_bytes": expected_steps * profile.batch_size * RANKS * record_bytes,
+                                   "inferred_rate_duration_s": elapsed_input,
+                                   "inferred_timing_phase": "training_input_block" if available else "training_epoch_wall_only",
                                    "epoch_wall_s": duration,
                                    "training_block_wall_s": block.get("duration", ""),
                                    "training_samples_per_s_DLIO": rate,
@@ -299,11 +304,24 @@ def comparison(profile, root, epochs, ranks, checkpoints, runs):
             raise ValueError(f"Missing paired checkpoint events in pool {pool}, repetition {repetition}")
         save_rate = sum(row["rank0_bytes"] for row in saves) / (
             1048576 * sum(row["rank0_save_s_DLIO"] for row in saves))
-        elapsed = (datetime.fromisoformat(run["end"]) - datetime.fromisoformat(run["start"])).total_seconds() / 60
+        elapsed = (datetime.fromisoformat(run["end"]) - datetime.fromisoformat(run["start"])).total_seconds()
+        if elapsed <= 0:
+            raise ValueError(f"Invalid full-run duration: pool {pool}, repetition {repetition}")
+        total_samples = sum(row["processed_samples"] for row in native_epochs)
         values.append({"pool": pool, "repetition": repetition, "training_input_MiB_s": input_rate,
+                       "total_processed_samples": total_samples,
+                       "whole_run_seconds": elapsed,
+                       "end_to_end_samples_s": total_samples / elapsed,
+                       "native_samples_s": statistics.mean(float(row["training_samples_per_s_DLIO"])
+                           for row in native_epochs if row["training_samples_per_s_DLIO"] != ""
+                           and float(row["training_samples_per_s_DLIO"]) > 0),
+                       "native_epochs_used": ",".join(str(row["epoch"]) for row in native_epochs
+                           if row["training_samples_per_s_DLIO"] != ""
+                           and float(row["training_samples_per_s_DLIO"]) > 0),
                        "training_input_source": source, "checkpoint_rank0_MiB_s_no_fsync": save_rate,
-                       "whole_run_minutes": elapsed})
-    metrics = (("training_input_MiB_s", "MiB/s", "higher"),
+                       "whole_run_minutes": elapsed / 60})
+    metrics = (("end_to_end_samples_s", "samples/s (full run)", "higher"),
+               ("training_input_MiB_s", "MiB/s", "higher"),
                ("checkpoint_rank0_MiB_s_no_fsync", "MiB/s", "higher"),
                ("whole_run_minutes", "min", "lower"))
     aggregates = []
@@ -319,28 +337,27 @@ def comparison(profile, root, epochs, ranks, checkpoints, runs):
 
 def style(ax, ylabel):
     ax.set_ylabel(ylabel)
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.1)
     ax.grid(axis="y", alpha=.22)
     ax.set_axisbelow(True)
     ax.spines[["top", "right"]].set_visible(False)
 
 
-def save(fig, path):
-    fig.tight_layout()
+def save(fig, path, bottom=0):
+    fig.tight_layout(rect=(0, bottom, 1, 1))
     fig.savefig(path, dpi=190, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
 
 def plot_comparison(profile, aggregates, out):
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.9))
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.9))
     entries = (
-        ("training_input_MiB_s", "Training throughput", "Estimated MiB/s · higher is better"),
-        ("checkpoint_rank0_MiB_s_no_fsync", "Checkpoint write throughput", "Rank-0 MiB/s · higher is better"),
-        ("whole_run_minutes", "Whole run", "Minutes · lower is better"),
+        ("end_to_end_samples_s", "End-to-end throughput", "Samples/s · total processed / full run time"),
+        ("checkpoint_rank0_MiB_s_no_fsync", "Checkpoint write throughput", "Rank-0 MiB/s; no fsync"),
     )
     for ax, (metric, title, xlabel) in zip(axes, entries):
         records = {row["pool"]: row for row in aggregates if row["metric"] == metric}
-        winner = (min if metric == "whole_run_minutes" else max)(
-            POOLS, key=lambda pool: records[pool]["mean"])
+        winner = max(POOLS, key=lambda pool: records[pool]["mean"])
         ceiling = max(records[pool]["mean"] + records[pool]["stddev"] for pool in POOLS) * 1.3
         for position, pool in enumerate(POOLS):
             item = records[pool]
@@ -360,30 +377,46 @@ def plot_comparison(profile, aggregates, out):
         ax.set_title(title, fontweight="bold")
         ax.spines[["top", "right"]].set_visible(False)
     fig.suptitle(f"{profile.profile}: pool performance · mean ± SD (3 runs)", fontweight="bold")
-    save(fig, out / "pool_performance.png")
+    fig.text(.5, .02, "End-to-end rate is derived from processed sample count and DLIO start/end timestamps;\n"
+             "includes all epochs, checkpointing and overhead within those timestamps, not dataset staging or cache preparation.",
+             ha="center", fontsize=8)
+    save(fig, out / "pool_performance.png", bottom=.12)
 
 
-def plot_training(profile, epochs, out):
-    unet = profile.profile == "unet3d_v100"
+def plot_training(profile, epochs, out, inferred=False):
+    field = "training_throughput_MiB_s" if inferred else "training_samples_per_s_DLIO"
+    def value(row):
+        raw = row[field]
+        return float(raw) if raw != "" and float(raw) > 0 else math.nan
     fig, ax = plt.subplots(figsize=(8.3, 4.5))
     for pool in POOLS:
         for repetition in REPETITIONS:
-            ys = [next(float(row["training_throughput_MiB_s"]) for row in epochs if
+            ys = [next(value(row) for row in epochs if
                        row["pool"] == pool and row["repetition"] == repetition
                        and row["epoch"] == epoch) for epoch in EPOCHS]
-            ax.plot(EPOCHS, ys, color=COLORS[pool], alpha=.2, linewidth=1)
-        means, errors = zip(*(mean_std([float(row["training_throughput_MiB_s"])
+            ax.plot(EPOCHS, ys, color=COLORS[pool], alpha=.2, linewidth=1,
+                    linestyle=":" if inferred else "-")
+        means, errors = zip(*(mean_std([value(row)
             for row in epochs if row["pool"] == pool and row["epoch"] == epoch])
+            if all(math.isfinite(value(row)) for row in epochs
+                   if row["pool"] == pool and row["epoch"] == epoch)
+            else (math.nan, math.nan)
             for epoch in EPOCHS))
-        ax.errorbar(EPOCHS, means, yerr=errors, fmt="o-", capsize=3,
-                    color=COLORS[pool], linewidth=2, label=LABELS[pool])
+        ax.plot(EPOCHS, means, "o:" if inferred else "o-",
+                color=COLORS[pool], linewidth=2, label=LABELS[pool])
+        measured = [(epoch, mean, error) for epoch, mean, error in zip(EPOCHS, means, errors)
+                    if math.isfinite(mean)]
+        if measured:
+            xs, ys, deviations = zip(*measured)
+            ax.errorbar(xs, ys, yerr=deviations, fmt="none", capsize=3, color=COLORS[pool])
     ax.set_xticks(EPOCHS)
-    ax.set_xlabel("Epoch")
-    style(ax, "Estimated training input throughput (MiB/s)" if unet else
-          "DLIO-modeled training input throughput (MiB/s)")
+    ax.set_xlabel("Epoch" if inferred else "Epoch · zero-reported DLIO rates omitted; no interpolation")
+    style(ax, "Estimated input throughput (MiB/s; NOT a DLIO-reported byte rate)" if inferred
+          else "DLIO training throughput (samples/s)")
     ax.legend(frameon=False, fontsize=8)
-    ax.set_title(f"{profile.profile}: training throughput by epoch", fontweight="bold")
-    save(fig, out / "training_throughput_by_epoch.png")
+    title = "inferred input throughput · dotted = calculated" if inferred else "DLIO training throughput by epoch"
+    ax.set_title(f"{profile.profile}: {title}", fontweight="bold")
+    save(fig, out / ("training_throughput_inferred.png" if inferred else "training_throughput_by_epoch.png"))
 
 
 def plot_checkpoints(profile, checkpoints, out):
@@ -405,18 +438,16 @@ def plot_checkpoints(profile, checkpoints, out):
 
 
 def plot_repetitions(profile, runs, out):
-    unet = profile.profile == "unet3d_v100"
     fig, ax = plt.subplots(figsize=(8.3, 4.5))
     for pool in POOLS:
-        vals = [next(row["training_input_MiB_s"] for row in runs if row["pool"] == pool and
+        vals = [next(row["end_to_end_samples_s"] for row in runs if row["pool"] == pool and
                       row["repetition"] == repetition) for repetition in REPETITIONS]
         ax.plot(REPETITIONS, vals, "o-", color=COLORS[pool], label=LABELS[pool], linewidth=2)
     ax.set_xticks(REPETITIONS)
     ax.set_xlabel("Repetition · pool order: Default → HDD → SSD")
-    style(ax, "Estimated training input throughput (MiB/s)" if unet else
-          "DLIO-modeled training input throughput (MiB/s)")
+    style(ax, "End-to-end throughput (samples/s; full run including checkpoints)")
     ax.legend(frameon=False)
-    ax.set_title(f"{profile.profile}: training throughput by run", fontweight="bold")
+    ax.set_title(f"{profile.profile}: end-to-end throughput by run", fontweight="bold")
     save(fig, out / "training_throughput_by_run.png")
 
 
@@ -468,7 +499,9 @@ def analyze(root, profile, output, overwrite=False):
             "dataset_ost_assignments.png"))):
             old.unlink(missing_ok=True)
     plot_comparison(profile, comparison_groups, figures)
+    (figures / "pool_performance_inferred.png").unlink(missing_ok=True)
     plot_training(profile, epochs, figures)
+    plot_training(profile, epochs, figures, inferred=True)
     plot_checkpoints(profile, checkpoints, figures)
     plot_repetitions(profile, run_values, figures)
     plot_load_tail(profile, ranks, figures)
