@@ -13,6 +13,58 @@ the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
 the partition setting appeared in systemd but installed no kernel limit.
 Complete existing pool-6 jobs first.
 
+## ResNet across cluster reservations
+
+Start three conditions (4/0, 2/2, 0/4; three repetitions each) from original pool 6:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_resnet50_pools.py --all-pools --deadline 6h
+```
+
+Continue the newest unfinished managed sweep during the next reservation:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_resnet50_pools.py --continue --deadline 6h
+```
+
+`--deadline` is a duration from invocation: seconds, `90m`, `6h` or `1h30m`.
+It includes staging, checks, cache preparation and DLIO. Up to the final
+60 seconds (10% for short budgets) are reserved for stopping the active
+process group and restoring pool 6 with no caps. An interrupted repetition
+is **restarted**, not resumed mid-epoch; completed repetitions are skipped.
+Each retry uses the full cache protocol.
+
+Progress is saved after every completed repetition in
+`~/tejas/dlio/throttled_ssd/resnet50/sweep-*.json`. Continuation reuses the
+same `runs-poolN-*` directories. Per-repetition CSV journals rebuild combined
+metrics without duplicate rows. Interrupted raw outputs are retained under
+`interrupted/`; partial checkpoints are renamed in place on BeeGFS, with
+their paths recorded there. Staging uses a temporary file and reuses
+completed same-size copies after an interruption.
+
+Ctrl-C, SIGTERM and SIGHUP follow the same stop/save/restore path. If
+restoration fails or runs out of time, inspect membership/caps before
+releasing the reservation. SIGKILL cannot clean up; ensure old MPI processes
+have stopped before continuing after one. Continuation detects whether the
+targets are in pool 6 or an experiment pool and reinstalls verified caps;
+if necessary it first restores pool 6, then starts/resumes the 14→16→18 sweep.
+Split/missing targets stop execution for inspection. A lock prevents two
+managed ResNet sweeps running concurrently.
+
+If no unfinished journal exists, `--continue` can adopt the latest legacy
+`python3 -c ... run_all("resnet")` sweep. Stop that old process first. It
+checks the condition, native completion evidence, eight metrics and four
+device rows before preserving each completed repetition. Fully completed
+pool 14 is skipped, so the next condition is pool 16; any partial repetition
+is restarted. Existing pool-15/17 results are retained but not scheduled.
+The old process keeps its original schedule until stopped; updating code
+cannot change the process already running.
+
+`--pool N` and `--pilot` keep single-condition behavior; reservation flags
+apply to the three-condition sweep (9 full runs). Without a deadline the
+sweep runs until complete or interrupted.
+A new sweep is refused while an unfinished journal exists; use `--continue`.
+
 ## Entire U-Net or CosmoFlow sweep from the normal pool
 
 With the original nine SSD targets in pool 6, no storage-service bandwidth

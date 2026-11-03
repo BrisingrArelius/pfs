@@ -6,6 +6,7 @@ import json
 import os
 import re
 import shlex
+import signal
 import shutil
 import subprocess
 import sys
@@ -29,9 +30,63 @@ CLASSES = {"resnet": "normal.run_resnet50_pools.ResNetCheckpointing",
            "unet": "normal.run_unet3d_pools.SeededPyTorchCheckpointing",
            "cosmoflow": "normal.run_cosmoflow_pools.CosmoFlowCheckpointing"}
 
+# Enabled only by the reservation-aware ResNet runner. Other runners retain
+# their existing subprocess behavior.
+DEADLINE = None
+MANAGED = False
+
+
+class DeadlineReached(RuntimeError):
+    pass
+
+
+def remaining():
+    if DEADLINE is None:
+        return None
+    seconds = DEADLINE - time.monotonic()
+    if seconds <= 0:
+        raise DeadlineReached("Reservation run budget exhausted")
+    return seconds
+
+
+def execute(command, **kwargs):
+    if DEADLINE is None and not MANAGED:
+        return subprocess.run(command, **kwargs)
+    seconds = remaining()
+    check = kwargs.pop("check", False)
+    data = kwargs.pop("input", None)
+    if data is not None:
+        kwargs["stdin"] = subprocess.PIPE
+    if kwargs.pop("capture_output", False):
+        kwargs["stdout"] = kwargs["stderr"] = subprocess.PIPE
+    with subprocess.Popen(command, start_new_session=True, **kwargs) as process:
+        try:
+            stdout, stderr = process.communicate(input=data, timeout=seconds)
+        except BaseException as error:
+            # mpirun and its local rank processes must stop before pool moves.
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+            if isinstance(error, subprocess.TimeoutExpired):
+                raise DeadlineReached("Reservation run budget exhausted") from error
+            raise
+        if check and process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, command, stdout, stderr)
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
 
 def beegfs(*args):
-    return subprocess.run(["sudo", "beegfs-ctl", *map(str, args)], check=True,
+    return execute(["sudo", "beegfs-ctl", *map(str, args)], check=True,
                           text=True, capture_output=True).stdout
 
 
@@ -43,7 +98,7 @@ def verify(pool):
     if members != set(TARGETS):
         raise RuntimeError(f"Pool {pool} must contain {TARGETS}; found {members}")
     for host in ("colva1", "colva2", "colva3"):
-        text = subprocess.run(["ssh", host, shlex.join(("systemctl", "show",
+        text = execute(["ssh", host, shlex.join(("systemctl", "show",
             "beegfs-storage.service", "-p", "IOReadBandwidthMax", "-p", "IOWriteBandwidthMax"))],
             check=True, capture_output=True, text=True).stdout
         selected = [(target, device) for target, (node, device) in DEVICES.items() if node == host]
@@ -58,14 +113,14 @@ def verify(pool):
             if seen != expected:
                 raise RuntimeError(f"{host}: {direction}={seen}, expected {expected}")
         physical = [Path(device).name.rsplit("p", 1)[0] for _, device in selected]
-        ids = subprocess.run(["ssh", host, shlex.join(("cat", *(
+        ids = execute(["ssh", host, shlex.join(("cat", *(
             f"/sys/class/block/{device}/dev" for device in physical)))],
             check=True, capture_output=True, text=True).stdout.splitlines()
         if len(ids) != len(physical):
             raise RuntimeError(f"{host}: missing physical SSD device IDs")
         command = ('cg=$(systemctl show -P ControlGroup beegfs-storage.service); '
                    'sudo -n cat "/sys/fs/cgroup${cg}/io.max"')
-        kernel = subprocess.run(["ssh", host, command], check=True,
+        kernel = execute(["ssh", host, command], check=True,
                                 capture_output=True, text=True).stdout
         limits = {line.split()[0]: dict(field.split("=", 1) for field in line.split()[1:])
                   for line in kernel.splitlines()}
@@ -107,7 +162,7 @@ def physical_counters():
         targets = [(target, Path(device).name.rsplit("p", 1)[0])
                    for target, (node, device) in DEVICES.items() if node == host]
         paths = [f"/sys/class/block/{device}/stat" for _, device in targets]
-        lines = subprocess.run(["ssh", host, shlex.join(("cat", *paths))],
+        lines = execute(["ssh", host, shlex.join(("cat", *paths))],
                                check=True, capture_output=True, text=True).stdout.splitlines()
         if len(lines) != len(targets):
             raise RuntimeError(f"{host}: incomplete physical SSD counters")
@@ -147,6 +202,24 @@ def prepare(profile, pool):
     pattern(train, pool)
     (dataset / "valid").mkdir(exist_ok=True)
     present = list(train.iterdir())
+    if DEADLINE is not None or MANAGED:
+        expected_names = {p.name for p in inputs}
+        if any(p.name not in expected_names and p.name != ".copy-partial" for p in present):
+            raise RuntimeError(f"Unexpected dataset contents: {train}")
+        print(f"{profile.profile}: staging/resuming {len(inputs)} inputs into pool {pool}", flush=True)
+        for file in inputs:
+            remaining()
+            target = train / file.name
+            if target.exists():
+                if target.stat().st_size != file.stat().st_size:
+                    raise RuntimeError(f"Changed input: {target}")
+                continue
+            temporary = train / ".copy-partial"
+            execute(["cp", "--", str(file), str(temporary)], check=True)
+            temporary.replace(target)
+        (train / ".copy-partial").unlink(missing_ok=True)
+        present = list(train.iterdir())
+        print(f"{profile.profile}: pool {pool} input staging complete", flush=True)
     if present and ({p.name for p in present} != {p.name for p in inputs}
                     or any((train / file.name).stat().st_size != file.stat().st_size for file in inputs)):
         raise RuntimeError(f"Partial or changed dataset: {train}")
@@ -165,7 +238,7 @@ def prepare(profile, pool):
     return root
 
 
-def run(name, pool, pilot=False):
+def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None):
     if pool not in FAST or name not in CLASSES:
         raise ValueError("Expected ResNet, U-Net or CosmoFlow and a condition pool 14–18")
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
@@ -173,26 +246,66 @@ def run(name, pool, pilot=False):
     verify(pool)
     profile = WORKLOADS[name]
     root = prepare(profile, pool)
-    output = RESULT_ROOT / "throttled_ssd" / profile.folder / (
+    output = output or RESULT_ROOT / "throttled_ssd" / profile.folder / (
         ("pilot-" if pilot else "runs-") + f"pool{pool}-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
-    output.mkdir(parents=True)
+    output.mkdir(parents=True, exist_ok=True)
     (output / "condition.json").write_text(json.dumps({"pool": pool, "fast": FAST[pool],
         "slow": sorted(set(TARGETS) - set(FAST[pool])), "targets": TARGETS,
         "fast_MiB_s": 45, "slow_MiB_s": 15, "profile": profile.profile}, indent=2) + "\n")
     env = os.environ.copy()
     env["PYTHONPATH"] = os.pathsep.join((str(NORMAL.parent), str(NORMAL),
                                          env.get("PYTHONPATH", "")))
+    retained = {}
+    for filename in ("metrics.csv", "device_io.csv"):
+        path = output / filename
+        if path.exists():
+            with path.open(newline="") as file:
+                retained[filename] = [row for row in csv.DictReader(file)
+                                      if int(row["repetition"]) in completed]
+        # Per-repetition evidence makes rebuilding the combined CSV safe even
+        # if the previous process was killed while replacing that CSV.
+        for repetition in completed:
+            journal = output / f"rep{repetition}-pool{pool}" / filename
+            if journal.exists():
+                retained[filename] = [row for row in retained.get(filename, [])
+                                      if int(row["repetition"]) != repetition]
+                with journal.open(newline="") as file:
+                    retained[filename].extend(csv.DictReader(file))
+        for repetition in completed:
+            expected_rows = 8 if filename == "metrics.csv" else 4
+            if sum(int(row["repetition"]) == repetition for row in retained.get(filename, [])) != expected_rows:
+                raise RuntimeError(f"Completed repetition {repetition} has missing/duplicate evidence: {path}")
     with (output / "metrics.csv").open("w", newline="") as csvfile, \
             (output / "device_io.csv").open("w", newline="") as devicefile:
         writer = csv.writer(csvfile)
         writer.writerow(FIELDS)
         devices = csv.writer(devicefile)
         devices.writerow(("pool", "repetition", "target", "host", "device", "duration_s",
-                          "read_bytes", "write_bytes", "read_MiB_s", "write_MiB_s"))
+                           "read_bytes", "write_bytes", "read_MiB_s", "write_MiB_s"))
+        writer.writerows([row[field] for field in FIELDS] for row in retained.get("metrics.csv", []))
+        device_fields = ("pool", "repetition", "target", "host", "device", "duration_s",
+                         "read_bytes", "write_bytes", "read_MiB_s", "write_MiB_s")
+        devices.writerows([row[field] for field in device_fields]
+                          for row in retained.get("device_io.csv", []))
+        csvfile.flush()
+        devicefile.flush()
         for repetition in range(1, 2 if pilot else 4):
+            if repetition in completed:
+                print(f"{profile.profile}: pool {pool}, run {repetition}/3 already complete; skipping", flush=True)
+                continue
+            remaining()
             directory = output / f"rep{repetition}-pool{pool}"
-            directory.mkdir()
             checkpoint_dir = root / "checkpoints" / f"{output.name}-rep{repetition}"
+            if directory.exists() or checkpoint_dir.exists():
+                archived = output / "interrupted" / f"rep{repetition}-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}"
+                archived.mkdir(parents=True)
+                if directory.exists():
+                    directory.rename(archived / "raw")
+                if checkpoint_dir.exists():
+                    checkpoint_archive = checkpoint_dir.with_name(checkpoint_dir.name + "-interrupted-" + archived.name)
+                    checkpoint_dir.rename(checkpoint_archive)
+                    (archived / "checkpoint-path.txt").write_text(str(checkpoint_archive) + "\n")
+            directory.mkdir()
             checkpoint_dir.mkdir()
             print(f"{profile.profile}: pool {pool}, run {repetition}/"
                   f"{1 if pilot else 3} starting", flush=True)
@@ -217,18 +330,21 @@ def run(name, pool, pilot=False):
                        "++workload.train.computation_time=0", f"hydra.run.dir={directory}"]
             if pilot:
                 command.insert(-1, "++workload.train.total_training_steps=2")
-            subprocess.run(["sync"], check=True)
+            execute(["sync"], check=True)
             for host in ("colva1", "colva2", "colva3", "colva4"):
-                subprocess.run(["ssh", host,
+                execute(["ssh", host,
                                 "sudo -n sh -c 'sync && printf 3 > /proc/sys/vm/drop_caches'"],
                                check=True)
-            subprocess.run(["sudo", "tee", "/proc/sys/vm/drop_caches"], input="3\n",
+            execute(["sudo", "tee", "/proc/sys/vm/drop_caches"], input="3\n",
                            text=True, stdout=subprocess.DEVNULL, check=True)
+            if remaining() is not None and remaining() < 30:
+                raise DeadlineReached("Insufficient time for cache preparation")
             time.sleep(30)
             before = physical_counters()
             with (directory / "console.log").open("w") as log:
-                subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
-            devices.writerows(physical_io(pool, repetition, before, physical_counters()))
+                execute(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+            io_rows = physical_io(pool, repetition, before, physical_counters())
+            devices.writerows(io_rows)
             devicefile.flush()
             files = sorted(file for file in checkpoint_dir.rglob("*") if file.is_file())
             sizes = checkpoint_sizes(files, profile, (2,) if pilot else (2, 4), size)
@@ -239,10 +355,22 @@ def run(name, pool, pilot=False):
                     raise RuntimeError("Pilot checkpoint missing")
                 print(f"Pilot checkpoint retained: {checkpoint_dir}")
             else:
-                writer.writerows(metrics(directory, pool, repetition,
-                                         ",".join(map(str, TARGETS)), checkpoint_osts, sizes))
+                metric_rows = list(metrics(directory, pool, repetition,
+                                           ",".join(map(str, TARGETS)), checkpoint_osts, sizes))
+                writer.writerows(metric_rows)
                 csvfile.flush()
+                if on_complete is not None:
+                    for filename, fields, rows in (("metrics.csv", FIELDS, metric_rows),
+                                                    ("device_io.csv", device_fields, io_rows)):
+                        temporary = directory / (filename + ".tmp")
+                        with temporary.open("w", newline="") as journal:
+                            recorded = csv.writer(journal)
+                            recorded.writerow(fields)
+                            recorded.writerows(rows)
+                        temporary.replace(directory / filename)
                 shutil.rmtree(checkpoint_dir)
+            if on_complete is not None:
+                on_complete(repetition)
             print(f"{profile.profile}: pool {pool}, run {repetition}/"
                   f"{1 if pilot else 3} complete", flush=True)
     print(f"Output: {output}")
@@ -258,7 +386,7 @@ def run_all(name):
     source = DATA_ROOT / profile.folder / "pool1/dataset/train"
     if len(list(source.glob(f"*.{profile.extension}"))) != profile.files:
         raise RuntimeError(f"Expected {profile.files} prepared input files in {source}")
-    pools = (14, 16, 18) if name == "cosmoflow" else tuple(FAST)
+    pools = (14, 16, 18) if name in ("cosmoflow", "resnet") else tuple(FAST)
     previous = 6
     for pool in pools:
         transition(previous, pool)

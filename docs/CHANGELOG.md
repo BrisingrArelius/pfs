@@ -6,6 +6,22 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-03 — Distinguish reported and inferred DLIO throughput
 
+- Added reservation-aware ResNet `--all-pools --deadline 6h` and
+  `--continue --deadline 6h` launches. Managed commands have bounded
+  process-group termination; progress is saved per repetition, partial
+  staging is reusable, interrupted attempts are preserved, and completed
+  evidence is journalled for safe CSV reconstruction. A reserved cleanup
+  interval restores pool 6 on a deadline or catchable interruption; failures
+  are reported for inspection. Continuation restarts the partial repetition
+  and skips completed ones, including across pool-6 restoration.
+- Restricted managed ResNet to pools 14, 16 and 18 (4/0, 2/2, 0/4), nine
+  full runs total. Continuation normalizes leftover target membership/caps
+  back to original pool 6 before moving to the unfinished condition.
+- Added legacy ResNet result adoption for `--continue` when no unfinished
+  managed journal exists. Completed repetitions from the latest pool-14-led
+  sweep are retained after evidence checks; partial repetitions restart and
+  fully completed pool 14 is skipped. Already-running old launchers must be
+  stopped before adoption and retain their original schedule until then.
 - Replaced pool/per-run arithmetic mean epoch rates with end-to-end
   throughput for every workload: validated total processed sample count /
   full-run DLIO timestamp duration, including checkpoints. Removed the

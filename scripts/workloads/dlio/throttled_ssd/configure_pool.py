@@ -4,9 +4,8 @@
 import argparse
 import re
 import shlex
-import subprocess
 
-from pool_common import DEVICES, FAST, TARGETS, beegfs, verify
+from pool_common import DEVICES, FAST, TARGETS, beegfs, execute, verify
 
 
 SERVICE = "beegfs-storage.service"
@@ -15,17 +14,17 @@ NORMAL_TARGETS = {104, 105, 106, 107, 205, 206, 305, 306, 307}
 
 
 def remote(host, *args):
-    return subprocess.run(["ssh", host, shlex.join(args)], check=True,
+    return execute(["ssh", host, shlex.join(args)], check=True,
                           capture_output=True, text=True).stdout
 
 
-def normal_members(listing):
+def normal_members(listing, pool=6):
     members = set()
     in_pool = False
     for line in listing.splitlines():
         row = re.match(r"^[ \t]*(\d+)[ \t]+([A-Za-z_]\S*)(?:[ \t]+([\d,]+))?", line)
         if row:
-            in_pool = row[1] == "6" and row[2] == "ssd"
+            in_pool = row[1] == str(pool)
             if in_pool and row[3]:
                 members.update(int(value) for value in row[3].split(",") if value)
         elif in_pool and re.fullmatch(r"[ \t]*[\d,]+[ \t]*", line):
@@ -63,9 +62,9 @@ def apply_limits(pool):
 
 
 def transition(source, destination):
-    if (source, destination) not in ((6, 14), (14, 16), (16, 18)) and (
+    if not (source == 6 and destination in FAST) and (source, destination) not in ((14, 16), (16, 18)) and (
             source not in FAST or destination not in FAST or destination != source + 1):
-        raise ValueError("Expected 6→14, the next experiment pool, or CosmoFlow's 14→16→18")
+        raise ValueError("Expected pool 6→an experiment pool, the next pool, or CosmoFlow's 14→16→18")
     verify_normal() if source == 6 else verify(source)
     listing = beegfs("--liststoragepools")
     fast = len(FAST[destination])
@@ -83,11 +82,15 @@ def restore(source):
         raise ValueError("Expected an experiment pool 14–18")
     verify(source)
     move(source, 6)
+    clear_limits()
+    verify_normal()
+    print("Pool 6 restored with its original targets and no runtime caps.", flush=True)
+
+
+def clear_limits():
     for host in ("colva1", "colva2", "colva3"):
         remote(host, "sudo", "systemctl", "set-property", "--runtime", SERVICE,
                "IOReadBandwidthMax=", "IOWriteBandwidthMax=")
-    verify_normal()
-    print("Pool 6 restored with its original targets and no runtime caps.", flush=True)
 
 
 def main():

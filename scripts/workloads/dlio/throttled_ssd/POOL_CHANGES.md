@@ -21,6 +21,22 @@ U-Net uses all five conditions. If any step fails, it stops at the current
 pool without restoring or launching further runs; inspect processes and pool
 membership before retrying.
 
+ResNet can span reservations using three conditions (4/0, 2/2, 0/4;
+pools 14, 16, 18), three repetitions each:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_resnet50_pools.py --all-pools --deadline 6h
+# During the next reservation:
+python3 scripts/workloads/dlio/throttled_ssd/run_resnet50_pools.py --continue --deadline 6h
+```
+
+The managed ResNet runner reserves up to the final minute for stopping and
+restoring pool 6. Continuation skips completed repetitions and restarts the
+partial one, automatically moving from pool 6 to the required condition.
+If restoration is incomplete, it reports that explicitly; inspect membership
+and caps before releasing the reservation. See [README.md](README.md#resnet-across-cluster-reservations)
+for saved-state locations and interruption behavior.
+
 For manual condition-by-condition execution, run the commands below on
 `anjuna2` **between** completed DLIO runs. All five
 conditions use the same targets `104,205,305,306`, with four targets and
