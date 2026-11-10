@@ -4,6 +4,39 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-11-10 — Proposed DLIO DXT phase study
+
+- Implemented the isolated `scripts/workloads/dlio/profiling/` pipeline without
+  modifying existing runners or DLIO workload settings: 12 one-invocation
+  cases, per-process POSIX/DXT/reader coverage, traced clock anchors, passive
+  host telemetry, ownership-aware cleanup, reservation continuation and
+  fail-closed coverage checks. Added SQLite/CSV extraction, approved A/B/C
+  charts and exact-event standalone HTML drill-down. No cluster workload
+  execution during development; installed Darshan selection and explicit
+  eight-rank/fork preflight are documented.
+- Updated profiling to reuse existing server Darshan versions and earlier
+  `DARSHAN_RUNTIME_LIB`/installation paths without rebuilds or PATH changes.
+  MPI-linked runtimes are permitted when their MPI matches mpi4py; the real
+  rank/fork/clock coverage preflight decides compatibility before full runs.
+- Documented an approval-stage, instrumentation-only U-Net/CosmoFlow phase
+  study: one invocation for each of three normal and three throttled
+  configurations per workload (12 total), with all five epochs and eight
+  ranks retained. No instrumentation or orchestration implementation yet.
+- Added a clearly schematic chart mockup: semantic phase band, rank-level
+  read/write timeline and request-size view on a shared time axis. Included
+  DXT Explorer/PDSW references, trace-coverage requirements, metadata/cache
+  attribution limits and microbenchmark-correlation methodology.
+- Recorded user approval of all three proposed panels, with A (phase/activity)
+  and C (request sizes) as primary explanatory views and B as rank-level
+  supporting detail. Instrumentation implementation and cluster execution
+  have not started.
+- Critically reviewed the phase-study methodology without implementing it:
+  corrected nested epoch/checkpoint accounting and rank-0 timer labelling,
+  proposed passive phase-aligned traffic context, added historical cache
+  comparability and tracing-coverage checks, and defined six falsifiable
+  observation questions with a presentation/evidence strategy. Updated the
+  schematic to show checkpoint timers inside the complete epoch spans.
+
 ## 2026-11-03 — Distinguish reported and inferred DLIO throughput
 
 - Fixed managed command failure cleanup to terminate the local process group
