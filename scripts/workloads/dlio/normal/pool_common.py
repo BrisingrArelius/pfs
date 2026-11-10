@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from dlio_pool_profiles import DATA_ROOT, ELIGIBLE, POOLS, RANKS, RESULT_ROOT, data_files
+import dlio_darshan
 
 
 TARGET = re.compile(r"\+ (\d+) @ ")
@@ -110,14 +111,18 @@ def metrics(output, pool, repetition, dataset_osts, checkpoint_osts, sizes):
     return rows
 
 
-def run(profile, checkpoint_class, model_bytes, pilot=False):
+def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None):
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
         raise RuntimeError("These runners require the installed DLIO 2.0.0")
+    if darshan is not None:
+        darshan = dlio_darshan.validate(darshan)
     root = DATA_ROOT / profile.folder
     output = RESULT_ROOT / profile.folder / (
         ("pilot-" if pilot else "runs-") + datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
     output.mkdir(parents=True, exist_ok=False)
     env = os.environ.copy()
+    if darshan is not None:
+        env = dlio_darshan.clean_environment(env)
     env["PYTHONPATH"] = str(Path(__file__).resolve().parent) + os.pathsep + env.get("PYTHONPATH", "")
     pools = (1,) if pilot else POOLS
     targets = {}
@@ -171,6 +176,8 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
                 ]
                 if pilot:
                     command.insert(-1, "++workload.train.total_training_steps=2")
+                if darshan is not None:
+                    command = dlio_darshan.instrument(command, run_dir, root/f"pool{pool}/dataset", checkpoint_dir, darshan)
                 print(f"{profile.profile}: repetition {repetition}, pool {pool}", flush=True)
                 subprocess.run(("sync",), check=True)
                 for host in ("colva1", "colva2", "colva3", "colva4"):
@@ -183,6 +190,8 @@ def run(profile, checkpoint_class, model_bytes, pilot=False):
                 with (run_dir / "console.log").open("w") as log:
                     subprocess.run(command, env=env, stdout=log,
                                    stderr=subprocess.STDOUT, check=True)
+                if darshan is not None:
+                    dlio_darshan.check_logs(run_dir)
                 files = sorted(path for path in checkpoint_dir.rglob("*") if path.is_file())
                 sizes = checkpoint_sizes(files, profile, (2,) if pilot else (2, 4), size)
                 observed = placement(files, run_dir / "checkpoint-osts.tsv", pool)

@@ -33,6 +33,55 @@ normal CosmoFlow if a throttled run moved them out.
 The runner prints a flushed `pool N, run X/3 complete` line only after that
 run's checkpoint validation, metrics, and cleanup succeed; pilots use `X/1`.
 
+## Optional built-in Darshan profiling (U-Net and CosmoFlow)
+
+After syncing the code, test each workload on `anjuna2` using its existing pilot:
+
+```bash
+python3 scripts/workloads/dlio/normal/run_cosmoflow_pools.py --pilot --darshan
+python3 scripts/workloads/dlio/normal/run_unet3d_pools.py --pilot --darshan
+```
+
+The default runtime is `~/darshan-nompi/lib/libdarshan.so.0.0.0`, or
+`DARSHAN_RUNTIME_LIB` if set. Supply another already-installed runtime with
+`--darshan /absolute/path/libdarshan.so`. `darshan-parser` and
+`darshan-dxt-parser` must be on PATH. Leave controller `LD_PRELOAD` unset.
+
+This enables **DLIO's built-in Darshan profiler**, including its start/stop
+calls. A project-local launcher fixes two DLIO 2.0.0 environment quirks:
+it removes the shared `DARSHAN_LOGFILE` after profiler construction, and
+unsets `DARSHAN_DISABLE` after `start()` (Darshan tests its presence, so
+DLIO's value `"0"` prevents new reader processes from initializing).
+The installed DLIO and Darshan packages are not edited.
+
+```text
+original runner -> eight DLIO ranks -> built-in profiler start/stop
+                       + existing Darshan runtime and local compatibility fix
+                                      -> repN-poolP/darshan/*.darshan
+```
+
+Each invocation saves its configuration, rank/forked-process PID JSON files and native
+PID-specific logs in `repN-poolP/darshan/` (possibly date-nested). Capture is
+restricted to that invocation's dataset and checkpoints. POSIX/STDIO record
+capacity is 16,384 per module, name memory 8 MiB and module memory 96 MiB per
+process; DXT_POSIX is enabled. After DLIO exits, the runner checks that all
+eight rank logs and recorded forked-process logs exist, and runs both installed parsers on every saved log.
+Missing rank logs or incomplete-module errors stop the sweep and retain the
+evidence. These checks do not establish exhaustive request-level coverage.
+Buffered STDIO without POSIX events remains aggregate STDIO data; it is not
+rejected or represented as exact DXT timing.
+
+Successful pilots print `Darshan: 8 rank logs present; ...` and the normal
+pilot completion message. Only then omit `--pilot` for full runs. The original
+pool order, three repetitions, workload settings and cache protocol are
+unchanged; without `--darshan`, profiling remains off.
+
+Local regression checks (no MPI/DLIO workload or cluster administration):
+
+```bash
+python3 -m unittest discover -s scripts/workloads/dlio/normal -p 'test_dlio_darshan.py' -v
+```
+
 `generate_data.py` uses DLIO to generate pool 1's data, then copies the same
 bytes to pools 3 and 6 under their BeeGFS patterns. It reuses existing
 complete datasets (including the previously generated ResNet copies) and

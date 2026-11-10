@@ -4,56 +4,37 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
-## 2026-11-10 — Proposed DLIO DXT phase study
+## 2026-11-10 — Opt-in DLIO built-in Darshan profiling
 
-- Removed repeated per-process Darshan configuration dumps (the configuration
-  is already saved per attempt) and unused job-ID metadata parsing.
-- Fixed a reproduced trace-loss bug: utility subprocesses inherited a rank's
-  fixed `DARSHAN_LOGFILE`, wrote an empty log first, and prevented the rank
-  from saving its real trace. Use native PID-specific filenames instead,
-  handle flat/date-hierarchical logs, and validate helpers before excluding
-  their non-workload logs. The preflight/regression now launches utility
-  subprocesses before application I/O as well as forked readers. Workload
-  settings and the installed Darshan versions are unchanged.
-- Added measured POSIX single-write timestamp alignment when only a DXT clock
-  marker is absent, with source/diagnostic reporting and unchanged strict
-  workload coverage checks. Added `--recover --validate-only` to revalidate
-  finished failed attempts in place without rerunning DLIO, moving pools or
-  changing the saved workload fingerprint.
-- Fixed preflight provenance collection for installed Darshan utilities that
-  reject `--version`: preserve stdout/stderr/exit status and executable hash
-  without failing an already validated rank/reader capture. Actual trace
-  parsing and coverage checks remain strict; no Darshan installation changes.
-- Implemented the isolated `scripts/workloads/dlio/profiling/` pipeline without
-  modifying existing runners or DLIO workload settings: 12 one-invocation
-  cases, per-process POSIX/DXT/reader coverage, traced clock anchors, passive
-  host telemetry, ownership-aware cleanup, reservation continuation and
-  fail-closed coverage checks. Added SQLite/CSV extraction, approved A/B/C
-  charts and exact-event standalone HTML drill-down. No cluster workload
-  execution during development; installed Darshan selection and explicit
-  eight-rank/fork preflight are documented.
-- Updated profiling to reuse existing server Darshan versions and earlier
-  `DARSHAN_RUNTIME_LIB`/installation paths without rebuilds or PATH changes.
-  MPI-linked runtimes are permitted when their MPI matches mpi4py; the real
-  rank/fork/clock coverage preflight decides compatibility before full runs.
-- Documented an approval-stage, instrumentation-only U-Net/CosmoFlow phase
-  study: one invocation for each of three normal and three throttled
-  configurations per workload (12 total), with all five epochs and eight
-  ranks retained. No instrumentation or orchestration implementation yet.
-- Added a clearly schematic chart mockup: semantic phase band, rank-level
-  read/write timeline and request-size view on a shared time axis. Included
-  DXT Explorer/PDSW references, trace-coverage requirements, metadata/cache
-  attribution limits and microbenchmark-correlation methodology.
-- Recorded user approval of all three proposed panels, with A (phase/activity)
-  and C (request sizes) as primary explanatory views and B as rank-level
-  supporting detail. Instrumentation implementation and cluster execution
-  have not started.
-- Critically reviewed the phase-study methodology without implementing it:
-  corrected nested epoch/checkpoint accounting and rank-0 timer labelling,
-  proposed passive phase-aligned traffic context, added historical cache
-  comparability and tracing-coverage checks, and defined six falsifiable
-  observation questions with a presentation/evidence strategy. Updated the
-  schematic to show checkpoint timers inside the complete epoch spans.
+- Added `--darshan [LIBRARY]` to the original normal/throttled U-Net and
+  CosmoFlow runners. It selects DLIO 2.0.0's built-in profiler and preloads
+  the existing runtime into ranks only. A small project-local launcher
+  removes DLIO's shared log filename and unsets its `DARSHAN_DISABLE="0"`
+  after native start so forked readers can initialize; native stop remains.
+  Installed packages are untouched, and workload commands/cache protocols,
+  repetition counts and pool matrices are retained.
+- Added per-invocation dataset/checkpoint filtering, larger record/name/module
+  budgets, native per-PID logs and rank/forked-process identities. Isolate
+  capture from inherited Darshan/DXT settings. Check all eight rank/recorded
+  forked-process logs and both installed parsers before cleanup/completion; retain buffered
+  STDIO aggregates without requiring missing POSIX DXT events.
+- Added local CLI/workload-fidelity and actual-runtime regressions for eight
+  roots/readers/utilities, 8,192 files across five read passes, buffered STDIO,
+  missing rank logs and parser errors. Documented cluster pilot commands;
+  no cluster workload was launched during development.
+
+## 2026-11-10 — Roll back custom DLIO profiling
+
+- Removed the isolated profiling runner, hooks, telemetry, analyzer, plots,
+  tests, study specification and mockup added after `8844ed9`, including
+  subsequent profiling fixes. Restored the original DLIO suite index.
+- Verified normal and throttled runner directories match the pre-profiling
+  baseline `8844ed9` exactly, retaining the earlier workload, reservation,
+  continuation and process-cleanup fixes.
+- The cluster pilot of DLIO 2.0.0's built-in Darshan profiler completed DLIO
+  but lost seven rank logs to its fixed filename; the surviving rank log
+  also reported incomplete POSIX records. Built-in profiling is not enabled
+  in the original runners by this rollback.
 
 ## 2026-11-03 — Distinguish reported and inferred DLIO throughput
 

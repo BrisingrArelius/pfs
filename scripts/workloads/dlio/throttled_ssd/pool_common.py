@@ -19,6 +19,7 @@ sys.path.insert(0, str(NORMAL))
 sys.path.insert(0, str(NORMAL.parent))
 from dlio_pool_profiles import DATA_ROOT, RANKS, RESULT_ROOT, WORKLOADS  # noqa: E402
 from normal.pool_common import FIELDS, checkpoint_sizes, metrics  # noqa: E402
+import dlio_darshan  # noqa: E402
 
 TARGETS = (104, 205, 305, 306)
 FAST = {14: TARGETS, 15: (104, 205, 305), 16: (104, 205), 17: (104,), 18: ()}
@@ -244,11 +245,13 @@ def prepare(profile, pool):
     return root
 
 
-def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None):
+def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None, darshan=None):
     if pool not in FAST or name not in CLASSES:
         raise ValueError("Expected ResNet, U-Net or CosmoFlow and a condition pool 14–18")
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
         raise RuntimeError("DLIO 2.0.0 required")
+    if darshan is not None:
+        darshan = dlio_darshan.validate(darshan)
     verify(pool)
     profile = WORKLOADS[name]
     root = prepare(profile, pool)
@@ -259,6 +262,8 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None)
         "slow": sorted(set(TARGETS) - set(FAST[pool])), "targets": TARGETS,
         "fast_MiB_s": 45, "slow_MiB_s": 15, "profile": profile.profile}, indent=2) + "\n")
     env = os.environ.copy()
+    if darshan is not None:
+        env = dlio_darshan.clean_environment(env)
     env["PYTHONPATH"] = os.pathsep.join((str(NORMAL.parent), str(NORMAL),
                                          env.get("PYTHONPATH", "")))
     retained = {}
@@ -336,6 +341,8 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None)
                        "++workload.train.computation_time=0", f"hydra.run.dir={directory}"]
             if pilot:
                 command.insert(-1, "++workload.train.total_training_steps=2")
+            if darshan is not None:
+                command = dlio_darshan.instrument(command, directory, root/"dataset", checkpoint_dir, darshan)
             execute(["sync"], check=True)
             for host in ("colva1", "colva2", "colva3", "colva4"):
                 execute(["ssh", host,
@@ -352,6 +359,8 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None)
             io_rows = physical_io(pool, repetition, before, physical_counters())
             devices.writerows(io_rows)
             devicefile.flush()
+            if darshan is not None:
+                dlio_darshan.check_logs(directory)
             files = sorted(file for file in checkpoint_dir.rglob("*") if file.is_file())
             sizes = checkpoint_sizes(files, profile, (2,) if pilot else (2, 4), size)
             checkpoint_osts = placement(files, directory / "checkpoint-osts.tsv")
@@ -382,12 +391,14 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None)
     print(f"Output: {output}")
 
 
-def run_all(name):
+def run_all(name, darshan=None):
     """Run the workload's conditions, restoring pool 6 after full success."""
     from configure_pool import restore, transition
 
     if name not in CLASSES:
         raise ValueError(f"Unsupported workload: {name}")
+    if darshan is not None:
+        darshan = dlio_darshan.validate(darshan)
     profile = WORKLOADS[name]
     source = DATA_ROOT / profile.folder / "pool1/dataset/train"
     if len(list(source.glob(f"*.{profile.extension}"))) != profile.files:
@@ -397,6 +408,6 @@ def run_all(name):
     for pool in pools:
         transition(previous, pool)
         print(f"Starting three full {name} runs on pool {pool}", flush=True)
-        run(name, pool)
+        run(name, pool, darshan=darshan)
         previous = pool
     restore(previous)

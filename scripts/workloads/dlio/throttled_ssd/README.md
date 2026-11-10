@@ -13,6 +13,27 @@ the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
 the partition setting appeared in systemd but installed no kernel limit.
 Complete existing pool-6 jobs first.
 
+## Optional built-in Darshan profiling
+
+The U-Net and CosmoFlow runners accept `--darshan [LIBRARY]` for the same
+[built-in profiler and compatibility fixes](../normal/README.md#optional-built-in-darshan-profiling-u-net-and-cosmoflow)
+as the normal runners. The default runtime is the existing
+`~/darshan-nompi/lib/libdarshan.so.0.0.0` (or `DARSHAN_RUNTIME_LIB`).
+For an already configured pool, first run its existing short pilot:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_cosmoflow_pools.py --pool 14 --pilot --darshan
+python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --pool 14 --pilot --darshan
+```
+
+Use the currently configured pool ID; these single-pool commands do not
+configure it. `--all-pools --darshan` also enables capture, retaining the
+original three repetitions per condition and existing workload-specific pool
+matrix. Logs/configuration/rank identities are saved under each invocation's
+`darshan/` directory. Both parsers must pass before checkpoint cleanup and
+completion are recorded. Record/file filtering does not turn STDIO aggregates
+into exact POSIX events. The ResNet CLI is unchanged.
+
 ## ResNet across cluster reservations
 
 Start three conditions (4/0, 2/2, 0/4; three repetitions each) from original pool 6:

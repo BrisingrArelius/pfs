@@ -5,6 +5,7 @@ import argparse
 
 from dlio_pool_profiles import WORKLOADS
 from pool_common import run
+from dlio_darshan import add_argument
 
 
 if __name__ != "__main__":
@@ -32,9 +33,10 @@ if __name__ != "__main__":
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pilot", action="store_true")
+    add_argument(parser)
     args = parser.parse_args()
     run(WORKLOADS["cosmoflow"], "run_cosmoflow_pools.CosmoFlowCheckpointing",
-        model_bytes=WORKLOADS["cosmoflow"].model_bytes, pilot=args.pilot)
+        model_bytes=WORKLOADS["cosmoflow"].model_bytes, pilot=args.pilot, darshan=args.darshan)
 
 
 if __name__ == "__main__":
