@@ -241,8 +241,14 @@ def preflight(output, args):
     finally:
         terminate_owned(probe)
         shared.DEADLINE = old_deadline
-    versions = {tool: shared.execute([tool,"--version"], check=True,capture_output=True,text=True).stdout
-                for tool in ("mpirun","darshan-parser","darshan-dxt-parser")}
+    versions = {}
+    for tool in ("mpirun","darshan-parser","darshan-dxt-parser"):
+        # Some installed Darshan utilities reject --version. Actual log parsing
+        # above is the compatibility check; provenance probing is informational.
+        result = shared.execute([tool,"--version"],check=False,capture_output=True,text=True)
+        binary = Path(shutil.which(tool)).resolve()
+        versions[tool] = {"path":str(binary),"sha256":sha(binary),
+                          "stdout":result.stdout,"stderr":result.stderr,"returncode":result.returncode}
     versions.update(darshan_dependencies=linked, mpi4py=mpi,
                     darshan_runtime=str(args.darshan_library),python=sys.version, output_filesystem=output_fs,
                     git_revision=shared.execute(["git","rev-parse","HEAD"],check=True,capture_output=True,text=True).stdout.strip(),

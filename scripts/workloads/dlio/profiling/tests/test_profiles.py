@@ -283,6 +283,31 @@ class OrchestrationTests(unittest.TestCase):
                     runner.preflight(root,args)
                 self.assertIsNone(runner.shared.DEADLINE)
 
+    def test_unsupported_version_flag_does_not_fail_successful_capture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            library=root/"libdarshan.so"
+            library.touch()
+            for tool in ("mpirun","darshan-parser","darshan-dxt-parser"):
+                (root/tool).write_text("existing installed tool")
+            args=argparse.Namespace(darshan_library=library,dxt_mib=8,module_mib=16)
+            def execute(command,**kwargs):
+                if command[:2]==["darshan-parser","--version"]:
+                    if kwargs.get("check"):
+                        raise subprocess.CalledProcessError(1,command)
+                    return subprocess.CompletedProcess(command,1,"","unrecognized option --version")
+                return subprocess.CompletedProcess(command,0,"ext4" if command[0]=="findmnt" else "existing version","")
+            with patch.object(shutil,"which",side_effect=lambda tool:str(root/tool)), \
+                    patch.object(runner.shared,"execute",side_effect=execute), \
+                    patch.object(runner.shared,"DEADLINE",None),patch.object(runner,"mpi_compatibility",return_value={}), \
+                    patch.object(runner,"terminate_owned"),patch.object(runner,"analyze_case") as captured:
+                runner.preflight(root,args)
+                captured.assert_called_once()
+            recorded=json.loads(next(root.glob("preflight-*/provenance.json")).read_text())["darshan-parser"]
+            self.assertEqual(recorded["returncode"],1)
+            self.assertIn("unrecognized",recorded["stderr"])
+            self.assertEqual(recorded["sha256"],runner.sha(root/"darshan-parser"))
+
     def test_resume_skips_complete_cases_and_restores_before_next_workload(self):
         with tempfile.TemporaryDirectory() as directory:
             output=Path(directory)

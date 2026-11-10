@@ -6,6 +6,10 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-10 — Proposed DLIO DXT phase study
 
+- Fixed preflight provenance collection for installed Darshan utilities that
+  reject `--version`: preserve stdout/stderr/exit status and executable hash
+  without failing an already validated rank/reader capture. Actual trace
+  parsing and coverage checks remain strict; no Darshan installation changes.
 - Implemented the isolated `scripts/workloads/dlio/profiling/` pipeline without
   modifying existing runners or DLIO workload settings: 12 one-invocation
   cases, per-process POSIX/DXT/reader coverage, traced clock anchors, passive
