@@ -145,9 +145,11 @@ class CoverageIntegration(unittest.TestCase):
         data = cls.case/"smoke-data"
         data.mkdir()
         environment = runner.instrumentation(cls.case,data,data,Path(library),8,16)
+        cls.environment = environment
         analysis.dump(cls.case/"case.json",{"smoke":True,"dataset":str(data),"checkpoints":str(data)})
-        code = """import os,sys
+        code = """import os,sys,subprocess
 from pathlib import Path
+subprocess.run(['/bin/true'],check=True)
 path=Path(sys.argv[1])/('data-'+os.environ['PMI_RANK'])
 path.write_bytes(b'x'*4096)
 assert path.read_bytes()==b'x'*4096
@@ -174,6 +176,20 @@ assert status==0
         self.assertEqual(self.report["processes"],16)
         self.assertEqual(self.report["worker_processes"],8)
         self.assertLess(max(x["uncertainty_s"] for x in self.report["clock_alignment"].values()),.1)
+        helpers=self.report["ignored_helper_logs"]
+        self.assertEqual(sum(Path(item["exe"].split()[0]).name=="true" for item in helpers),8)
+
+    def test_unmapped_helper_with_workload_io_is_not_ignored(self):
+        before=set((self.case/"darshan").rglob("*.darshan"))
+        try:
+            subprocess.run(["/bin/cat",str(self.case/"smoke-data/data-0")],
+                           env={**os.environ,**self.environment},stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,check=True)
+            with self.assertRaisesRegex(ValueError,"Unmapped process touched"):
+                analysis.analyze_case(self.case)
+        finally:
+            for path in set((self.case/"darshan").rglob("*.darshan"))-before:
+                path.unlink()
+            self.report=analysis.analyze_case(self.case)
 
     def test_dxt_shortfall_is_not_published_as_complete(self):
         def shortened(command, **kwargs):
@@ -222,7 +238,8 @@ assert status==0
             self.report=analysis.analyze_case(self.case)
 
     def test_missing_process_log_fails_closed(self):
-        log=next((self.case/"darshan").glob("*.darshan"))
+        anchors={json.loads(path.read_text())["pid"] for path in (self.case/"anchors").glob("*.json")}
+        log=next(path for path in (self.case/"darshan").rglob("*.darshan") if analysis.log_pid(path) in anchors)
         renamed=log.with_suffix(".saved")
         log.rename(renamed)
         try:

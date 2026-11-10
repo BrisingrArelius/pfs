@@ -78,10 +78,20 @@ Optional instrumentation preflight, no DLIO or pool changes:
 python3 scripts/workloads/dlio/profiling/run_profiles.py --preflight
 ```
 
-The preflight uses eight MPI ranks and one tiny forked reader per rank,
+The preflight uses eight MPI ranks, one tiny utility subprocess and one
+tiny forked reader per rank,
 checks MPI rank identity, and validates real POSIX/DXT counts, bytes and
 clock markers. It is not a training benchmark. The same preflight runs
 automatically before a full study, before any pool moves.
+
+Darshan uses its **native PID-specific filenames**, not an inherited fixed
+`DARSHAN_LOGFILE`. This prevents metadata utility subprocesses (such as those
+used during DLIO initialization) from claiming a rank's log before it exits.
+Logs may be flat or in Darshan's year/month/day hierarchy. The analyzer maps
+them by PID and records executable/path information. Unanchored helper logs
+are ignored only after verifying that their complete POSIX/STDIO records
+contain no measured dataset, checkpoint or clock-marker paths; unknown
+processes touching measured paths still fail coverage.
 
 Start the full 12-invocation study, from original pool 6 with no caps:
 

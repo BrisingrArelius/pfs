@@ -50,8 +50,10 @@ def install():
         state.update(pid=os.getpid(), ppid=os.getppid(), owner_pid=owner, rank=rank,
                      role="rank" if os.getpid() == owner else "worker",
                      hostname=os.uname().nodename)
-        # DARSHAN_LOGFILE is read at shutdown. Set it again after every fork.
-        os.environ["DARSHAN_LOGFILE"] = str(case / "darshan" / f"pid-{os.getpid()}.darshan")
+        # Let Darshan include the actual PID in its native filename. An
+        # inherited fixed filename lets a utility child claim the parent's
+        # log before the parent exits, losing the actual workload trace.
+        os.environ.pop("DARSHAN_LOGFILE", None)
         marker("start")
 
     def finish():

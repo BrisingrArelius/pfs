@@ -3,7 +3,7 @@
 
 import argparse
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 import fcntl
 import hashlib
 import importlib.metadata
@@ -135,6 +135,11 @@ def source_identity(library):
 def instrumentation(case, dataset, checkpoints, library, dxt_mib, module_mib):
     for directory in ("anchors", "darshan", "raw"):
         (case/directory).mkdir()
+    # Fixed-log-path installations use unpadded year/month/day directories;
+    # log-path-by-env installations use the flat parent. Support both.
+    for days in range(3):
+        date = datetime.now()+timedelta(days=days)
+        (case/"darshan"/str(date.year)/str(date.month)/str(date.day)).mkdir(parents=True,exist_ok=True)
     # Paths in Darshan configuration are whitespace-delimited EREs.
     if any(char.isspace() for path in (case, dataset, checkpoints) for char in str(path)):
         raise ValueError("Profiling paths must not contain whitespace")

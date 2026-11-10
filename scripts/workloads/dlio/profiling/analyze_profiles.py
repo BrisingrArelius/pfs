@@ -32,7 +32,7 @@ def aggregate(lines):
         if line.startswith("#"):
             if "incomplete data" in line.lower() or "ran out" in line.lower():
                 flags.append(line.strip())
-            match = re.match(r"# (nprocs|start_time|end_time|darshan log version):\s*(.*)", line)
+            match = re.match(r"# (exe|jobid|nprocs|start_time|end_time|darshan log version):\s*(.*)", line)
             if match:
                 metadata[match[1]] = match[2].strip()
             continue
@@ -44,6 +44,33 @@ def aggregate(lines):
                 flags.append("Expected non-MPI, unreduced per-process records")
             files[parts[5]][parts[3]] = float(parts[4])
     return metadata, files, flags
+
+
+def log_pid(path):
+    # Fixed names from early captures remain readable for diagnostics.
+    match = re.fullmatch(r"pid-(\d+)[.]darshan",path.name)
+    if match:
+        return int(match[1])
+    match = re.search(r"_id\d+-(\d+)_",path.name)
+    if match:
+        return int(match[1])
+    raise ValueError(f"Cannot identify native Darshan log PID: {path.name}")
+
+
+def helper_log(path, manifest, output, run):
+    """Ignore a helper only after proving it has no measured-path records."""
+    with tempfile.TemporaryDirectory(prefix="helper-",dir=output) as directory:
+        parsed=Path(directory)/"aggregate.txt"
+        with parsed.open("w") as file, (output/"helper-parser.stderr").open("a") as stderr:
+            run(["darshan-parser","--show-incomplete",str(path)],stdout=file,stderr=stderr,check=True,text=True)
+        with parsed.open() as file:
+            metadata,counters,flags=aggregate(file)
+    if int(metadata.get("nprocs",0)) != 1 or flags:
+        raise ValueError(f"Unvalidated helper log: {path}")
+    if any(role(name,manifest) in ("dataset","checkpoint","anchor") for name in counters):
+        raise ValueError(f"Unmapped process touched a measured path: {path}; refusing to discard its I/O")
+    return {"path":str(path),"pid":log_pid(path),"exe":metadata.get("exe",""),
+            "reason":"No dataset/checkpoint/clock-marker records in complete POSIX/STDIO log"}
 
 
 def dxt_events(lines):
@@ -213,9 +240,18 @@ def analyze_case(case, execute=None, max_clock_error=.1):
             raise ValueError("Expected exactly eight rank-process anchors")
         if len({a["hostname"] for a in anchors}) != 1:
             raise ValueError("This protocol expects all ranks/readers on one client")
-        logs = {int(path.stem.split("-")[1]): path for path in (case / "darshan").glob("pid-*.darshan")}
-        if set(logs) != {a["pid"] for a in anchors}:
-            raise ValueError("Missing process logs or logs without instrumentation anchors")
+        logs = defaultdict(list)
+        for path in (case/"darshan").rglob("*.darshan"):
+            logs[log_pid(path)].append(path)
+        anchored={a["pid"] for a in anchors}
+        if not anchored <= set(logs):
+            raise ValueError(f"Missing process logs: {sorted(anchored-set(logs))}")
+        run = execute or subprocess.run
+        report["ignored_helper_logs"] = [helper_log(path,manifest,output,run)
+            for pid,paths in logs.items() if pid not in anchored for path in paths]
+        for pid in anchored:
+            if len(logs[pid]) != 1:
+                raise ValueError(f"Multiple logs for anchored PID {pid}; inspect process lifecycle")
         for anchor in anchors:
             if anchor["owner_pid"] not in {a["pid"] for a in roots} or not 0 <= anchor["rank"] < 8:
                 raise ValueError("Unmapped reader process")
@@ -229,16 +265,18 @@ def analyze_case(case, execute=None, max_clock_error=.1):
             origin, phases, checkpoints, timings = reconstruct(case, manifest, anchors)
         ends = [phase["end_s"] for phase in phases]
         metadata_rows, batch = [], []
-        run = execute or subprocess.run
         for anchor in anchors:
             pid = anchor["pid"]
             with tempfile.TemporaryDirectory(prefix="parser-", dir=output) as temporary:
                 parsed, traced = Path(temporary)/"aggregate.txt", Path(temporary)/"dxt.txt"
                 for tool, destination in (("darshan-parser", parsed), ("darshan-dxt-parser", traced)):
                     with destination.open("w") as file, (output / f"pid-{pid}-{tool}.stderr").open("w") as err:
-                        run([tool, "--show-incomplete", str(logs[pid])], stdout=file, stderr=err, check=True, text=True)
+                        run([tool, "--show-incomplete", str(logs[pid][0])], stdout=file, stderr=err, check=True, text=True)
                 with parsed.open() as file:
                     metadata, counters, flags = aggregate(file)
+                report.setdefault("process_logs",{})[str(pid)] = {
+                    "path":str(logs[pid][0]),"exe":metadata.get("exe",""),
+                    "start_time":metadata.get("start_time"),"end_time":metadata.get("end_time")}
                 if int(metadata.get("nprocs", 0)) != 1 or flags:
                     raise ValueError(f"PID {pid}: incomplete or MPI-reduced log: {flags}")
                 markers = {}

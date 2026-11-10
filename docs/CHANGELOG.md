@@ -6,6 +6,13 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-10 — Proposed DLIO DXT phase study
 
+- Fixed a reproduced trace-loss bug: utility subprocesses inherited a rank's
+  fixed `DARSHAN_LOGFILE`, wrote an empty log first, and prevented the rank
+  from saving its real trace. Use native PID-specific filenames instead,
+  handle flat/date-hierarchical logs, and validate helpers before excluding
+  their non-workload logs. The preflight/regression now launches utility
+  subprocesses before application I/O as well as forked readers. Workload
+  settings and the installed Darshan versions are unchanged.
 - Added measured POSIX single-write timestamp alignment when only a DXT clock
   marker is absent, with source/diagnostic reporting and unchanged strict
   workload coverage checks. Added `--recover --validate-only` to revalidate
