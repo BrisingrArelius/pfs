@@ -153,7 +153,7 @@ def instrumentation(case, dataset, checkpoints, library, dxt_mib, module_mib):
     return {"LD_PRELOAD": str(library), "DARSHAN_ENABLE_NONMPI": "1",
             "DARSHAN_LOG_DIR_PATH":str(case/"darshan"), "DARSHAN_LOGPATH":str(case/"darshan"),
             "DXT_ENABLE_IO_TRACE": "1", "DARSHAN_CONFIG_PATH": str(config),
-            "DARSHAN_DISABLE_SHARED_REDUCTION": "1", "DARSHAN_DUMP_CONFIG": "1",
+            "DARSHAN_DISABLE_SHARED_REDUCTION": "1",
             "PFS_DXT_CASE": str(case),
             "PYTHONPATH": os.pathsep.join((str(HERE/"hooks"), str(DLIO), str(DLIO/"normal"),
                                            os.environ.get("PYTHONPATH", "")))}

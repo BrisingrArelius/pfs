@@ -32,7 +32,7 @@ def aggregate(lines):
         if line.startswith("#"):
             if "incomplete data" in line.lower() or "ran out" in line.lower():
                 flags.append(line.strip())
-            match = re.match(r"# (exe|jobid|nprocs|start_time|end_time|darshan log version):\s*(.*)", line)
+            match = re.match(r"# (exe|nprocs|start_time|end_time|darshan log version):\s*(.*)", line)
             if match:
                 metadata[match[1]] = match[2].strip()
             continue

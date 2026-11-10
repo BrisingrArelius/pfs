@@ -6,6 +6,8 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-10 — Proposed DLIO DXT phase study
 
+- Removed repeated per-process Darshan configuration dumps (the configuration
+  is already saved per attempt) and unused job-ID metadata parsing.
 - Fixed a reproduced trace-loss bug: utility subprocesses inherited a rank's
   fixed `DARSHAN_LOGFILE`, wrote an empty log first, and prevented the rank
   from saving its real trace. Use native PID-specific filenames instead,
