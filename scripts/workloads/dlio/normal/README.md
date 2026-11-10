@@ -54,6 +54,12 @@ unsets `DARSHAN_DISABLE` after `start()` (Darshan tests its presence, so
 DLIO's value `"0"` prevents new reader processes from initializing).
 The installed DLIO and Darshan packages are not edited.
 
+For U-Net, profiler stop also closes DLIO's persistent PyTorch reader pool
+using its normal shutdown method, after native run timing has ended. DLIO
+2.0.0 otherwise leaves those daemon readers until interpreter exit, which
+can interrupt native Darshan log writes. Unreadable `.darshan_partial` files
+are reported as unfinished captures, not accepted as valid logs.
+
 ```text
 original runner -> eight DLIO ranks -> built-in profiler start/stop
                        + existing Darshan runtime and local compatibility fix
@@ -79,8 +85,43 @@ unchanged; without `--darshan`, profiling remains off.
 Local regression checks (no MPI/DLIO workload or cluster administration):
 
 ```bash
-python3 -m unittest discover -s scripts/workloads/dlio/normal -p 'test_dlio_darshan.py' -v
+python3 -m unittest discover -s scripts/workloads/dlio/normal -p 'test_*darshan.py' -v
 ```
+
+### Plot a captured pilot
+
+The full-sweep `analyze.py` requires all nine five-epoch runs. For one captured
+pilot, use this offline command instead (Matplotlib, PyYAML and the installed
+Darshan parsers are required):
+
+```bash
+python3 scripts/workloads/dlio/normal/plot_darshan.py \
+  "$HOME/tejas/dlio/cosmoflow/pilot-TIMESTAMP"
+```
+
+Pass the printed pilot directory or its `rep1-pool1` subdirectory. The script
+checks all recorded process logs before creating `rep1-pool1/darshan-plots/`
+with `A-phase-activity`, `B-rank-activity`, `C-request-sizes` PNG/SVG figures,
+plus the `pilot-darshan` summary and JSON containing raw requests/plotted values.
+A shows native epoch bands with nested rank-0 checkpoint markers and combined
+read/write activity; B groups same-operation activity by owner rank including
+readers; C shows actual DXT POSIX request-size categories over time, with a
+shared count-to-glyph-area scale and 1-second bins (`--bin-seconds` overrides).
+Zero-byte EOF calls are retained. The summary separates POSIX/STDIO byte views;
+STDIO bytes are not extra bytes to add to POSIX.
+
+**Existing pilot alignment is coarse:** the installed standard parser exposes
+whole-second process job starts, and the offset between recorded job start
+and DXT's internal origin is uncalibrated. A/B/C label this explicitly; do not
+use them for precise subsecond overlap or phase-boundary attribution. Native
+DLIO timestamp strings use the original run host's local timezone. Plot on
+that host, or supply its UTC offset in seconds using `--native-utc-offset`
+when plotting copied logs (e.g. `0` for UTC). No STDIO-only request times are
+invented. These pilot diagnostic views do not establish exact cross-process
+clock alignment.
+No workload, cache drop or pool change is performed by plotting. The failed
+U-Net pilot with unreadable partial logs must be rerun after the shutdown fix;
+those missing traces cannot be reconstructed from native DLIO timings.
 
 `generate_data.py` uses DLIO to generate pool 1's data, then copies the same
 bytes to pools 3 and 6 under their BeeGFS patterns. It reuses existing

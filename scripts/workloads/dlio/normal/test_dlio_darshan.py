@@ -2,6 +2,7 @@
 
 import argparse
 import ast
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -77,6 +78,18 @@ class LauncherTests(unittest.TestCase):
             with patch.object(darshan.subprocess,"run",side_effect=error):
                 with self.assertRaises(subprocess.CalledProcessError):
                     darshan.check_logs(root, ranks=1)
+
+    def test_partial_worker_log_is_reported_as_unfinished(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            logs=root/"darshan"
+            logs.mkdir()
+            for name,pid in (("rank-0",123),("worker-456",456)):
+                (logs/f"{name}.json").write_text(json.dumps({"rank":0,"pid":pid}))
+            (logs/"test_id123-123_1.darshan").touch()
+            (logs/"test_id123-456_1.darshan_partial").touch()
+            with self.assertRaisesRegex(RuntimeError,"unfinished Darshan log"):
+                darshan.check_logs(root,ranks=1)
 
 
 class RuntimeTests(unittest.TestCase):
@@ -171,6 +184,24 @@ d.main()
             parent = next(path for path in files if f"-{rank['pid']}_" in path.name)
             parsed = subprocess.check_output(["darshan-parser","--total",str(parent)],text=True)
             self.assertIn("STDIO_BYTES_WRITTEN",parsed)
+            if importlib.util.find_spec("matplotlib") and importlib.util.find_spec("yaml"):
+                import plot_darshan as plot
+                (root/".hydra").mkdir()
+                (root/".hydra/config.yaml").write_text(json.dumps({"workload":{
+                    "model":"capture-test","dataset":{"data_folder":str(data)},
+                    "checkpoint":{"checkpoint_folder":str(checkpoints)}}}))
+                (root/"summary.json").write_text(json.dumps({"num_accelerators":8}))
+                (root/"per_epoch_stats.json").write_text(json.dumps({
+                    "1":{"start":"2026-11-11T00:00:00","end":"2026-11-11T00:00:05"},
+                    "2":{"start":"2026-11-11T00:00:05","end":"2026-11-11T00:00:11",
+                         "ckpt1":{"start":"2026-11-11T00:00:09","end":"2026-11-11T00:00:10"}}}))
+                measured=plot.collect(root)
+                self.assertEqual(measured["rank_api_bytes"][1]["POSIX_BYTES_READ"],8192)
+                self.assertEqual(measured["rank_api_bytes"][0]["POSIX_BYTES_READ"],
+                                 8192+8192*len(b"record-capacity-probe")*5)
+                self.assertEqual(measured["rank_api_bytes"][0]["STDIO_BYTES_WRITTEN"],len(b"checkpoint-index"))
+                plot.render(measured,root/"darshan-plots")
+                self.assertTrue((root/"darshan-plots/pilot-darshan.png").is_file())
 
 
 if __name__ == "__main__":

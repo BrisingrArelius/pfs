@@ -4,6 +4,31 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
+
+- Added pilot A/B/C figures: native phase/activity bands, reader-inclusive
+  owner-rank operation unions, and time-binned request-size categories with
+  common count-scaled glyphs. Retain raw parsed events in JSON and label the
+  saved pilots' whole-second job-clock alignment and uncalibrated initialization
+  offsets; expose the original host timezone offset for copied-log plotting.
+  No precise overlap/phase-boundary claims or STDIO timing are inferred.
+- The cluster U-Net pilot saved all eight rank logs but left one unreadable
+  `.darshan_partial` reader log per rank. Close DLIO's persistent PyTorch
+  training reader pool at profiler stop, after native run timing, using
+  PyTorch's normal shutdown method instead of leaving daemon termination to
+  interpreter exit. Preserve workload arguments, epoch/prefetch behavior and
+  native profiler stop. Report partial files explicitly as unfinished logs.
+- Added a real persistent PyTorch DataLoader regression with NPZ files,
+  four workers, two truncated pilot epochs and native Darshan log validation.
+  The pre-fix test found workers still alive at profiler stop; the fixed test
+  checks all reader processes exit and their logs parse without partial files.
+- Added an offline single-invocation pilot plot command: native epoch bands
+  with nested rank-0 checkpoint timers, per-rank POSIX/STDIO API bytes, and
+  exact DXT request-size distributions, with PNG/SVG and plotted-value JSON.
+  Require valid process logs and reject measured I/O from unmapped processes;
+  retain STDIO-only data without fabricating DXT timing or cross-process clock
+  alignment. Added synthetic/native-parser rendering regressions and usage.
+
 ## 2026-11-10 — Opt-in DLIO built-in Darshan profiling
 
 - Added `--darshan [LIBRARY]` to the original normal/throttled U-Net and
