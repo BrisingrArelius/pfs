@@ -54,6 +54,20 @@ class ParserTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "drift"):
             analysis.clock_offset(anchor, markers)
 
+    def test_single_write_posix_timestamp_is_a_measured_clock_anchor(self):
+        anchor={"pid":1,"start":{"path":"start","wall_before_ns":1002000000000,"wall_after_ns":1002001000000},
+                "end":{"path":"end","wall_before_ns":1012000000000,"wall_after_ns":1012001000000}}
+        counters={"start":{"POSIX_WRITES":1,"POSIX_READS":0,"POSIX_BYTES_WRITTEN":len(b"PFS-DXT-clock-anchor\n"),
+                           "POSIX_F_WRITE_START_TIMESTAMP":2.0002,"POSIX_F_WRITE_END_TIMESTAMP":2.0008}}
+        markers,sources=analysis.resolve_markers(anchor,{"end":{"start":12.0002,"end":12.0008}},counters)
+        offset,error=analysis.clock_offset(anchor,markers)
+        self.assertAlmostEqual(offset,1000)
+        self.assertIn("POSIX timestamps",sources["start"])
+        self.assertLess(error,.001)
+        counters["start"]["POSIX_WRITES"]=2
+        with self.assertRaisesRegex(ValueError,"unambiguous POSIX"):
+            analysis.resolve_markers(anchor,{"end":{"start":12.0002,"end":12.0008}},counters)
+
     def test_command_matches_existing_workload_settings(self):
         root = PROFILE.parents[3]
         existing = {"unet": "runs-20261026-164248-962399",
@@ -184,6 +198,29 @@ assert status==0
         finally:
             self.report = analysis.analyze_case(self.case)
 
+    def test_missing_dxt_marker_can_use_real_aggregate_timestamps(self):
+        def no_start_marker(command,**kwargs):
+            result=subprocess.run(command,**kwargs)
+            if command[0]=="darshan-dxt-parser":
+                kwargs["stdout"].flush()
+                path=Path(kwargs["stdout"].name)
+                output=[]
+                marker=False
+                for line in path.read_text().splitlines(keepends=True):
+                    if "# DXT, file_id:" in line:
+                        marker=".anchor-start" in line
+                    if not (marker and line.lstrip().startswith("X_POSIX")):
+                        output.append(line)
+                path.write_text("".join(output))
+            return result
+        try:
+            report=analysis.analyze_case(self.case,execute=no_start_marker)
+            self.assertTrue(report["valid"])
+            self.assertTrue(all(any("POSIX timestamps" in source for source in item["marker_sources"].values())
+                                for item in report["clock_alignment"].values()))
+        finally:
+            self.report=analysis.analyze_case(self.case)
+
     def test_missing_process_log_fails_closed(self):
         log=next((self.case/"darshan").glob("*.darshan"))
         renamed=log.with_suffix(".saved")
@@ -219,6 +256,24 @@ assert status==0
 
 
 class OrchestrationTests(unittest.TestCase):
+    def test_finished_attempt_recovered_without_workload_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            case=root/"cosmoflow-normal-pool1/attempt-original"
+            (case/"raw/.hydra").mkdir(parents=True)
+            for name in ("raw/summary.json","raw/per_epoch_stats.json","raw/.hydra/config.yaml","checkpoint-sizes.csv",
+                         *(f"raw/{rank}_output.json" for rank in range(8))):
+                (case/name).write_text("original completed evidence")
+            state={"status":"failed","identity":{"original":"source"},"cases":{
+                "cosmoflow-normal-pool1":{"status":"failed","attempt":str(case.relative_to(root))}}}
+            analysis.dump(root/"state.json",state)
+            with patch.object(analysis,"analyze_case",return_value={"valid":True}) as validated:
+                self.assertEqual(analysis.recover_run(root),["cosmoflow-normal-pool1"])
+                validated.assert_called_once_with(case)
+            recovered=json.loads((root/"state.json").read_text())
+            self.assertEqual(recovered["identity"],state["identity"])
+            self.assertEqual(recovered["cases"]["cosmoflow-normal-pool1"]["status"],"complete")
+            self.assertEqual((case/"raw/summary.json").read_text(),"original completed evidence")
     def test_owned_process_cleanup_does_not_touch_another_study(self):
         with tempfile.TemporaryDirectory() as directory:
             owned=subprocess.Popen([sys.executable,"-c","import time;time.sleep(60)"],

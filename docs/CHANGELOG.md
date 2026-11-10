@@ -6,6 +6,11 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-10 — Proposed DLIO DXT phase study
 
+- Added measured POSIX single-write timestamp alignment when only a DXT clock
+  marker is absent, with source/diagnostic reporting and unchanged strict
+  workload coverage checks. Added `--recover --validate-only` to revalidate
+  finished failed attempts in place without rerunning DLIO, moving pools or
+  changing the saved workload fingerprint.
 - Fixed preflight provenance collection for installed Darshan utilities that
   reject `--version`: preserve stdout/stderr/exit status and executable hash
   without failing an already validated rank/reader capture. Actual trace

@@ -196,6 +196,28 @@ python3 scripts/workloads/dlio/profiling/analyze_profiles.py \
 Add `--file /exact/dataset/file` if useful. Open `analysis/detail.html`.
 Queries above 50,000 events are rejected until narrowed, not silently sampled.
 
+### Recover a finished invocation whose post-run validation failed
+
+With the runner stopped, revalidate its existing evidence without repeating DLIO:
+
+```bash
+python3 scripts/workloads/dlio/profiling/analyze_profiles.py \
+  /home/pfs/tejas/dlio/profiling/profile-TIMESTAMP --recover --validate-only
+```
+
+Passed attempts are marked complete in the same `state.json`; `run_profiles.py
+--continue RUN_DIR --deadline 3h` then skips them. Workload source fingerprints
+are preserved. Recovery does not move pools or delete checkpoint evidence.
+Incomplete or invalid traces are not promoted to completed cases.
+
+Clock alignment normally uses traced marker writes. If a DXT marker alone is
+absent, the analyzer accepts Darshan's POSIX first/last-write timestamps only
+for that same marker's single verified payload write. Start/end consistency
+and uncertainty checks still apply; workload DXT count/byte reconciliation is
+unchanged. `coverage.json` records the marker source and diagnostics. Missing
+or ambiguous marker records still fail; file mtimes and guessed job starts
+are never substituted.
+
 ## Interpretation and limits
 
 Use the [reviewed study plan](../../../../docs/specs/DLIO_DXT_Phase_Study.md)

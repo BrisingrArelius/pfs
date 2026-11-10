@@ -99,6 +99,30 @@ def clock_offset(anchor, markers, max_error=.1):
     return (low+high)/2, (high-low)/2
 
 
+def resolve_markers(anchor, markers, counters):
+    """Use measured POSIX timestamps if only a DXT marker record is absent.
+
+    A single known-size write has the same Darshan clock in either module.
+    Never substitute file mtimes, job start seconds or native epoch times.
+    """
+    result, sources = dict(markers), {}
+    marker_bytes = len(b"PFS-DXT-clock-anchor\n")
+    for kind in ("start","end"):
+        path = anchor[kind]["path"]
+        if path in result:
+            sources[path] = "DXT write event"
+            continue
+        values = counters.get(path,{})
+        start, end = values.get("POSIX_F_WRITE_START_TIMESTAMP"), values.get("POSIX_F_WRITE_END_TIMESTAMP")
+        if (values.get("POSIX_WRITES") != 1 or values.get("POSIX_BYTES_WRITTEN") != marker_bytes
+                or values.get("POSIX_READS",0) != 0 or start is None or end is None
+                or not math.isfinite(start) or not math.isfinite(end) or start < 0 or end < start):
+            raise ValueError(f"PID {anchor['pid']}: missing {kind} clock-marker event and no unambiguous POSIX marker timestamp; inspect analysis/coverage.json clock_markers")
+        result[path] = {"start":start,"end":end}
+        sources[path] = "POSIX timestamps of one verified marker write; DXT marker absent"
+    return result, sources
+
+
 def stamp(value, manifest):
     parsed = datetime.fromisoformat(value)
     if parsed.tzinfo is None:
@@ -224,8 +248,14 @@ def analyze_case(case, execute=None, max_clock_error=.1):
                             if event["file"] in markers:
                                 raise ValueError("Clock marker must contain exactly one write")
                             markers[event["file"]] = event
+                report.setdefault("clock_markers",{})[str(pid)] = {
+                    "expected_paths":{kind:anchor[kind]["path"] for kind in ("start","end")},
+                    "dxt_marker_paths":sorted(markers),
+                    "posix_marker_records":{path:values for path,values in counters.items() if ".anchor-" in path}}
+                markers, marker_sources = resolve_markers(anchor,markers,counters)
                 offset, error = clock_offset(anchor, markers, max_clock_error)
-                report["clock_alignment"][str(pid)] = {"wall_minus_dxt_s": offset, "uncertainty_s": error}
+                report["clock_alignment"][str(pid)] = {"wall_minus_dxt_s": offset, "uncertainty_s": error,
+                                                       "marker_sources":marker_sources}
                 observed = defaultdict(Counter)
                 with traced.open() as file:
                     for event in dxt_events(file):
@@ -251,6 +281,10 @@ def analyze_case(case, execute=None, max_clock_error=.1):
                 for name in set(counters) | set(observed):
                     values = counters.get(name, {})
                     actual = observed[name]
+                    if name in marker_sources and marker_sources[name].startswith("POSIX timestamps"):
+                        if actual["read_count"] or actual["write_count"]:
+                            raise ValueError("Ambiguous partially traced clock marker")
+                        continue  # Sole marker write validated above; workload coverage remains strict.
                     for op, suffix in (("read", "READ"), ("write", "WRITTEN")):
                         count_key = "POSIX_READS" if op == "read" else "POSIX_WRITES"
                         expected_count = int(values.get(count_key, 0))
@@ -372,11 +406,42 @@ def pattern_tables(db, output):
     table(output/"streams.csv",rows)
 
 
+def recover_run(run):
+    """Validate finished attempts in place; never rerun workloads or move pools."""
+    path = run/"state.json"
+    state = json.loads(path.read_text())
+    if state["status"] == "running":
+        raise ValueError("Stop the profiling runner before recovering its state")
+    recovered = []
+    for key,progress in state["cases"].items():
+        if progress["status"] == "complete":
+            continue
+        case = run/progress["attempt"]
+        required = [case/name for name in ("raw/summary.json","raw/per_epoch_stats.json",
+                                          "raw/.hydra/config.yaml","checkpoint-sizes.csv")]
+        required.extend(case/f"raw/{rank}_output.json" for rank in range(8))
+        if not all(item.is_file() for item in required):
+            print(f"{key}: native evidence incomplete; invocation still needs restarting")
+            continue
+        analyze_case(case)
+        progress["status"] = "complete"
+        progress["recovered_validation"] = True
+        state["status"] = "interrupted"  # Controller must still verify/restore pools.
+        temporary = path.with_suffix(".tmp")
+        dump(temporary,state)
+        temporary.replace(path)
+        recovered.append(key)
+        print(f"{key}: finished trace validated in place; --continue will skip it")
+    return recovered
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run", type=Path, help="A profile run directory, or one case attempt")
     parser.add_argument("--bin-seconds", type=float, default=5)
     parser.add_argument("--detail", action="store_true", help="Write exact-event interactive detail instead of overview plots")
+    parser.add_argument("--recover",action="store_true",help="Revalidate finished failed/interrupted attempts and mark passed cases complete")
+    parser.add_argument("--validate-only",action="store_true",help="Validate/recover without rendering charts")
     parser.add_argument("--rank", type=int, choices=range(8))
     parser.add_argument("--file", help="Exact file path for a detail view")
     parser.add_argument("--start", type=float, default=0)
@@ -384,6 +449,10 @@ def main():
     args = parser.parse_args()
     if args.bin_seconds <= 0:
         parser.error("--bin-seconds must be positive")
+    if args.recover:
+        if not (args.run/"state.json").is_file():
+            parser.error("--recover requires a study directory with state.json")
+        recover_run(args.run)
     if (args.run / "case.json").exists():
         cases = [args.run]
     else:
@@ -392,7 +461,11 @@ def main():
     if not cases:
         parser.error("No completed profiling cases")
     for case in cases:
-        analyze_case(case)
+        if not args.recover:
+            analyze_case(case)
+    if args.validate_only:
+        print(f"Validated {len(cases)} completed case(s); no workload execution or pool changes")
+        return
     from plots import render, comparison, detail
     if args.detail:
         if len(cases) != 1:
