@@ -70,6 +70,9 @@ def check_logs(directory, ranks=8):
         identity = json.loads(path.read_text())
         matches = [path for path in files if re.search(rf"_id\d+-{identity['pid']}_", path.name)]
         if len(matches) != 1:
+            partials = list(logs.rglob(f"*_id*-{identity['pid']}_*.darshan_partial"))
+            if partials:
+                raise RuntimeError(f"Rank {identity['rank']}, PID {identity['pid']}: unfinished Darshan log: {partials[0]}; reader shutdown may have interrupted log writing")
             raise RuntimeError(f"Rank {identity['rank']}, PID {identity['pid']}: expected one native Darshan log, found {len(matches)} in {logs}")
     for path in files:
         for tool in ("darshan-parser", "darshan-dxt-parser"):
@@ -82,6 +85,7 @@ def main():
 
     original = DarshanProfiler.__init__
     original_start = DarshanProfiler.start
+    original_stop = DarshanProfiler.stop
 
     def native_filename(self):
         original(self)
@@ -95,8 +99,23 @@ def main():
         # disables initialization in new reader/utility processes.
         os.environ.pop("DARSHAN_DISABLE", None)
 
+    def stop(self):
+        args = getattr(self, "_args", None)
+        framework = getattr(args, "framework", None)
+        if getattr(framework, "value", framework) == "pytorch":
+            from dlio_benchmark.framework.torch_framework import TorchFramework
+            loader = TorchFramework.get_instance(True).get_loader()
+            iterator = getattr(getattr(loader, "_dataset", None), "_iterator", None)
+            if iterator is not None:
+                # DLIO 2.0.0 leaves persistent readers alive after stats.end_run.
+                # Close them normally now, rather than daemon termination at
+                # interpreter exit interrupting their native Darshan log writes.
+                iterator._shutdown_workers()
+        original_stop(self)
+
     DarshanProfiler.__init__ = native_filename
     DarshanProfiler.start = start
+    DarshanProfiler.stop = stop
     rank = os.environ.get("PMI_RANK", os.environ.get("OMPI_COMM_WORLD_RANK"))
     if rank is None:
         raise RuntimeError("MPI rank identity is unavailable")
