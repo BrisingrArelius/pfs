@@ -36,6 +36,39 @@ Change the three config constants for a future experiment; choose a **new**
 config. `condition.json` records the actual configured rates per result;
 resuming into an existing condition with different rates is rejected.
 
+### Both workloads across reservations
+
+The combined runner has one **shared deadline** from invocation, including
+staging, cache preparation, DLIO, Darshan validation and restoration:
+
+```bash
+scripts/workloads/dlio/throttled_ssd/run.sh --deadline 6hours
+```
+
+It runs CosmoFlow first, then U-Net with whatever budget remains, for three
+full repetitions in each of pools 14/16/18. Darshan is always enabled; the
+default existing runtime is `~/darshan-nompi/lib/libdarshan.so.0.0.0` (or
+`DARSHAN_RUNTIME_LIB`); `--darshan-library /path/libdarshan.so` overrides it.
+It reserves up to two minutes (10% for short budgets) for stopping owned
+processes and restoring pool 6. A deadline/interruption exits with status 75.
+
+Resume in the next reservation using the same command (automatic continuation)
+or explicitly require an unfinished study:
+
+```bash
+scripts/workloads/dlio/throttled_ssd/run.sh --continue --deadline 6hours
+```
+
+Completed repetitions are journaled and skipped; an interrupted repetition
+restarts from the beginning, with partial raw output/checkpoints preserved.
+The study journal is `~/tejas/dlio/throttled_ssd_1.5/study-*.json` under the
+current config. Resume checks the workload, rates, source and runtime hashes;
+do not change these mid-study. SIGTERM/SIGHUP/Ctrl-C follow the cleanup path;
+SIGKILL cannot, so continuation checks for study-tagged processes and restores
+pool 6 first. A failed cleanup is reported for inspection. The legacy
+individual U-Net/CosmoFlow commands below remain non-resumable; use `run.sh`
+for the shared-deadline workflow.
+
 For a single `--pool` run, the four targets must already be in that pool,
 and `systemd` must report the configured read/write limits (currently
 **45 MiB/s** fast and **30 MiB/s** slow). `pool_common.py` checks pool membership,

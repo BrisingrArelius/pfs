@@ -61,7 +61,7 @@ def instrument(command, directory, dataset, checkpoints, library):
             "++workload.workflow.profiling=true", "++workload.profiling.profiler=darshan"]
 
 
-def check_logs(directory, ranks=8):
+def check_logs(directory, ranks=8, execute=None):
     logs = directory/"darshan"
     files = sorted(logs.rglob("*.darshan"))
     workers = sorted(logs.glob("worker-*.json"))
@@ -76,7 +76,7 @@ def check_logs(directory, ranks=8):
             raise RuntimeError(f"Rank {identity['rank']}, PID {identity['pid']}: expected one native Darshan log, found {len(matches)} in {logs}")
     for path in files:
         for tool in ("darshan-parser", "darshan-dxt-parser"):
-            subprocess.run([tool, str(path)], stdout=subprocess.DEVNULL, check=True)
+            (execute or subprocess.run)([tool, str(path)], stdout=subprocess.DEVNULL, check=True)
     print(f"Darshan: {ranks} rank logs present; {len(workers)} forked-process logs checked; {len(files)} total logs parsed without incomplete-module errors: {logs}", flush=True)
 
 

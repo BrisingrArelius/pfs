@@ -33,10 +33,10 @@ CLASSES = {"resnet": "normal.run_resnet50_pools.ResNetCheckpointing",
            "unet": "normal.run_unet3d_pools.SeededPyTorchCheckpointing",
            "cosmoflow": "normal.run_cosmoflow_pools.CosmoFlowCheckpointing"}
 
-# Enabled only by the reservation-aware ResNet runner. Other runners retain
-# their existing subprocess behavior.
+# Enabled by reservation-aware runners. Other runners retain their behavior.
 DEADLINE = None
 MANAGED = False
+MANAGED_ID = None
 
 
 class DeadlineReached(RuntimeError):
@@ -92,6 +92,44 @@ def execute(command, **kwargs):
             stop_group(process)
             raise subprocess.CalledProcessError(process.returncode, command, stdout, stderr)
         return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
+def owned_processes(identifier):
+    """Only find local processes explicitly tagged for this reservation study."""
+    if not identifier:
+        return []
+    marker = ("PFS_DLIO_STUDY_ID=" + identifier).encode()
+    result = []
+    for path in Path("/proc").iterdir():
+        if not path.name.isdigit() or int(path.name) == os.getpid():
+            continue
+        try:
+            if marker in (path / "environ").read_bytes().split(b"\0"):
+                stat = (path / "stat").read_text()
+                if stat[stat.rfind(")")+2:].split()[0] != "Z":
+                    result.append(int(path.name))
+        except (OSError, ValueError):
+            continue
+    return result
+
+
+def stop_owned(identifier):
+    """Stop orphaned study processes before changing storage-pool membership."""
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        for pid in owned_processes(identifier):
+            try:
+                descriptor = os.pidfd_open(pid)
+                try:
+                    signal.pidfd_send_signal(descriptor, sig)
+                finally:
+                    os.close(descriptor)
+            except ProcessLookupError:
+                pass
+        until = time.monotonic() + 2
+        while owned_processes(identifier) and time.monotonic() < until:
+            time.sleep(.05)
+    if owned_processes(identifier):
+        raise RuntimeError("Study processes are still alive; refusing to move storage targets")
 
 
 def beegfs(*args):
@@ -277,6 +315,8 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None,
     env = os.environ.copy()
     if darshan is not None:
         env = dlio_darshan.clean_environment(env)
+    if MANAGED_ID:
+        env["PFS_DLIO_STUDY_ID"] = MANAGED_ID
     env["PYTHONPATH"] = os.pathsep.join((str(NORMAL.parent), str(NORMAL),
                                          env.get("PYTHONPATH", "")))
     retained = {}
@@ -373,7 +413,7 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None,
             devices.writerows(io_rows)
             devicefile.flush()
             if darshan is not None:
-                dlio_darshan.check_logs(directory)
+                dlio_darshan.check_logs(directory, execute=execute if MANAGED else None)
             files = sorted(file for file in checkpoint_dir.rglob("*") if file.is_file())
             sizes = checkpoint_sizes(files, profile, (2,) if pilot else (2, 4), size)
             checkpoint_osts = placement(files, directory / "checkpoint-osts.tsv")

@@ -6,6 +6,13 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Added a combined `throttled_ssd/run.sh --deadline 6hours` reservation
+  runner: CosmoFlow then U-Net under one deadline, with Darshan, per-repetition
+  atomic progress journals, automatic/explicit continuation, interrupted raw
+  preservation and pool-6 restoration. Resume checks workload/rate/source and
+  runtime fingerprints; tagged orphan-process cleanup precedes target moves.
+  Added offline tests for shared budget, workload handoff, interruption,
+  unchanged completed repetitions, fingerprint mismatches and cleanup.
 - Added shared throttled experiment configuration for fast target rate, ratio
   and result directory, currently 45/30 MiB/s (1.5:1) and `throttled_ssd_1.5`. Both
   U-Net and CosmoFlow now use pools 14/16/18 by default with three repetitions;
