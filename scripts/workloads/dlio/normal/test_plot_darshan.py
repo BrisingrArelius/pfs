@@ -66,16 +66,19 @@ class PilotPlotTests(unittest.TestCase):
             self.assertEqual(next(event for event in data["events"] if event["op"]=="write")["start_s"],9)
             self.assertEqual(next(event for event in data["events"] if event["op"]=="read")["thread"],"42")
             output=root/"figures"
+            output.mkdir()
+            for name in ("A-phase-activity.svg","pilot-darshan.png","pilot-darshan.json"):
+                (output/name).write_text("superseded output")
             plot.render(data,output)
-            image=plot.plt.imread(output/"pilot-darshan.png")
+            image=plot.plt.imread(output/"ABC.png")
             self.assertGreater(image.shape[0],100)
-            self.assertIn("<svg",(output/"pilot-darshan.svg").read_text())
-            saved=json.loads((output/"pilot-darshan.json").read_text())
+            saved=json.loads((output/"plot-data.json").read_text())
             self.assertEqual(saved["rank_api_bytes"],data["rank_api_bytes"])
             self.assertEqual(sum(item["count"] for item in saved["request_time_bins"]["counts"]),3)
-            for name in ("A-phase-activity","B-rank-activity","C-request-sizes"):
-                self.assertTrue((output/f"{name}.png").is_file())
-                self.assertIn("COARSE",(output/f"{name}.svg").read_text())
+            self.assertEqual(saved["event_count"],3)
+            self.assertNotIn("events",saved)
+            self.assertTrue(any("COARSE" in note for note in saved["limitations"]))
+            self.assertEqual(sorted(path.name for path in output.iterdir()),["ABC.png","plot-data.json"])
 
     def test_unknown_process_with_measured_io_is_not_dropped(self):
         with tempfile.TemporaryDirectory() as directory:

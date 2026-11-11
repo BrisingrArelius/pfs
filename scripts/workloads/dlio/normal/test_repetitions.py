@@ -102,8 +102,11 @@ class RepetitionTests(unittest.TestCase):
         profile=SimpleNamespace(folder="cosmoflow",profile="cosmoflow_v100",files=1,
                                 batch_size=1,reader_threads=4,model_bytes=100)
         for module in (normal,throttled):
-            for count,pilot,expected in ((1,False,1),(3,False,3),(3,True,1)):
-                with self.subTest(suite=module.__name__,count=count,pilot=pilot), \
+            cases=[(1,False,1,None),(3,False,3,None),(3,True,1,None)]
+            if module is normal:
+                cases.extend((1,False,1,pool) for pool in (1,3,6))
+            for count,pilot,expected,selected_pool in cases:
+                with self.subTest(suite=module.__name__,count=count,pilot=pilot,pool=selected_pool), \
                      tempfile.TemporaryDirectory() as directory,ExitStack() as stack,redirect_stdout(StringIO()):
                     root=Path(directory)
                     data=root/"data"
@@ -127,8 +130,8 @@ class RepetitionTests(unittest.TestCase):
                         stack.enter_context(patch.object(module,"RESULT_ROOT",root/"results"))
                         stack.enter_context(patch.object(module,"data_files",return_value=[data/"input"]))
                         stack.enter_context(patch.object(module.subprocess,"run",side_effect=execute))
-                        module.run(profile,"checkpoint.Class",100,pilot=pilot,repetitions=count)
-                        expected*=3 if not pilot else 1
+                        module.run(profile,"checkpoint.Class",100,pilot=pilot,repetitions=count,pool=selected_pool)
+                        expected*=3 if not pilot and selected_pool is None else 1
                     else:
                         stack.enter_context(patch.dict(module.WORKLOADS,{"cosmoflow":profile}))
                         stack.enter_context(patch.object(module,"verify"))
@@ -141,6 +144,8 @@ class RepetitionTests(unittest.TestCase):
                     for command in commands:
                         self.assertIn(f"++workload.train.epochs={2 if pilot else 5}",command)
                         self.assertIn("++workload.checkpoint.type=all_ranks",command)
+                        if selected_pool is not None:
+                            self.assertTrue(any(f"/pool{selected_pool}/dataset" in arg for arg in command))
 
     def test_throttled_selected_pools_forward_one_invocation_and_restore(self):
         module=throttled_module()

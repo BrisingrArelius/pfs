@@ -90,6 +90,11 @@ process each completed `rep1-poolN` directory independently. The full-sweep
 performance analyzer still expects all nine runs. Changing the option/source
 does not change a process that is already running.
 
+To rerun only one normal pool, add `--pool 1` (or `3` / `6`). For example,
+`run_cosmoflow_pools.py --pool 1 --repetitions 1 --darshan` runs one full
+five-epoch Default invocation and writes a new timestamped run directory.
+`--pilot` remains restricted to pool 1. Existing captures are not overwritten.
+
 For the complete plotting-only study, run each workload with
 `--repetitions 1 --darshan` here (pools 1/3/6), then use the throttled runner's
 `--all-pools --pools 14 16 18 --repetitions 1 --darshan`. This is six complete
@@ -114,14 +119,16 @@ python3 scripts/workloads/dlio/normal/plot_darshan.py \
 
 Pass the printed pilot directory or its `rep1-pool1` subdirectory. The script
 checks all recorded process logs before creating `rep1-pool1/darshan-plots/`
-with `A-phase-activity`, `B-rank-activity`, `C-request-sizes` PNG/SVG figures,
-plus the `pilot-darshan` summary and JSON containing raw requests/plotted values.
+with one `ABC.png` combining all three views and a compact `plot-data.json`
+containing plotted values. No SVGs or separate panel/summary images are generated;
+rerendering removes this plotter's superseded outputs in the selected directory.
 A shows native epoch bands with nested rank-0 checkpoint markers and combined
 read/write activity; B groups same-operation activity by owner rank including
 readers; C shows actual DXT POSIX request-size categories over time, with a
 shared count-to-glyph-area scale and 1-second bins (`--bin-seconds` overrides).
-Zero-byte EOF calls are retained. The summary separates POSIX/STDIO byte views;
-STDIO bytes are not extra bytes to add to POSIX.
+Zero-byte EOF calls are retained. The picture annotates aggregate STDIO writes
+separately; STDIO bytes are not extra bytes to add to POSIX. Original per-process
+Darshan logs are the raw request source, rather than a duplicate event-list JSON.
 
 **Existing pilot alignment is coarse:** the installed standard parser exposes
 whole-second process job starts, and the offset between recorded job start
@@ -199,7 +206,7 @@ U-Net's missing native training rates remain blank; its plotted training
 throughput uses expected samples × configured mean record size divided by
 available training-block time or, for epochs 1/3/5, epoch wall time. This is
 an estimate, not measured read traffic. Curated PNGs and comparison CSVs are
-in `results/workloads/plots/dlio/{unet,resnet}/`.
+in `results/workloads/plots/dlio/normal/{unet,resnet,cosmoflow}/`.
 
 ## ResNet call chain
 

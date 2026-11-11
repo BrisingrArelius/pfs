@@ -111,9 +111,13 @@ def metrics(output, pool, repetition, dataset_osts, checkpoint_osts, sizes):
     return rows
 
 
-def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None, repetitions=3):
+def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None, repetitions=3, pool=None):
     if repetitions<1:
         raise ValueError("repetitions must be positive")
+    if pool is not None and pool not in POOLS:
+        raise ValueError(f"Expected a normal pool in {POOLS}")
+    if pilot and pool not in (None,1):
+        raise ValueError("The normal pilot uses pool 1")
     repetitions=1 if pilot else repetitions
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
         raise RuntimeError("These runners require the installed DLIO 2.0.0")
@@ -127,7 +131,7 @@ def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None, repet
     if darshan is not None:
         env = dlio_darshan.clean_environment(env)
     env["PYTHONPATH"] = str(Path(__file__).resolve().parent) + os.pathsep + env.get("PYTHONPATH", "")
-    pools = (1,) if pilot else POOLS
+    pools = (1,) if pilot else ((pool,) if pool is not None else POOLS)
     targets = {}
     for pool in pools:
         print(f"{profile.profile}: checking pool {pool} inputs", flush=True)

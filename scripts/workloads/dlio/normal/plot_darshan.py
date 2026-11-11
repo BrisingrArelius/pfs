@@ -2,7 +2,7 @@
 """Plot one saved DLIO invocation (including a two-epoch pilot), offline."""
 
 import argparse
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 import json
 import math
@@ -108,7 +108,12 @@ def collect(case, native_utc_offset=None):
                 raise ValueError(f"Checkpoint is outside epoch {epoch}")
             checkpoints.append([left,right])
         phases.append({"epoch":int(epoch),"start_s":start,"end_s":end,"rank0_checkpoints":checkpoints})
-    return {"model":config["model"],"source":str(case.resolve()),"phases":phases,
+    pool_match=re.search(r"pool(\d+)$",case.name)
+    pool=int(pool_match[1]) if pool_match else None
+    pool_label={1:"Default",3:"HDD",6:"SSD"}.get(pool,"Pool")
+    return {"model":config["model"],"pool":pool,
+            "pool_label":f"{pool_label} (pool {pool})" if pool is not None else "Single invocation",
+            "source":str(case.resolve()),"phases":phases,
             "rank_api_bytes":[dict(row) for row in totals],
             "dxt_request_sizes":{op:dict(sorted(counts.items())) for op,counts in sizes.items()},
             "events":events,"clocks":clocks,"native_utc_offset_s":native_utc_offset,
@@ -162,7 +167,7 @@ def activity(ax, intervals, y, color):
             ax.scatter(zero,[y]*len(zero),marker="|",s=12,color=color,rasterized=True)
 
 
-def render_abc(data, output, bin_seconds=1):
+def render(data, output, bin_seconds=1):
     if bin_seconds<=0:
         raise ValueError("bin_seconds must be positive")
     events=data["events"]
@@ -171,15 +176,10 @@ def render_abc(data, output, bin_seconds=1):
     left=min(0,math.floor(min(event["start_s"] for event in events)/bin_seconds)*bin_seconds)
     right=max(data["phases"][-1]["end_s"],max(event["end_s"] for event in events),
               (math.floor(max(event["start_s"] for event in events)/bin_seconds)+1)*bin_seconds)
-    def save(fig, name):
-        fig.suptitle(f"{data['model']} · {name}\n{CLOCK_NOTE}",fontsize=12)
-        fig.text(.5,.015,"POSIX API calls, not disk service. Blank time is unclassified. STDIO-only counters have no DXT timing.",ha="center",fontsize=8)
-        fig.tight_layout(rect=(0,.04,1,.91))
-        for suffix in ("png","svg"):
-            fig.savefig(output/f"{name}.{suffix}",dpi=150)
-        plt.close(fig)
-
-    fig,axes=plt.subplots(2,1,figsize=(13,6),sharex=True,gridspec_kw={"height_ratios":[1,2]})
+    output.mkdir(parents=True,exist_ok=True)
+    ranks=len(data["rank_api_bytes"])
+    fig,axes=plt.subplots(4,1,figsize=(14,max(11,ranks*.4+8)),sharex=True,
+                          gridspec_kw={"height_ratios":[.6,1.1,max(2,ranks*.27),1.6]})
     ax=axes[0]
     for phase in data["phases"]:
         start,end=phase["start_s"],phase["end_s"]
@@ -188,7 +188,7 @@ def render_abc(data, output, bin_seconds=1):
         ax.text((start+end)/2,.5,f"Epoch {phase['epoch']}",ha="center",va="center")
         for start,end in phase["rank0_checkpoints"]:
             ax.broken_barh([(start,end-start)],(.25,.5),facecolors=COLORS["write"])
-    ax.set(ylim=(0,1),yticks=[],ylabel="Native phases",title="Complete epoch bands; orange checkpoint timers are nested (rank 0)")
+    ax.set(ylim=(0,1),yticks=[],ylabel="Native phases",title="A · Complete epoch bands with nested rank-0 checkpoint timers")
     ax=axes[1]
     phase_bands(ax,data)
     annotations=[]
@@ -197,78 +197,51 @@ def render_abc(data, output, bin_seconds=1):
         activity(ax,[(event["start_s"],event["end_s"]) for event in selected],y,COLORS[op])
         annotations.append(f"{op}: {len(selected):,} requests, {format_bytes(sum(e['length'] for e in selected))}")
     ax.set(yticks=[0,1],yticklabels=["Read union","Write union"],ylim=(-.5,1.5),xlim=(left,right),
-           xlabel="Seconds from native epoch-1 start",title="All-rank + reader activity unions · "+"; ".join(annotations))
-    save(fig,"A-phase-activity")
+           title="All-rank + reader activity · "+"; ".join(annotations))
 
-    fig,ax=plt.subplots(figsize=(13,max(5,len(data["rank_api_bytes"])*.55)))
+    ax=axes[2]
     phase_bands(ax,data)
     for rank in range(len(data["rank_api_bytes"])):
         for delta,op in ((-.15,"read"),(.15,"write")):
             activity(ax,[(e["start_s"],e["end_s"]) for e in events if e["rank"]==rank and e["op"]==op],rank+delta,COLORS[op])
     for op,color in COLORS.items():
         ax.plot([],[],color=color,linewidth=4,label=op)
-    ax.legend()
-    ax.set(yticks=range(len(data["rank_api_bytes"])),ylabel="MPI owner rank (includes forked readers)",
-           xlabel="Seconds from native epoch-1 start",xlim=(left,right),
-           ylim=(len(data["rank_api_bytes"])-.5,-.5),title="Same-operation unions; raw per-process requests retained in JSON")
-    save(fig,"B-rank-activity")
+    ax.legend(loc="upper right",ncol=2)
+    ax.set(yticks=range(ranks),ylabel="MPI owner rank",xlim=(left,right),
+           ylim=(ranks-.5,-.5),title="B · Rank-owned activity, including recorded readers (same-operation unions)")
 
     counts=Counter((math.floor(e["start_s"]/bin_seconds),size_category(e["length"]),e["op"]) for e in events)
     scale=max(counts.values())
-    fig,ax=plt.subplots(figsize=(13,6))
+    ax=axes[3]
     phase_bands(ax,data)
     for op,delta in (("read",-.12),("write",.12)):
         selected=[(key,count) for key,count in counts.items() if key[2]==op]
         ax.scatter([(key[0]+.5)*bin_seconds for key,count in selected],
                    [key[1]+delta for key,count in selected],
                    s=[8+192*count/scale for key,count in selected],color=COLORS[op],alpha=.7,label=op)
-    ax.legend(loc="upper left")
     ax.set(yticks=range(5),yticklabels=SIZE_LABELS,ylim=(-.6,4.6),xlim=(left,right),
-           xlabel="Seconds from native epoch-1 start",title=f"Request categories over time · {bin_seconds:g} s bins · common count-to-area scale; largest glyph = {scale:,} requests")
-    save(fig,"C-request-sizes")
+           xlabel="Seconds from native epoch-1 start",title=f"C · Request sizes over time · {bin_seconds:g} s bins · largest glyph = {scale:,} requests (shared read/write scale)")
     data["request_time_bins"]={"bin_seconds":bin_seconds,"largest_glyph_count":scale,
                               "counts":[{"bin":key[0],"category":key[1],"op":key[2],"count":count}
                                         for key,count in sorted(counts.items())]}
-
-
-def render(data, output, bin_seconds=1):
-    output.mkdir(parents=True,exist_ok=True)
-    fig,axes=plt.subplots(3,1,figsize=(12,10),constrained_layout=True)
-    ax=axes[0]
-    for index,phase in enumerate(data["phases"]):
-        left,right=phase["start_s"],phase["end_s"]
-        ax.broken_barh([(left,right-left)],(index-.3,.6),facecolors="#8DB4D6")
-        for start,end in phase["rank0_checkpoints"]:
-            ax.broken_barh([(start,end-start)],(index-.15,.3),facecolors="#D08734")
-    ax.set(yticks=range(len(data["phases"])),yticklabels=[f"Epoch {p['epoch']}" for p in data["phases"]],
-           xlabel="Seconds from native epoch-1 start",title="Native epoch bands; orange = nested rank-0 checkpoint timer")
-    ax=axes[1]
-    series=[("POSIX_BYTES_READ","POSIX read"),("POSIX_BYTES_WRITTEN","POSIX write"),
-            ("STDIO_BYTES_READ","STDIO read"),("STDIO_BYTES_WRITTEN","STDIO write")]
-    ranks=range(len(data["rank_api_bytes"]))
-    for index,(counter,label) in enumerate(series):
-        ax.bar([rank+(index-1.5)*.2 for rank in ranks],
-               [row.get(counter,0)/1048576 for row in data["rank_api_bytes"]],width=.2,label=label)
-    ax.set(xticks=list(ranks),xlabel="MPI owner rank (includes recorded forked readers)",ylabel="API MiB",
-           title="Dataset + checkpoint bytes; POSIX and STDIO are separate views, not additive")
-    ax.legend(ncol=4)
-    labels=["0 B (EOF)","1–4 KiB",">4–64 KiB",">64 KiB–1 MiB",">1 MiB"]
-    ax=axes[2]
-    for index,op in enumerate(("read","write")):
-        bins=[0]*5
-        for length,count in data["dxt_request_sizes"][op].items():
-            length=int(length)
-            bucket=next(i for i,limit in enumerate((0,4096,65536,1048576,float("inf"))) if length<=limit)
-            bins[bucket]+=count
-        ax.bar([i+(index-.5)*.35 for i in range(5)],bins,width=.35,label=op)
-    ax.set(xticks=range(5),xticklabels=labels,ylabel="Request count",title="Actual POSIX DXT request-size distribution (all measured paths)")
-    ax.legend()
-    fig.suptitle(f"DLIO {data['model']} · {len(data['phases'])}-epoch capture diagnostic",fontsize=15)
-    for suffix in ("png","svg"):
-        fig.savefig(output/f"pilot-darshan.{suffix}",dpi=150)
+    model={"cosmoflow":"CosmoFlow","unet3d":"U-Net 3D"}.get(data["model"],data["model"])
+    fig.suptitle(f"{model} · {data.get('pool_label','Single invocation')} · {len(data['phases'])} epochs",fontsize=16)
+    fig.text(.5,.955,CLOCK_NOTE,ha="center",fontsize=9,color="#795123")
+    stdio_write=sum(row.get("STDIO_BYTES_WRITTEN",0) for row in data["rank_api_bytes"])
+    fig.text(.5,.025,f"STDIO writes: {format_bytes(stdio_write)} aggregate only; no individual STDIO request timing.",ha="center",fontsize=9)
+    fig.text(.5,.01,"POSIX API calls, not disk service. Blank time is unclassified. Orange phase shading marks rank-0 checkpoint timers.",ha="center",fontsize=9)
+    fig.tight_layout(rect=(0,.05,1,.94))
+    fig.savefig(output/"ABC.png",dpi=150)
     plt.close(fig)
-    render_abc(data,output,bin_seconds)
-    (output/"pilot-darshan.json").write_text(json.dumps(data,indent=2)+"\n")
+    summary={key:value for key,value in data.items() if key!="events"}
+    summary["event_count"]=len(events)
+    summary["raw_event_source"]="Original per-process .darshan logs in the invocation's darshan/ directory"
+    (output/"plot-data.json").write_text(json.dumps(summary,indent=2)+"\n")
+    # Remove only the superseded outputs of this plotter after successful save.
+    for name in ("A-phase-activity","B-rank-activity","C-request-sizes","pilot-darshan"):
+        for suffix in ("png","svg"):
+            (output/f"{name}.{suffix}").unlink(missing_ok=True)
+    (output/"pilot-darshan.json").unlink(missing_ok=True)
 
 
 def main():
@@ -284,7 +257,7 @@ def main():
     data=collect(case,args.native_utc_offset)
     output=args.output or case/"darshan-plots"
     render(data,output,args.bin_seconds)
-    print(f"Saved A-phase-activity, B-rank-activity, C-request-sizes and pilot-darshan PNG/SVG plus JSON in {output}")
+    print(f"Saved one combined ABC.png and compact plot-data.json in {output}")
 
 
 if __name__=="__main__":

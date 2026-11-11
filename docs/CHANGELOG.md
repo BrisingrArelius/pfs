@@ -6,6 +6,25 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Added opt-in `--pool 1|3|6` to normal U-Net/CosmoFlow runners for a single
+  full-pool rerun, retaining defaults and pool-1-only pilot behavior. Renamed
+  the curated normal CosmoFlow figure folder to `darshan/` for easier updates.
+- Flattened the normal CosmoFlow Darshan gallery: pool-labelled PNG and JSON
+  files now live directly beside the gallery index, with updated links.
+- Simplified Darshan figures to one combined A/B/C PNG per invocation/pool.
+  Removed separate panel images, SVG exports and the extra summary figure;
+  successful rerenders clean only this plotter's legacy filenames. Use a
+  compact plotted-value JSON instead of duplicating raw event lists. Updated
+  rendering tests and the Default/HDD/SSD gallery to show three pictures total.
+- Grouped normal workload plot folders under
+  `results/workloads/plots/dlio/normal/{cosmoflow,unet,resnet}/`, matching the
+  existing sibling `throttled_ssd/` layout. Updated the current documentation
+  and gallery's relative source-data links after the move.
+- Generated A/B/C and capture-summary figures for the local normal CosmoFlow
+  repetition-1 captures on pools 1/3/6 using confirmed source UTC+05:30.
+  Curated PNG/SVG copies in the existing plot tree under
+  `cosmoflow/darshan-normal-20261111/` with an offline HTML gallery, clear pool
+  labels, source-data links and the coarse-clock/STDIO-only write limitations.
 - Corrected the remaining colva3 cap mappings for targets 305/306 to whole
   `/dev/nvme1n1` and `/dev/nvme2n1` after target 305 showed the same missing
   physical `io.max` entry. All four targets now consistently use physical

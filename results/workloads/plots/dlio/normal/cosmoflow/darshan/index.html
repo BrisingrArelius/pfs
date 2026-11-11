@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CosmoFlow · Default / HDD / SSD · Darshan A/B/C</title>
+  <style>
+    :root { color-scheme: light; font: 16px/1.5 system-ui, sans-serif; color: #20314a; background: #f3f6fa; }
+    body { max-width: 1380px; margin: auto; padding: 28px; }
+    h1 { margin-bottom: 6px; font-size: 30px; } h2 { margin-bottom: 6px; }
+    .subtitle, .meta { color: #586b82; } .subtitle { margin-top: 0; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0; }
+    a { color: #2365a0; } nav a { background: white; padding: 9px 17px; border-radius: 24px; text-decoration: none; border: 1px solid #dce4ed; }
+    .note { background: #fff8e9; border-left: 4px solid #d08734; padding: 14px 18px; border-radius: 6px; }
+    section { scroll-margin-top: 20px; margin: 32px 0 42px; }
+    figure { margin: 0; background: white; padding: 12px; border: 1px solid #dde5ee; border-radius: 12px; box-shadow: 0 3px 14px #17355108; }
+    figure img { display: block; width: 100%; height: auto; border-radius: 5px; }
+    figcaption { padding: 8px 6px 4px; } figcaption strong { display: block; }
+    .links { display: flex; gap: 14px; margin-top: 7px; font-size: 14px; }
+    .meta { margin: 0 0 16px; font-size: 14px; }
+    footer { border-top: 1px solid #dce4ed; padding-top: 16px; font-size: 14px; }
+    @media (max-width: 1000px) { body { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CosmoFlow · Normal-pool Darshan captures</h1>
+    <p class="subtitle">Default / HDD / SSD · one combined A/B/C picture per pool</p>
+    <nav><a href="#default">Default · pool 1</a><a href="#hdd">HDD · pool 3</a><a href="#ssd">SSD · pool 6</a></nav>
+    <div class="note"><strong>Reading these figures:</strong> cross-process timing is coarse, with uncalibrated initialization offsets. The source timezone is UTC+05:30. Checkpoints have STDIO byte counters but no POSIX DXT write events in these captures: empty write timelines do not mean no checkpoints. Axis and glyph scales are labelled separately in each figure. Click an image for full resolution.</div>
+  </header>
+  <section id="default">
+    <h2>Default · Pool 1</h2>
+    <p class="meta">Repetition 1 · <a href="default-pool1.png">Full-resolution picture</a> · <a href="default-pool1.json">Plotted values</a></p>
+    <figure><a href="default-pool1.png"><img src="default-pool1.png" alt="Default pool: combined A phase/activity, B rank activity and C request-size timeline"></a><figcaption>A · Phases/activity &nbsp; B · Rank-owned activity &nbsp; C · Request sizes over time</figcaption></figure>
+  </section>
+  <section id="hdd">
+    <h2>HDD · Pool 3</h2>
+    <p class="meta">Repetition 1 · <a href="hdd-pool3.png">Full-resolution picture</a> · <a href="hdd-pool3.json">Plotted values</a></p>
+    <figure><a href="hdd-pool3.png"><img src="hdd-pool3.png" alt="HDD pool: combined A phase/activity, B rank activity and C request-size timeline"></a><figcaption>A · Phases/activity &nbsp; B · Rank-owned activity &nbsp; C · Request sizes over time</figcaption></figure>
+  </section>
+  <section id="ssd">
+    <h2>SSD · Pool 6</h2>
+    <p class="meta">Repetition 1 · <a href="ssd-pool6.png">Full-resolution picture</a> · <a href="ssd-pool6.json">Plotted values</a></p>
+    <figure><a href="ssd-pool6.png"><img src="ssd-pool6.png" alt="SSD pool: combined A phase/activity, B rank activity and C request-size timeline"></a><figcaption>A · Phases/activity &nbsp; B · Rank-owned activity &nbsp; C · Request sizes over time</figcaption></figure>
+  </section>
+  <footer>Each pool's plotted-values JSON records its source capture. A/B/C show observed API activity; they do not establish physical disk service times or classify blank time as compute/metadata.</footer>
+</body>
+</html>

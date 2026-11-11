@@ -57,6 +57,13 @@ class LauncherTests(unittest.TestCase):
             result=subprocess.run([sys.executable,str(script),"--repetitions","0"],capture_output=True,text=True)
             self.assertEqual(result.returncode,2)
             self.assertIn("must be positive",result.stderr)
+            run=Mock()
+            with patch.dict(sys.modules,{"pool_common":types.SimpleNamespace(run=run)}), \
+                 patch.object(sys,"argv",[str(script),"--pool","1","--repetitions","1"]):
+                runpy.run_path(str(script),run_name="__main__")
+            self.assertEqual(run.call_args.kwargs["pool"],1)
+            result=subprocess.run([sys.executable,str(script),"--pilot","--pool","3"],capture_output=True,text=True)
+            self.assertEqual(result.returncode,2)
 
     def test_inherited_capture_settings_do_not_override_job_configuration(self):
         environment={"PATH":"/bin", "PYTHONPATH":"/project", "DARSHAN_MOD_DISABLE":"POSIX",
@@ -242,7 +249,7 @@ d.main()
                                  8192+8192*len(b"record-capacity-probe")*5)
                 self.assertEqual(measured["rank_api_bytes"][0]["STDIO_BYTES_WRITTEN"],len(b"checkpoint-index"))
                 plot.render(measured,root/"darshan-plots")
-                self.assertTrue((root/"darshan-plots/pilot-darshan.png").is_file())
+                self.assertTrue((root/"darshan-plots/ABC.png").is_file())
 
 
 if __name__ == "__main__":
