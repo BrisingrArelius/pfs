@@ -51,7 +51,8 @@ cfg_dir()  { echo "$V2_CKPT/cfg_$1"; }       # cfg_dir allF|...|D
 #   balanced     F F S S            F F S S
 #   onefast      F S S S            S S S S
 #   D            mixed pool         mixed pool
-CONFIGS=(allF allS unbalanced balanced onefast D)
+#   antiphase    F F S S            S S F F     (added after the first matrix)
+CONFIGS=(allF allS unbalanced balanced onefast D antiphase)
 declare -A PLACEMENT=(
     #             files: 0 1 2 3 4 5 6 7
     [allF]="F F F F F F F F"
@@ -60,6 +61,7 @@ declare -A PLACEMENT=(
     [balanced]="S S S S F F F F"
     [onefast]="S S S S F S S S"
     [D]="D D D D D D D D"
+    [antiphase]="S S F F F F S S"   # rank 0: 4,5 F then 0,1 S; rank 1: 6,7 S then 2,3 F
 )
 
 source "$V1_RUN/env.sh"

@@ -47,7 +47,8 @@ MiB = 1048576
 CHUNK = 512 * 1024
 
 LABEL = {"allF": "All F", "allS": "All S", "unbalanced": "Unbalanced",
-         "balanced": "Balanced", "onefast": "One file fast", "D": "Default pool D"}
+         "balanced": "Balanced", "onefast": "One file fast", "D": "Default pool D",
+         "antiphase": "Anti-phased"}
 # Estimated run time (minutes) from experiment_context.md, drawn as a band.
 PREDICTED = {"allF": (2, 2.5), "allS": (8, 10), "unbalanced": (8, 10),
              "balanced": (5, 6.3), "onefast": (8, 10), "D": (7.5, 8.5)}
@@ -59,7 +60,7 @@ INK, INK2, MUTED, GRID, SURF = "#0b0b0b", "#52514e", "#8a8983", "#e5e4e0", "#fcf
 MEDIUM_C = {"F": "#2a78d6", "S": "#eb6834", "F+S": "#1baf7a"}
 RANK_C = {0: "#52514e", 1: "#a8a7a0"}
 TOTAL_C = "#52514e"
-CATEGORICAL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"]
+CATEGORICAL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#7a5cc4"]
 
 plt.rcParams.update({
     "figure.facecolor": SURF, "axes.facecolor": SURF, "savefig.facecolor": SURF,
@@ -303,7 +304,7 @@ def fig_latency_cdf(all_ops, order, cfgs, out):
                                 "lat_ms"].to_numpy())
         if not len(v):
             continue
-        ax.plot(v, np.arange(1, len(v) + 1) / len(v), color=CATEGORICAL[k % 6],
+        ax.plot(v, np.arange(1, len(v) + 1) / len(v), color=CATEGORICAL[k % len(CATEGORICAL)],
                 linewidth=2, label=f"{LABEL.get(c, c)}  ({rank_pattern(cfgs, c)})")
     ax.set_xscale("log")
     ax.set_xlabel("payload read latency (ms, log scale)")

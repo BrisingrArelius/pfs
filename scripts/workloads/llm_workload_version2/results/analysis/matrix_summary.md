@@ -6,5 +6,6 @@
 | Balanced | FFSS \| FFSS | 3 | 8.02 ± 0.02 | 5–6.3 | 8.02 ± 0.02 | 8.02 ± 0.03 | 35.7 ± 0.1 | 18 / 109 | 964 / 2758 |
 | One file fast | FSSS \| SSSS | 3 | 11.40 ± 0.01 | 8–10 | 10.24 ± 0.02 | 11.40 ± 0.01 | 25.1 ± 0.0 | 27 / 167 | 1292 / 2759 |
 | Default pool D | DDDD \| DDDD | 3 | 11.25 ± 0.02 | 7.5–8.5 | 11.25 ± 0.02 | 11.24 ± 0.03 | 25.5 ± 0.0 | 23 / 128 | 1366 / 2773 |
+| Anti-phased | FFSS \| SSFF | 3 | 6.54 ± 0.01 | nan–nan | 6.54 ± 0.01 | 6.48 ± 0.01 | 43.8 ± 0.1 | 14 / 102 | 779 / 2735 |
 
 ± is one standard deviation across reps. Latency columns are the mean over reps of each run's per-read mean and p95.
