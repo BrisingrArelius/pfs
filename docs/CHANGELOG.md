@@ -6,6 +6,15 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Changed the combined CosmoFlow/U-Net transfer-estimate figure to use the
+  same millisecond axis for both panels, exposing absolute differences while
+  retaining numerical values and the illustrative-estimate qualification.
+- Combined the CosmoFlow and U-Net SSD/cache estimates into one PNG with
+  separate labelled scales, replacing the two previous images.
+- Added two presentation diagrams contrasting idealized file-size/bandwidth
+  equivalents across SSD cap mixes and separate cache microbenchmarks. The
+  146 MiB U-Net illustration explicitly distinguishes the configured mean
+  of 139.8 MiB, and both diagrams label the optimistic assumptions.
 - Condensed `docs/findings.md` into a concise scientific comparison; added
   version-specific DLIO U-Net NPZ/PyTorch reader sources alongside the
   CosmoFlow TFRecord reader and distinguished observations from hypotheses.
