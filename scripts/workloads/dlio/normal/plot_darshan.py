@@ -110,7 +110,9 @@ def collect(case, native_utc_offset=None):
         phases.append({"epoch":int(epoch),"start_s":start,"end_s":end,"rank0_checkpoints":checkpoints})
     pool_match=re.search(r"pool(\d+)$",case.name)
     pool=int(pool_match[1]) if pool_match else None
-    pool_label={1:"Default",3:"HDD",6:"SSD"}.get(pool,"Pool")
+    pool_label={1:"Default",3:"HDD",6:"SSD",14:"4 fast / 0 slow",
+                15:"3 fast / 1 slow",16:"2 fast / 2 slow",
+                17:"1 fast / 3 slow",18:"0 fast / 4 slow"}.get(pool,"Pool")
     return {"model":config["model"],"pool":pool,
             "pool_label":f"{pool_label} (pool {pool})" if pool is not None else "Single invocation",
             "source":str(case.resolve()),"phases":phases,

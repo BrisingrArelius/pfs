@@ -1,0 +1,9 @@
+pool,repetition,phase,epoch,duration_s,bytes_written,throughput,throughput_unit,ost_ids,raw_output
+14,1,training_input_block,1,262.27,,31.380640946836365,samples/s,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14
+14,1,training_input_block,2,158.15,,51.59321752906726,samples/s,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14
+14,1,checkpoint_save_rank0,2,2.78,100000478,34.304995502499374,MiB/s (no fsync),"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14
+14,1,training_input_block,3,155.50,,51.917829386385144,samples/s,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14
+14,1,training_input_block,4,153.86,,51.6024767974839,samples/s,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14
+14,1,checkpoint_save_rank0,4,2.67,100000478,35.718309923950656,MiB/s (no fsync),"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14
+14,1,training_input_block,5,158.04,,51.9723149141814,samples/s,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14
+14,1,training_summary,,,,128.65049342045117,MiB/s (DLIO mean),"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd/cosmoflow/runs-pool14-20261111-101032-030525/rep1-pool14

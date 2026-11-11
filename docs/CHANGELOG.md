@@ -6,6 +6,24 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Condensed `docs/findings.md` into a concise scientific comparison; added
+  version-specific DLIO U-Net NPZ/PyTorch reader sources alongside the
+  CosmoFlow TFRecord reader and distinguished observations from hypotheses.
+- Checked tagged DLIO 2.0.0 TFRecord generator/reader source and the original
+  CosmoFlow paper; documented whole-record logical reads, four parallel reads,
+  physical-read uncertainty, and the original paper's different 64-sample,
+  512 MB TFRecord layout in `docs/findings.md`.
+- Added `docs/findings.md`, a meeting-ready comparison of CosmoFlow and U-Net
+  file sizes, traced request sizes, performance patterns, checkpoint behavior,
+  microbenchmark context, and the explicitly unproven small-file/critical-path
+  hypothesis, with links to evidence and application literature.
+- Generated combined U-Net Darshan figures for the copied pool-14 and
+  pool-16 captures, preserving per-pool plotted-value JSON.
+- Generated combined A/B/C figures for the copied instrumented CosmoFlow
+  throttled pool-14, pool-16 and pool-18 captures under
+  `throttled_ssd/cosmoflow/darshan/`.
+- Label throttled Darshan plots by their actual fast/slow target composition,
+  including pools 14/16/18 used for the one-invocation CosmoFlow study.
 - Added opt-in `--pool 1|3|6` to normal U-Net/CosmoFlow runners for a single
   full-pool rerun, retaining defaults and pool-1-only pilot behavior. Renamed
   the curated normal CosmoFlow figure folder to `darshan/` for easier updates.
