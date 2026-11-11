@@ -1,0 +1,132 @@
+hydra:
+  run:
+    dir: /home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  launcher:
+    _target_: hydra._internal.core_plugins.basic_launcher.BasicLauncher
+  sweeper:
+    _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
+    max_batch_size: null
+    params: null
+  help:
+    app_name: dlio_benchmark
+    header: =========================== ${hydra.help.app_name} ===========================
+    footer: "Please submit questions/bugs to \n  https://github.com/argonne-lcf/dlio_benchmark/issues\n\
+      \n          Copyright (c) 2021 UChicago Argonne, LLC"
+    template: "\n${hydra.help.header}\n\nDLIO - an IO benchmark for deep learning\
+      \ applications. \n\nRunning the benchmark: dlio_benchmark workload=unet3d\n\n\
+      One can select the workload configuration using \"workload={WORKLOAD}\". \n\
+      The corresponding YAML file is ./configs/workload/{WORKLOAD}.yaml folder. \n\
+      Available choise for $APP_CONFIG_GROUPS\nOne can override everything in the\
+      \ command line, for example:\ndlio_benchmark workload.framework=tensorflow\n\
+      \nOne can also create a custom YAML file for a specific workload. \nAn example\
+      \ of a YAML file is as follows. \n\n-------\n$CONFIG\n-------\nA complete list\
+      \ of config options in the YAML file can be found: \nhttps://argonne-lcf.github.io/dlio_benchmark/config.html\n\
+      \nBy default all the output files will be saved in hydra.run.dir. \nThis can\
+      \ be changed in ./configs/config.yaml.\n\n${hydra.help.footer}\n--"
+  hydra_help:
+    template: 'Hydra (${hydra.runtime.version})
+
+      See https://hydra.cc for more info.
+
+
+      == Flags ==
+
+      $FLAGS_HELP
+
+
+      == Configuration groups ==
+
+      Compose your configuration from those groups (For example, append hydra/job_logging=disabled
+      to command line)
+
+
+      $HYDRA_CONFIG_GROUPS
+
+
+      Use ''--cfg hydra'' to Show the Hydra config.
+
+      '
+    hydra_help: ???
+  hydra_logging:
+    version: 1
+    root:
+      level: ERROR
+    disable_existing_loggers: true
+  job_logging:
+    version: 1
+    root:
+      level: ERROR
+    disable_existing_loggers: true
+  env: {}
+  mode: RUN
+  searchpath: []
+  callbacks: {}
+  output_subdir: .hydra
+  overrides:
+    hydra:
+    - hydra.run.dir=/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+    - hydra.mode=RUN
+    task:
+    - workload=resnet50_v100
+    - ++workload.workflow.generate_data=False
+    - ++workload.workflow.train=True
+    - ++workload.workflow.checkpoint=True
+    - ++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/resnet50/pool6/dataset
+    - ++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/resnet50/pool6/checkpoints/rep2-runs-20261026-010423-356906
+    - ++workload.checkpoint.type=all_ranks
+    - ++workload.checkpoint.checkpoint_mechanism_classname=dlio_resnet_checkpoint.ResNetCheckpointing
+    - ++workload.checkpoint.checkpoint_after_epoch=2
+    - ++workload.checkpoint.epochs_between_checkpoints=2
+    - ++workload.checkpoint.model_size=100000000
+    - ++workload.checkpoint.num_layers=0
+    - ++workload.checkpoint.layer_parameters=[]
+    - ++workload.reader.batch_size=64
+    - ++workload.reader.file_shuffle=seed
+    - ++workload.reader.sample_shuffle=seed
+    - ++workload.reader.prefetch_size=2
+    - ++workload.train.epochs=5
+    - ++workload.train.computation_time=0
+  job:
+    name: main
+    chdir: null
+    override_dirname: ++workload.checkpoint.checkpoint_after_epoch=2,++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/resnet50/pool6/checkpoints/rep2-runs-20261026-010423-356906,++workload.checkpoint.checkpoint_mechanism_classname=dlio_resnet_checkpoint.ResNetCheckpointing,++workload.checkpoint.epochs_between_checkpoints=2,++workload.checkpoint.layer_parameters=[],++workload.checkpoint.model_size=100000000,++workload.checkpoint.num_layers=0,++workload.checkpoint.type=all_ranks,++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/resnet50/pool6/dataset,++workload.reader.batch_size=64,++workload.reader.file_shuffle=seed,++workload.reader.prefetch_size=2,++workload.reader.sample_shuffle=seed,++workload.train.computation_time=0,++workload.train.epochs=5,++workload.workflow.checkpoint=True,++workload.workflow.generate_data=False,++workload.workflow.train=True,workload=resnet50_v100
+    id: ???
+    num: ???
+    config_name: config
+    env_set: {}
+    env_copy: []
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: []
+  runtime:
+    version: 1.3.2
+    version_base: '1.3'
+    cwd: /home/pfs/tejas/pfs
+    config_sources:
+    - path: hydra.conf
+      schema: pkg
+      provider: hydra
+    - path: dlio_benchmark.configs
+      schema: pkg
+      provider: main
+    - path: ''
+      schema: structured
+      provider: schema
+    output_dir: /home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+    choices:
+      workload: resnet50_v100
+      hydra/env: default
+      hydra/callbacks: null
+      hydra/job_logging: disabled
+      hydra/hydra_logging: disabled
+      hydra/hydra_help: default
+      hydra/help: dlio_benchmark_help.yaml
+      hydra/sweeper: basic
+      hydra/launcher: basic
+      hydra/output: default
+  verbose: false

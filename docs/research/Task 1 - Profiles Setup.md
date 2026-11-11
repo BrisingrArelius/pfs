@@ -6,7 +6,7 @@ questions and proposed work as they were recorded.
 ## Historical goal
 
 The task sought the **top 20 most common/prevalent file I/O profiles in HPC**,
-styled after [`scripts/workloads/profiles_backup.json`](../../scripts/workloads/profiles_backup.json),
+styled after [`scripts/workloads/legacy/profiles_backup.json`](../../scripts/workloads/legacy/profiles_backup.json),
 with parameters backed by literature or prior experimental results.
 
 ## Problem with the current `profiles_backup.json`
@@ -46,7 +46,7 @@ All thresholds must be groundable in **Darshan POSIX/MPI-IO counters**, since th
 - **Type (read/write/mixed):** `POSIX_BYTES_READ` vs. `POSIX_BYTES_WRITTEN` ratio.
 - **Sharing pattern (SSF/FPP)**, if added: the per-record `rank` field on Darshan records — `rank == -1` (Darshan's shared-file reduction, all ranks touched it) → SSF; one distinct rank per distinct filename → FPP; multiple specific non--1 ranks sharing the same filename hash → partial-shared. Backed by Patel et al. (FAST 2020), per [`LitReview_task1.md`](LitReview_task1.md) Part B #4 and the Cross-Paper Synthesis's "missing dimension" note.
 
-  **Pipeline gap:** [`parse_darshan.py`](../../scripts/workloads/analysis/parse_darshan.py)
+  **Pipeline gap:** [`parse_darshan.py`](../../scripts/workloads/legacy/analysis/parse_darshan.py)
   aggregates `rank` away, so its CSV output cannot represent sharing patterns.
 
 If a literature threshold relies on data Darshan doesn't expose (e.g. raw latency), flag it as non-actionable rather than adopting it silently.

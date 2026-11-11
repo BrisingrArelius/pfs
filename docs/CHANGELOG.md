@@ -4,6 +4,243 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
+
+- Condensed `docs/findings.md` into a concise scientific comparison; added
+  version-specific DLIO U-Net NPZ/PyTorch reader sources alongside the
+  CosmoFlow TFRecord reader and distinguished observations from hypotheses.
+- Checked tagged DLIO 2.0.0 TFRecord generator/reader source and the original
+  CosmoFlow paper; documented whole-record logical reads, four parallel reads,
+  physical-read uncertainty, and the original paper's different 64-sample,
+  512 MB TFRecord layout in `docs/findings.md`.
+- Added `docs/findings.md`, a meeting-ready comparison of CosmoFlow and U-Net
+  file sizes, traced request sizes, performance patterns, checkpoint behavior,
+  microbenchmark context, and the explicitly unproven small-file/critical-path
+  hypothesis, with links to evidence and application literature.
+- Generated combined U-Net Darshan figures for the copied pool-14 and
+  pool-16 captures, preserving per-pool plotted-value JSON.
+- Generated combined A/B/C figures for the copied instrumented CosmoFlow
+  throttled pool-14, pool-16 and pool-18 captures under
+  `throttled_ssd/cosmoflow/darshan/`.
+- Label throttled Darshan plots by their actual fast/slow target composition,
+  including pools 14/16/18 used for the one-invocation CosmoFlow study.
+- Added opt-in `--pool 1|3|6` to normal U-Net/CosmoFlow runners for a single
+  full-pool rerun, retaining defaults and pool-1-only pilot behavior. Renamed
+  the curated normal CosmoFlow figure folder to `darshan/` for easier updates.
+- Flattened the normal CosmoFlow Darshan gallery: pool-labelled PNG and JSON
+  files now live directly beside the gallery index, with updated links.
+- Simplified Darshan figures to one combined A/B/C PNG per invocation/pool.
+  Removed separate panel images, SVG exports and the extra summary figure;
+  successful rerenders clean only this plotter's legacy filenames. Use a
+  compact plotted-value JSON instead of duplicating raw event lists. Updated
+  rendering tests and the Default/HDD/SSD gallery to show three pictures total.
+- Grouped normal workload plot folders under
+  `results/workloads/plots/dlio/normal/{cosmoflow,unet,resnet}/`, matching the
+  existing sibling `throttled_ssd/` layout. Updated the current documentation
+  and gallery's relative source-data links after the move.
+- Generated A/B/C and capture-summary figures for the local normal CosmoFlow
+  repetition-1 captures on pools 1/3/6 using confirmed source UTC+05:30.
+  Curated PNG/SVG copies in the existing plot tree under
+  `cosmoflow/darshan-normal-20261111/` with an offline HTML gallery, clear pool
+  labels, source-data links and the coarse-clock/STDIO-only write limitations.
+- Corrected the remaining colva3 cap mappings for targets 305/306 to whole
+  `/dev/nvme1n1` and `/dev/nvme2n1` after target 305 showed the same missing
+  physical `io.max` entry. All four targets now consistently use physical
+  devices for cgroup caps. Test both directions and all four target rates
+  across pools 14/16/18, including stale partition-property clearing.
+- Fixed target 205's colva2 cap path to physical `/dev/nvme1n1`: the
+  `/dev/nvme1n1p1` setting appeared in systemd but left physical device
+  `259:7` uncapped in kernel `io.max`. Preserve stale-property clearing and
+  physical-kernel verification. Added tests for corrected read/write caps
+  across 14/16/18 and continued rejection of matching systemd properties
+  without an effective kernel cap.
+- Fixed pool restoration after a failed throttle-cap check: verify source
+  membership independently of caps before returning targets to pool 6 and
+  clearing limits. Retain full membership/cap verification for experiment
+  launches and verify the original pool after restoration. Added a regression
+  for pool 14 recovery with broken caps, target moves and all-host cap cleanup.
+- Added `--repetitions N` (default 3) to normal and throttled CosmoFlow/U-Net runners so
+  plotting-only captures can finish cleanly after one full invocation per
+  pool. Pilot shortening and all full-invocation workload arguments remain
+  unchanged; progress reports the selected count. Validate positive values
+  and test default/one-repetition CLI forwarding. A/B/C supports completed
+  invocation directories independently of the nine-run performance analyzer.
+- Forward the chosen repetition count through throttled single-pool and
+  all-pool launches. Added explicit `--pools` selection for all-pool launches
+  so the plotting study uses 14/16/18 for both workloads while legacy defaults
+  remain unchanged. Tested actual repetition loops with all cluster actions
+  mocked, CLI forwarding, selected pool transitions and restoration. The
+  plotting matrix is one invocation on 1/3/6 and 14/16/18 per workload.
+- Added pilot A/B/C figures: native phase/activity bands, reader-inclusive
+  owner-rank operation unions, and time-binned request-size categories with
+  common count-scaled glyphs. Retain raw parsed events in JSON and label the
+  saved pilots' whole-second job-clock alignment and uncalibrated initialization
+  offsets; expose the original host timezone offset for copied-log plotting.
+  No precise overlap/phase-boundary claims or STDIO timing are inferred.
+- The cluster U-Net pilot saved all eight rank logs but left one unreadable
+  `.darshan_partial` reader log per rank. Close DLIO's persistent PyTorch
+  training reader pool at profiler stop, after native run timing, using
+  PyTorch's normal shutdown method instead of leaving daemon termination to
+  interpreter exit. Preserve workload arguments, epoch/prefetch behavior and
+  native profiler stop. Report partial files explicitly as unfinished logs.
+- Added a real persistent PyTorch DataLoader regression with NPZ files,
+  four workers, two truncated pilot epochs and native Darshan log validation.
+  The pre-fix test found workers still alive at profiler stop; the fixed test
+  checks all reader processes exit and their logs parse without partial files.
+- Added an offline single-invocation pilot plot command: native epoch bands
+  with nested rank-0 checkpoint timers, per-rank POSIX/STDIO API bytes, and
+  exact DXT request-size distributions, with PNG/SVG and plotted-value JSON.
+  Require valid process logs and reject measured I/O from unmapped processes;
+  retain STDIO-only data without fabricating DXT timing or cross-process clock
+  alignment. Added synthetic/native-parser rendering regressions and usage.
+
+## 2026-11-10 — Opt-in DLIO built-in Darshan profiling
+
+- Added `--darshan [LIBRARY]` to the original normal/throttled U-Net and
+  CosmoFlow runners. It selects DLIO 2.0.0's built-in profiler and preloads
+  the existing runtime into ranks only. A small project-local launcher
+  removes DLIO's shared log filename and unsets its `DARSHAN_DISABLE="0"`
+  after native start so forked readers can initialize; native stop remains.
+  Installed packages are untouched, and workload commands/cache protocols,
+  repetition counts and pool matrices are retained.
+- Added per-invocation dataset/checkpoint filtering, larger record/name/module
+  budgets, native per-PID logs and rank/forked-process identities. Isolate
+  capture from inherited Darshan/DXT settings. Check all eight rank/recorded
+  forked-process logs and both installed parsers before cleanup/completion; retain buffered
+  STDIO aggregates without requiring missing POSIX DXT events.
+- Added local CLI/workload-fidelity and actual-runtime regressions for eight
+  roots/readers/utilities, 8,192 files across five read passes, buffered STDIO,
+  missing rank logs and parser errors. Documented cluster pilot commands;
+  no cluster workload was launched during development.
+
+## 2026-11-10 — Roll back custom DLIO profiling
+
+- Removed the isolated profiling runner, hooks, telemetry, analyzer, plots,
+  tests, study specification and mockup added after `8844ed9`, including
+  subsequent profiling fixes. Restored the original DLIO suite index.
+- Verified normal and throttled runner directories match the pre-profiling
+  baseline `8844ed9` exactly, retaining the earlier workload, reservation,
+  continuation and process-cleanup fixes.
+- The cluster pilot of DLIO 2.0.0's built-in Darshan profiler completed DLIO
+  but lost seven rank logs to its fixed filename; the surviving rank log
+  also reported incomplete POSIX records. Built-in profiling is not enabled
+  in the original runners by this rollback.
+
+## 2026-11-03 — Distinguish reported and inferred DLIO throughput
+
+- Fixed managed command failure cleanup to terminate the local process group
+  after a nonzero launcher exit, not only on timeout/interruption. A cluster
+  MPICH Hydra proxy segfault left DLIO ranks alive after exit 144; the fix
+  cleans up those descendants on future failures without changing workload
+  parameters or claiming to fix the underlying MPI crash.
+- Added reservation-aware ResNet `--all-pools --deadline 6h` and
+  `--continue --deadline 6h` launches. Managed commands have bounded
+  process-group termination; progress is saved per repetition, partial
+  staging is reusable, interrupted attempts are preserved, and completed
+  evidence is journalled for safe CSV reconstruction. A reserved cleanup
+  interval restores pool 6 on a deadline or catchable interruption; failures
+  are reported for inspection. Continuation restarts the partial repetition
+  and skips completed ones, including across pool-6 restoration.
+- Restricted managed ResNet to pools 14, 16 and 18 (4/0, 2/2, 0/4), nine
+  full runs total. Continuation normalizes leftover target membership/caps
+  back to original pool 6 before moving to the unfinished condition.
+- Added legacy ResNet result adoption for `--continue` when no unfinished
+  managed journal exists. Completed repetitions from the latest pool-14-led
+  sweep are retained after evidence checks; partial repetitions restart and
+  fully completed pool 14 is skipped. Already-running old launchers must be
+  stopped before adoption and retain their original schedule until then.
+- Replaced pool/per-run arithmetic mean epoch rates with end-to-end
+  throughput for every workload: validated total processed sample count /
+  full-run DLIO timestamp duration, including checkpoints. Removed the
+  redundant whole-run-time panel and inferred pool-summary figure. Native
+  epoch and dotted inferred byte-rate plots remain diagnostic views; CSVs
+  retain sample counts and full durations for reproducing completion rates.
+- Switched primary training plots in both DLIO analyzers to reported
+  samples/s, averaging positive reported epochs per run and omitting
+  zero-reported epoch points without interpolation. U-Net's available
+  epochs are 2 and 4; these averages are not its zero-inclusive summary mean.
+- Kept calculated MiB/s in separate dotted-line inferred figures and CSV
+  fields. Regenerated normal and throttled U-Net galleries from copied runs.
+- Set all DLIO throughput/loading-time plots to zero baselines with upper
+  headroom and labelled U-Net's native pool comparison as epochs 2 and 4.
+  The recorded first-epoch duration differs (129.25 s for all-fast versus
+  386.52 s for all-slow, repetition 1), while reported epoch-2/4 durations
+  remain about 82.36 s, explaining the different comparison outcomes.
+- Added separate `pool_performance_inferred.png` figures for normal and
+  throttled U-Net. Epoch CSVs now record configured sample bytes, processed
+  sample count, nominal byte volume and the timing denominator/source, so
+  inferred throughput can be reproduced without confusing it with physical
+  file-read bandwidth or DLIO's reported samples/s.
+
+## 2026-11-02 — Separate DLIO normal and throttled-SSD suites
+
+- Collected the older POSIX synthetic workload, IOR wrapper, profiles, runners,
+  compiled binary, and Darshan analysis under `scripts/workloads/legacy/`.
+  Updated their repository-root path calculations and active entrypoint links;
+  DLIO and LLM workload code remain separate.
+- Moved the existing DLIO generator, workload runners, analyzer and shared
+  profiles unchanged into `scripts/workloads/dlio/normal/`; updated their
+  documented invocations. Specified a new four-target, four-stripe SSD
+  speed-mix experiment in `docs/specs/DL_Throttled_SSD.md`.
+- Added separate ResNet-50 and U-Net 3D runners in
+  `scripts/workloads/dlio/throttled_ssd/`, using one shared helper to validate
+  pool membership and configured device caps, stage identical inputs outside
+  timing, and retain the same native DLIO evidence. Backend and client-network
+  telemetry are required separately before claiming a device bottleneck.
+- Recorded the pool 14–18 target moves and per-device cap commands in the
+  throttled-SSD folder. Added `configure_pool.py` to perform one verified
+  condition transition or restore pool 6 and clear the experiment's runtime
+  limits; workload execution remains a separate command.
+- Added an offline `plot_results.py` for completed throttled-SSD U-Net and
+  ResNet sweeps. It accepts available pool conditions incrementally and plots
+  training input, checkpoint writes, whole-run time, repetitions, and rank
+  loading from three-run native and runner evidence without creating results
+  READMEs.
+- Corrected the throttled-SSD pool membership check so an empty pool's line
+  cannot consume the following pool ID as a target. A pool-17 U-Net input copy
+  failed with BeeGFS `Remote I/O error`; a later three-run sweep completed,
+  but the earlier error still requires storage-side diagnosis.
+- Added `--all-pools` to the throttled U-Net runner. From original pool 6 it
+  now verifies the uncapped state, runs the five pool configurations with
+  three repetitions apiece, and restores pool 6 only after full success;
+  failures leave the current condition in place for inspection.
+- Added a standalone `check_throughput.py` in the throttled-SSD code folder.
+  It takes one bounded simultaneous sample of the four physical SSD read/write
+  counters and displays their configured versus effective cgroup limits as
+  four terminal rows; workload execution is unchanged.
+- Extended the throughput checker with `--native --pool N`: a temporary
+  four-stripe direct-I/O fio write/read through BeeGFS, reporting application
+  and physical-device rates separately. The probe cleans up after success
+  and runs only on a configured condition pool between DLIO measurements.
+- Added pre-invocation `sync` and Linux page-cache drops over SSH on
+  `colva1–4` to both normal and throttled-SSD DLIO runners, followed by the
+  existing `anjuna2` cache drop. This applies to future runs, not previously
+  collected evidence; failure on a storage host stops the run before DLIO.
+- Found that colva1's target-104 partition path appeared in systemd but
+  installed no `io.max` rule. Set its cap on the whole NVMe device instead,
+  clear stale limit entries before each condition, and require all four
+  physical-device read/write limits in runner preflight. The standalone
+  probe now accepts the physical-device path as its configured limit.
+- Added a 30-second wait after both server and client cache drops before
+  each future DLIO invocation in the normal and throttled suites. Full-run
+  checkpoint cleanup remains after evidence capture; pilots retain their
+  checkpoint files for inspection.
+- Added per-repetition snapshots of physical SSD read/write counters around
+  each new throttled-SSD DLIO invocation. `device_io.csv` records bytes and
+  whole-run rates per target after input staging and before checkpoint-file
+  cleanup; delayed writeback can overlap. Older runs have no retrospective
+  backend counts.
+- Added a workload-specific throttled CosmoFlow runner using the same
+  14–18 transitions, three repetitions per pool, cache preparation and
+  pool-6 restoration as the U-Net runner. CosmoFlow dataset placement
+  inspection samples 65 of its 8,192 files per condition; the offline
+  throttled plotter accepts completed CosmoFlow sweeps.
+- Added flushed per-run start/completion messages in both DLIO suites after
+  successful evidence capture and checkpoint cleanup. The throttled suite
+  also announces the start and end of first-time dataset copies.
+
+---
+
 ## 2026-10-26 — Prepare narrow DLIO pool comparison
 
 - Added an eight-rank ResNet-50 runner for three serial repetitions on each of
@@ -23,6 +260,62 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
   132-byte data files despite a 100-MB configured state. Added a local
   checkpoint hook that makes state trackable without editing DLIO; reject
   undersized files until a fresh cluster pilot verifies full payloads.
+- The trackable-state pilot produced eight ~100-MB checkpoint files. Normalize
+  DLIO 2.0.0's file-shuffle string to its enum in the local hook so seeded file
+  order is actually seeded across comparable runs.
+- Added workload-selectable DLIO data preparation and pilot/full-run commands
+  for ResNet-50, U-Net 3D, and CosmoFlow. New inputs are generated in pool 1
+  and copied to the other pools to keep dataset bytes identical; complete
+  existing datasets are reused and partial ones stop preparation. The shared
+  internal mechanics handle TensorFlow/PyTorch checkpoint files and bound CosmoFlow
+  placement inspection to a recorded sample instead of 1.5 million queries.
+  Kept all DLIO-owned scripts under `scripts/workloads/dlio/`. ResNet, U-Net,
+  and CosmoFlow have separate small runners; the DLIO-imported checkpoint
+  class lives in each runner rather than in a separate file. Added a folder-local
+  README with the generate → pilot → full-run commands and metric definitions.
+- Added color-coded Mermaid diagrams for the refactored ResNet runner call chain,
+  the DLIO 2.0.0 TensorFlow TFRecord ingestion/checkpoint path, and the distinct
+  owners of native DLIO JSON versus the runner's combined CSV. The diagrams
+  distinguish the local refactor from a sweep already running from older code.
+- Added an offline parser for a copied nine-run ResNet DLIO sweep. It validates
+  native output against the runner CSV, extracts all rank/epoch load and process
+  timings and checkpoint placement, and reports pool summaries without calling
+  nominal training rate a measured POSIX/backend read rate. Flagged one native
+  epoch with a 60-second pre-checkpoint timing gap; no benchmark was rerun.
+- Added an offline DLIO plotter for per-epoch modeled training and wall time,
+  rank-0 checkpoint saves, repetition trends, per-rank loading tails, and
+  dataset OST file assignments. Rendered five figures from the copied sweep,
+  with the anomalous epoch marked and per-run values separated from run-level
+  mean/error bars.
+- A five-epoch U-Net run exposed missing `block1.duration` and zero native
+  throughput in odd epochs despite completed load steps on all ranks. Mark
+  those training rates unavailable instead of zero I/O; accept the native
+  epoch wall time separately. Kept the runner simple: there is no resume mode;
+  a broken run can be repeated as a new sweep.
+- Fixed pool-copy preparation after U-Net failed to initialize on pool 3:
+  DLIO 2.0.0 lists `dataset/valid/` even with evaluation disabled, but the
+  generator previously copied only `train/`. Create the empty directory in
+  every pool and check for it before starting measured MPI runs; completed
+  datasets remain reusable.
+- Replaced the separate ResNet-only result parser and plotter entrypoints with
+  one workload-selectable offline `analyze.py` command. It validates native
+  output and runner evidence and writes tables and five figures in
+  one invocation for ResNet, U-Net, or a completed CosmoFlow suite. U-Net's
+  missing native odd-epoch rates remain unavailable instead of becoming zeros.
+- Added a run-level three-metric pool comparison (nominal training input,
+  rank-0 checkpoint save completion, and whole-run time), with three-run error
+  bars. Published five curated figures and the
+  comparison tables for each completed workload under
+  `results/workloads/plots/dlio/{unet,resnet}/`.
+- Simplified the generated plot sets to training and checkpoint throughput,
+  pool performance, run-to-run throughput, and data loading time. Removed
+  generated results READMEs and narrative reports and named each PNG for its
+  measurement. U-Net's missing native rates are plotted only as explicitly
+  estimated sample-size/time throughput, not as measured filesystem traffic.
+- Reduced the CosmoFlow variant to 8,192 files per pool (1/64 of its
+  DLIO preset). Both dataset generation and the pool runner now explicitly
+  override DLIO's file count so generated inputs match measured runs; this is
+  a reduced-scale variant, not the native full-size CosmoFlow workload.
 
 ---
 
@@ -137,7 +430,7 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-08-03 — Fix `nd_strided` access pattern collapsing into sequential I/O
 
-**File:** [`scripts/workloads/posix_synthetic_workload.c`](../scripts/workloads/posix_synthetic_workload.c)
+**File:** [`scripts/workloads/legacy/posix_synthetic_workload.c`](../scripts/workloads/legacy/posix_synthetic_workload.c)
 
 ### What was wrong
 

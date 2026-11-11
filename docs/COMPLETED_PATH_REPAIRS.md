@@ -31,7 +31,7 @@ See [the migration map](MIGRATION.md) for the old and new file locations.
 ## Workload orchestration and analysis
 
 - [x] Fix `run_pipeline.py` so it finds `run_workloads.py`, the Darshan parser,
-  and `scripts/workloads/analysis/analyze_darshan.py` in their current locations. Fix where it writes
+  and `scripts/workloads/legacy/analysis/analyze_darshan.py` in their current locations. Fix where it writes
   output. Do not change pool IDs or execution behavior.
 - [x] Fix `run_workloads.py` so it finds `profiles.json`, the IOR wrapper, the C
   workload, and the Darshan parser in their new locations.

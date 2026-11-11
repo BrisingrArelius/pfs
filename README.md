@@ -57,7 +57,7 @@ The changelog and research notes preserve historical observations.
 - [Historical results and provenance](results/README.md)
 - [Observed cluster topology](docs/CLUSTER_TOPOLOGY.md)
 - [Workload documentation](scripts/workloads/README.md)
-- [Darshan parsing and workload analysis](scripts/workloads/analysis/README.md)
+- [Legacy Darshan parsing and workload analysis](scripts/workloads/legacy/analysis/README.md)
 - [Trace-characterization tools](scripts/trace_characterization/README.md)
 - [Research notes](docs/research/CONTEXT.md)
 

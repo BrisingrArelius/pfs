@@ -1,0 +1,73 @@
+pool,repetition,phase,epoch,duration_s,bytes_written,throughput,throughput_unit,ost_ids,raw_output
+1,1,training_input_block,1,509.73,,2513.2343929239387,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+1,1,training_input_block,2,509.58,,2507.377796836042,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+1,1,checkpoint_save_rank0,2,2.7,100000478,35.321439813684535,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+1,1,training_input_block,3,509.52,,2513.4013034545333,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+1,1,training_input_block,4,508.54,,2510.3658651068063,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+1,1,checkpoint_save_rank0,4,2.57,100000478,37.108127430719165,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+1,1,training_input_block,5,508.34,,2520.384122930048,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+1,1,training_summary,,,,274.7872658336116,MiB/s (DLIO mean),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool1
+3,1,training_input_block,1,563.82,,2271.3702568922554,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+3,1,training_input_block,2,557.91,,2288.978822446234,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+3,1,checkpoint_save_rank0,2,2.72,100000478,35.061723344466266,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+3,1,training_input_block,3,556.43,,2301.2218820884555,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+3,1,training_input_block,4,531.33,,2403.8948863615137,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+3,1,checkpoint_save_rank0,4,2.62,100000478,36.399957059903905,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+3,1,training_input_block,5,529.40,,2419.6039892504828,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+3,1,training_summary,,,,255.54865369220232,MiB/s (DLIO mean),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool3
+6,1,training_input_block,1,501.28,,2549.5095542345434,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+6,1,training_input_block,2,501.80,,2279.7561858583604,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+6,1,checkpoint_save_rank0,2,2.79,100000478,34.18203852937213,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+6,1,training_input_block,3,501.71,,2549.3943321090264,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+6,1,training_input_block,4,501.86,,2542.517279909038,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+6,1,checkpoint_save_rank0,4,2.45,100000478,38.92566836610132,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+6,1,training_input_block,5,501.70,,2549.3319531826414,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+6,1,training_summary,,,,272.7259578477129,MiB/s (DLIO mean),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep1-pool6
+1,2,training_input_block,1,506.77,,2526.9370602568324,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+1,2,training_input_block,2,509.28,,2507.076099139557,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+1,2,checkpoint_save_rank0,2,2.78,100000478,34.304995502499374,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+1,2,training_input_block,3,505.94,,2529.876238226722,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+1,2,training_input_block,4,507.38,,2517.5815974763673,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+1,2,checkpoint_save_rank0,4,2.54,100000478,37.54641240037332,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+1,2,training_input_block,5,508.20,,2518.642630236681,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+1,2,training_summary,,,,275.56036191730453,MiB/s (DLIO mean),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool1
+3,2,training_input_block,1,557.16,,2298.3335109215295,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+3,2,training_input_block,2,548.10,,2331.3932967373594,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+3,2,checkpoint_save_rank0,2,2.76,100000478,34.55358242643052,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+3,2,training_input_block,3,537.95,,2379.84710357922,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+3,2,training_input_block,4,514.20,,2483.7286512289547,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+3,2,checkpoint_save_rank0,4,2.54,100000478,37.54641240037332,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+3,2,training_input_block,5,504.42,,2537.8216963548334,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+3,2,training_summary,,,,263.1167506590303,MiB/s (DLIO mean),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool3
+6,2,training_input_block,1,501.69,,2549.0576700742563,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+6,2,training_input_block,2,501.40,,2543.055934441567,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+6,2,checkpoint_save_rank0,2,2.57,100000478,37.108127430719165,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+6,2,training_input_block,3,501.24,,2550.270546152689,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+6,2,training_input_block,4,501.69,,2542.8751977845013,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+6,2,checkpoint_save_rank0,4,2.75,100000478,34.679231817072086,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+6,2,training_input_block,5,501.77,,2549.320567626934,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+6,2,training_summary,,,,278.5010956951754,MiB/s (DLIO mean),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep2-pool6
+1,3,training_input_block,1,506.33,,2529.918433293904,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+1,3,training_input_block,2,506.79,,2519.680685304924,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+1,3,checkpoint_save_rank0,2,2.43,100000478,39.246044237427256,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+1,3,training_input_block,3,506.74,,2528.151362830383,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+1,3,training_input_block,4,505.49,,2526.34238373451,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+1,3,checkpoint_save_rank0,4,2.75,100000478,34.679231817072086,MiB/s (no fsync),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+1,3,training_input_block,5,506.56,,2532.866647755775,samples/s,"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+1,3,training_summary,,,,276.36616942186646,MiB/s (DLIO mean),"401,402,403,404,405,406,407",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool1
+3,3,training_input_block,1,561.01,,2282.8342923359523,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+3,3,training_input_block,2,562.21,,2271.5308416863127,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+3,3,checkpoint_save_rank0,2,2.79,100000478,34.18203852937213,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+3,3,training_input_block,3,536.48,,2387.9806756102435,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+3,3,training_input_block,4,516.51,,2474.564379361046,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+3,3,checkpoint_save_rank0,4,2.48,100000478,38.45479334554365,MiB/s (no fsync),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+3,3,training_input_block,5,511.28,,2504.3897418340175,samples/s,"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+3,3,training_summary,,,,260.7149285430307,MiB/s (DLIO mean),"101,102,103,201,202,203,204,301,302,303,304",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool3
+6,3,training_input_block,1,501.41,,2550.0823479719047,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
+6,3,training_input_block,2,501.56,,2542.281515342774,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
+6,3,checkpoint_save_rank0,2,2.75,100000478,34.679231817072086,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
+6,3,training_input_block,3,501.89,,2549.7051068928195,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
+6,3,training_input_block,4,501.74,,2542.8199115727716,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
+6,3,checkpoint_save_rank0,4,2.76,100000478,34.55358242643052,MiB/s (no fsync),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
+6,3,training_input_block,5,502.15,,2548.9884351022715,samples/s,"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
+6,3,training_summary,,,,278.4857300806359,MiB/s (DLIO mean),"104,105,106,107,205,206,305,306,307",/home/pfs/tejas/dlio/resnet50/runs-20261026-010423-356906/rep3-pool6
