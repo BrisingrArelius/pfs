@@ -23,14 +23,47 @@ def throttled_module():
     return module
 
 
+def configuration_module(common):
+    path=Path(__file__).resolve().parents[1]/"throttled_ssd/configure_pool.py"
+    spec=importlib.util.spec_from_file_location("configure_pool_test",path)
+    module=importlib.util.module_from_spec(spec)
+    with patch.dict(sys.modules,{"pool_common":common}):
+        spec.loader.exec_module(module)
+    return module
+
+
 class RepetitionTests(unittest.TestCase):
+    def test_colva2_caps_use_physical_device_and_clear_stale_partition_caps(self):
+        configure=configuration_module(throttled_module())
+        for pool,rate in ((14,45),(16,45),(18,15)):
+            with self.subTest(pool=pool),patch.object(configure,"remote") as remote:
+                configure.apply_limits(pool)
+                calls=[call.args for call in remote.call_args_list if call.args[0]=="colva2"]
+                self.assertEqual(len(calls),2)
+                self.assertEqual(calls[0][-2:],("IOReadBandwidthMax=","IOWriteBandwidthMax="))
+                for direction in ("IOReadBandwidthMax","IOWriteBandwidthMax"):
+                    self.assertIn(f"{direction}=/dev/nvme1n1 {rate*1048576}",calls[1])
+                self.assertFalse(any("nvme1n1p1" in arg for arg in calls[1]))
+
+    def test_missing_kernel_cap_is_still_rejected_when_systemd_matches(self):
+        common=throttled_module()
+        def execute(command,**kwargs):
+            host,text=command[1:3]
+            if "IOReadBandwidthMax" in text:
+                output="IOReadBandwidthMax=/dev/nvme1n1 47185920\nIOWriteBandwidthMax=/dev/nvme1n1 47185920\n"
+            elif "/sys/class/block/" in text:
+                output="259:0\n" if host=="colva1" else "259:7\n"
+            else:
+                output="259:0 rbps=47185920 wbps=47185920\n" if host=="colva1" else ""
+            return SimpleNamespace(stdout=output)
+        with patch.object(common,"beegfs",return_value="14 dlio_ssd_f4_s0 104,205,305,306"), \
+             patch.object(common,"execute",side_effect=execute):
+            with self.assertRaisesRegex(RuntimeError,"colva2 target 205: io.max 259:7"):
+                common.verify(14)
+
     def test_restore_from_pool14_does_not_require_working_caps(self):
         common=throttled_module()
-        path=Path(__file__).resolve().parents[1]/"throttled_ssd/configure_pool.py"
-        spec=importlib.util.spec_from_file_location("restore_repetition_test",path)
-        configure=importlib.util.module_from_spec(spec)
-        with patch.dict(sys.modules,{"pool_common":common}):
-            spec.loader.exec_module(configure)
+        configure=configuration_module(common)
         members={14:set(common.TARGETS),6:configure.NORMAL_TARGETS-set(common.TARGETS)}
         def beegfs(*args):
             if args==("--liststoragepools",):

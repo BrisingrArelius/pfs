@@ -6,6 +6,12 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Fixed target 205's colva2 cap path to physical `/dev/nvme1n1`: the
+  `/dev/nvme1n1p1` setting appeared in systemd but left physical device
+  `259:7` uncapped in kernel `io.max`. Preserve stale-property clearing and
+  physical-kernel verification. Added tests for corrected read/write caps
+  across 14/16/18 and continued rejection of matching systemd properties
+  without an effective kernel cap.
 - Fixed pool restoration after a failed throttle-cap check: verify source
   membership independently of caps before returning targets to pool 6 and
   clearing limits. Retain full membership/cap verification for experiment

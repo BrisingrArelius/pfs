@@ -11,6 +11,10 @@ and **15 MiB/s** for the other IDs. `pool_common.py` checks pool membership,
 systemd settings, and the kernel's actual `io.max` before a run. On `colva1`,
 the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
 the partition setting appeared in systemd but installed no kernel limit.
+The same issue was observed on colva2 for target 205: cap its whole
+`/dev/nvme1n1`, not `/dev/nvme1n1p1`. The configuration script clears old
+per-device entries before applying the corrected paths. Kernel verification
+remains mandatory; matching systemd properties alone is insufficient.
 Complete existing pool-6 jobs first.
 
 To return the four targets from pool 14 to the original pool 6 and clear
