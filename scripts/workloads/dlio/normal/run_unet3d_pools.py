@@ -29,10 +29,14 @@ if __name__ != "__main__":
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pilot", action="store_true")
+    parser.add_argument("--repetitions",type=int,default=3,help="Full invocations per pool (default: 3; use 1 for capture plots)")
     add_argument(parser)
     args = parser.parse_args()
+    if args.repetitions<1:
+        parser.error("--repetitions must be positive")
     run(WORKLOADS["unet"], "run_unet3d_pools.SeededPyTorchCheckpointing",
-        model_bytes=WORKLOADS["unet"].model_bytes, pilot=args.pilot, darshan=args.darshan)
+        model_bytes=WORKLOADS["unet"].model_bytes, pilot=args.pilot, darshan=args.darshan,
+        repetitions=args.repetitions)
 
 
 if __name__ == "__main__":

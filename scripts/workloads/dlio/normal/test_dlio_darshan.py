@@ -5,18 +5,59 @@ import ast
 import importlib.util
 import json
 import os
+import runpy
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import dlio_darshan as darshan
 
 
 class LauncherTests(unittest.TestCase):
+    def test_throttled_repetitions_and_pool_selection_reach_runner(self):
+        root=Path(__file__).resolve().parents[1]/"throttled_ssd"
+        for name in ("cosmoflow","unet3d"):
+            script=root/f"run_{name}_pools.py"
+            for flags,expected in (([],3),(["--repetitions","1"],1)):
+                run,run_all=Mock(),Mock()
+                common=types.SimpleNamespace(run=run,run_all=run_all,FAST=(14,15,16,17,18))
+                with patch.dict(sys.modules,{"pool_common":common}), \
+                     patch.object(sys,"argv",[str(script),"--pool","14",*flags]):
+                    runpy.run_path(str(script),run_name="__main__")
+                self.assertEqual(run.call_args.kwargs["repetitions"],expected)
+                run_all.assert_not_called()
+            run,run_all=Mock(),Mock()
+            common=types.SimpleNamespace(run=run,run_all=run_all,FAST=(14,15,16,17,18))
+            with patch.dict(sys.modules,{"pool_common":common}), \
+                 patch.object(sys,"argv",[str(script),"--all-pools","--pools","14","16","18","--repetitions","1"]):
+                runpy.run_path(str(script),run_name="__main__")
+            self.assertEqual(run_all.call_args.kwargs["repetitions"],1)
+            self.assertEqual(run_all.call_args.kwargs["pools"],[14,16,18])
+            run.assert_not_called()
+            result=subprocess.run([sys.executable,str(script),"--pool","14","--repetitions","0"],capture_output=True,text=True)
+            self.assertEqual(result.returncode,2)
+            self.assertIn("must be positive",result.stderr)
+
+    def test_normal_repetition_option_reaches_runner(self):
+        root=Path(__file__).resolve().parent
+        for name in ("cosmoflow","unet3d"):
+            script=root/f"run_{name}_pools.py"
+            for flags,expected in (([],3),(["--repetitions","1"],1)):
+                run=Mock()
+                with patch.dict(sys.modules,{"pool_common":types.SimpleNamespace(run=run)}), \
+                     patch.object(sys,"argv",[str(script),*flags]):
+                    runpy.run_path(str(script),run_name="__main__")
+                self.assertEqual(run.call_args.kwargs["repetitions"],expected)
+                self.assertFalse(run.call_args.kwargs["pilot"])
+            result=subprocess.run([sys.executable,str(script),"--repetitions","0"],capture_output=True,text=True)
+            self.assertEqual(result.returncode,2)
+            self.assertIn("must be positive",result.stderr)
+
     def test_inherited_capture_settings_do_not_override_job_configuration(self):
         environment={"PATH":"/bin", "PYTHONPATH":"/project", "DARSHAN_MOD_DISABLE":"POSIX",
                      "DARSHAN_DISABLE":"1", "DXT_ENABLE_IO_TRACE":"0"}

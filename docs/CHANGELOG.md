@@ -6,6 +6,18 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Added `--repetitions N` (default 3) to normal and throttled CosmoFlow/U-Net runners so
+  plotting-only captures can finish cleanly after one full invocation per
+  pool. Pilot shortening and all full-invocation workload arguments remain
+  unchanged; progress reports the selected count. Validate positive values
+  and test default/one-repetition CLI forwarding. A/B/C supports completed
+  invocation directories independently of the nine-run performance analyzer.
+- Forward the chosen repetition count through throttled single-pool and
+  all-pool launches. Added explicit `--pools` selection for all-pool launches
+  so the plotting study uses 14/16/18 for both workloads while legacy defaults
+  remain unchanged. Tested actual repetition loops with all cluster actions
+  mocked, CLI forwarding, selected pool transitions and restoration. The
+  plotting matrix is one invocation on 1/3/6 and 14/16/18 per workload.
 - Added pilot A/B/C figures: native phase/activity bands, reader-inclusive
   owner-rank operation unions, and time-binned request-size categories with
   common count-scaled glyphs. Retain raw parsed events in JSON and label the

@@ -111,7 +111,10 @@ def metrics(output, pool, repetition, dataset_osts, checkpoint_osts, sizes):
     return rows
 
 
-def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None):
+def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None, repetitions=3):
+    if repetitions<1:
+        raise ValueError("repetitions must be positive")
+    repetitions=1 if pilot else repetitions
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
         raise RuntimeError("These runners require the installed DLIO 2.0.0")
     if darshan is not None:
@@ -143,7 +146,7 @@ def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None):
     with (output / "metrics.csv").open("w", newline="") as report:
         writer = csv.writer(report)
         writer.writerow(FIELDS)
-        for repetition in range(1, 2 if pilot else 4):
+        for repetition in range(1, repetitions+1):
             for pool in pools:
                 run_dir = output / f"rep{repetition}-pool{pool}"
                 checkpoint_dir = root / f"pool{pool}/checkpoints/{output.name}-rep{repetition}"
@@ -206,5 +209,5 @@ def run(profile, checkpoint_class, model_bytes, pilot=False, darshan=None):
                     report.flush()
                     shutil.rmtree(checkpoint_dir)
                 print(f"{profile.profile}: pool {pool}, run {repetition}/"
-                      f"{1 if pilot else 3} complete", flush=True)
+                      f"{repetitions} complete", flush=True)
     print(f"Output: {output}")

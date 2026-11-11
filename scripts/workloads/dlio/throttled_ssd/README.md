@@ -28,11 +28,33 @@ python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --pool 14 --pil
 
 Use the currently configured pool ID; these single-pool commands do not
 configure it. `--all-pools --darshan` also enables capture, retaining the
-original three repetitions per condition and existing workload-specific pool
-matrix. Logs/configuration/rank identities are saved under each invocation's
+original three repetitions per condition by default. Use `--repetitions 1`
+for one full five-epoch invocation per selected pool. For the plotting study,
+select **14, 16 and 18** explicitly for both workloads:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_cosmoflow_pools.py \
+  --all-pools --pools 14 16 18 --repetitions 1 --darshan
+python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py \
+  --all-pools --pools 14 16 18 --repetitions 1 --darshan
+```
+
+Run the commands sequentially, starting each sweep from restored original
+pool 6. Each sweep restores pool 6 after successful completion. `--pools`
+requires `--all-pools`; it selects the pool order and does not alter any
+individual invocation's workload. Without `--pools`, the original matrices
+remain: CosmoFlow uses 14/16/18 and U-Net uses 14–18. A single already-configured
+condition also accepts `--pool 14 --repetitions 1 --darshan`. Pilots remain one
+shortened invocation regardless of the full-run repetition setting.
+
+Logs/configuration/rank identities are saved under each invocation's
 `darshan/` directory. Both parsers must pass before checkpoint cleanup and
 completion are recorded. Record/file filtering does not turn STDIO aggregates
 into exact POSIX events. The ResNet CLI is unchanged.
+
+For A/B/C, pass the completed `rep1-poolN` directory to
+`normal/plot_darshan.py`; it does not require three repetitions. The separate
+performance comparison plotter retains its repeated-run requirements.
 
 ## ResNet across cluster reservations
 

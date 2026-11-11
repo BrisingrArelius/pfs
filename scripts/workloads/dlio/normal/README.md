@@ -18,7 +18,7 @@ First prepare the data, then inspect the pilot's checkpoint files and native
 `per_epoch_stats.json` before launching its full comparison. The pilot uses
 pool 1, two steps in each of two epochs, and retains its checkpoint files.
 The full runner uses eight MPI ranks and five epochs; it executes three
-repetitions of pools 1, 3, and 6 sequentially, checkpointing after epochs
+repetitions by default (`--repetitions N` for U-Net/CosmoFlow) of pools 1, 3, and 6 sequentially, checkpointing after epochs
 2 and 4. Before each new invocation, the runner calls `sync` on the client,
 then `sync` and drops Linux page caches on `colva1–4` over SSH, then drops
 the client cache and waits 30 seconds. These steps precede DLIO timing.
@@ -82,10 +82,23 @@ pilot completion message. Only then omit `--pilot` for full runs. The original
 pool order, three repetitions, workload settings and cache protocol are
 unchanged; without `--darshan`, profiling remains off.
 
+For plotting-only capture, use `--repetitions 1 --darshan`: this runs one
+complete five-epoch invocation on each of pools 1, 3 and 6, without changing
+batch/reader/checkpoint settings. The default remains three repetitions;
+`--pilot` still runs only its one shortened invocation. The A/B/C plotter can
+process each completed `rep1-poolN` directory independently. The full-sweep
+performance analyzer still expects all nine runs. Changing the option/source
+does not change a process that is already running.
+
+For the complete plotting-only study, run each workload with
+`--repetitions 1 --darshan` here (pools 1/3/6), then use the throttled runner's
+`--all-pools --pools 14 16 18 --repetitions 1 --darshan`. This is six complete
+invocations per workload, twelve total for CosmoFlow plus U-Net.
+
 Local regression checks (no MPI/DLIO workload or cluster administration):
 
 ```bash
-python3 -m unittest discover -s scripts/workloads/dlio/normal -p 'test_*darshan.py' -v
+python3 -m unittest discover -s scripts/workloads/dlio/normal -p 'test_*.py' -v
 ```
 
 ### Plot a captured pilot

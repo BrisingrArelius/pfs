@@ -245,7 +245,10 @@ def prepare(profile, pool):
     return root
 
 
-def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None, darshan=None):
+def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None, darshan=None, repetitions=3):
+    if repetitions<1:
+        raise ValueError("repetitions must be positive")
+    repetitions=1 if pilot else repetitions
     if pool not in FAST or name not in CLASSES:
         raise ValueError("Expected ResNet, U-Net or CosmoFlow and a condition pool 14–18")
     if importlib.metadata.version("dlio-benchmark") != "2.0.0":
@@ -300,9 +303,9 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None,
                           for row in retained.get("device_io.csv", []))
         csvfile.flush()
         devicefile.flush()
-        for repetition in range(1, 2 if pilot else 4):
+        for repetition in range(1, repetitions+1):
             if repetition in completed:
-                print(f"{profile.profile}: pool {pool}, run {repetition}/3 already complete; skipping", flush=True)
+                print(f"{profile.profile}: pool {pool}, run {repetition}/{repetitions} already complete; skipping", flush=True)
                 continue
             remaining()
             directory = output / f"rep{repetition}-pool{pool}"
@@ -319,7 +322,7 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None,
             directory.mkdir()
             checkpoint_dir.mkdir()
             print(f"{profile.profile}: pool {pool}, run {repetition}/"
-                  f"{1 if pilot else 3} starting", flush=True)
+                  f"{repetitions} starting", flush=True)
             size = min(profile.model_bytes, 16 * 1048576) if pilot else profile.model_bytes
             command = ["mpirun", "-np", str(RANKS), "dlio_benchmark", f"workload={profile.profile}",
                        f"++workload.dataset.num_files_train={profile.files}",
@@ -387,27 +390,32 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None,
             if on_complete is not None:
                 on_complete(repetition)
             print(f"{profile.profile}: pool {pool}, run {repetition}/"
-                  f"{1 if pilot else 3} complete", flush=True)
+                  f"{repetitions} complete", flush=True)
     print(f"Output: {output}")
 
 
-def run_all(name, darshan=None):
+def run_all(name, darshan=None, repetitions=3, pools=None):
     """Run the workload's conditions, restoring pool 6 after full success."""
     from configure_pool import restore, transition
 
     if name not in CLASSES:
         raise ValueError(f"Unsupported workload: {name}")
+    if repetitions<1:
+        raise ValueError("repetitions must be positive")
+    allowed=(14,16,18) if name in ("cosmoflow","resnet") else tuple(FAST)
+    pools=allowed if pools is None else tuple(pools)
+    if not pools or len(set(pools))!=len(pools) or not set(pools)<=set(allowed):
+        raise ValueError(f"Expected distinct pools from {allowed}")
     if darshan is not None:
         darshan = dlio_darshan.validate(darshan)
     profile = WORKLOADS[name]
     source = DATA_ROOT / profile.folder / "pool1/dataset/train"
     if len(list(source.glob(f"*.{profile.extension}"))) != profile.files:
         raise RuntimeError(f"Expected {profile.files} prepared input files in {source}")
-    pools = (14, 16, 18) if name in ("cosmoflow", "resnet") else tuple(FAST)
     previous = 6
     for pool in pools:
         transition(previous, pool)
-        print(f"Starting three full {name} runs on pool {pool}", flush=True)
-        run(name, pool, darshan=darshan)
+        print(f"Starting {repetitions} full {name} invocation(s) on pool {pool}", flush=True)
+        run(name, pool, darshan=darshan, repetitions=repetitions)
         previous = pool
     restore(previous)
