@@ -15,6 +15,9 @@ The same issue was observed on colva2 for target 205: cap its whole
 `/dev/nvme1n1`, not `/dev/nvme1n1p1`. The configuration script clears old
 per-device entries before applying the corrected paths. Kernel verification
 remains mandatory; matching systemd properties alone is insufficient.
+All four caps now use physical devices: colva1/104 and colva2/205 use
+`/dev/nvme1n1`; colva3/305 uses `/dev/nvme1n1` and colva3/306 uses
+`/dev/nvme2n1`. The partition-backed BeeGFS storage paths are unchanged.
 Complete existing pool-6 jobs first.
 
 To return the four targets from pool 14 to the original pool 6 and clear

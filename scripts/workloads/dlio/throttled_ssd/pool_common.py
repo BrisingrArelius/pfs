@@ -25,8 +25,8 @@ TARGETS = (104, 205, 305, 306)
 FAST = {14: TARGETS, 15: (104, 205, 305), 16: (104, 205), 17: (104,), 18: ()}
 DEVICES = {104: ("colva1", "/dev/nvme1n1"),
            205: ("colva2", "/dev/nvme1n1"),
-           305: ("colva3", "/dev/nvme1n1p1"),
-           306: ("colva3", "/dev/nvme2n1p1")}
+           305: ("colva3", "/dev/nvme1n1"),
+           306: ("colva3", "/dev/nvme2n1")}
 CLASSES = {"resnet": "normal.run_resnet50_pools.ResNetCheckpointing",
            "unet": "normal.run_unet3d_pools.SeededPyTorchCheckpointing",
            "cosmoflow": "normal.run_cosmoflow_pools.CosmoFlowCheckpointing"}

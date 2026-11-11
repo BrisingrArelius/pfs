@@ -6,6 +6,11 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Corrected the remaining colva3 cap mappings for targets 305/306 to whole
+  `/dev/nvme1n1` and `/dev/nvme2n1` after target 305 showed the same missing
+  physical `io.max` entry. All four targets now consistently use physical
+  devices for cgroup caps. Test both directions and all four target rates
+  across pools 14/16/18, including stale partition-property clearing.
 - Fixed target 205's colva2 cap path to physical `/dev/nvme1n1`: the
   `/dev/nvme1n1p1` setting appeared in systemd but left physical device
   `259:7` uncapped in kernel `io.max`. Preserve stale-property clearing and

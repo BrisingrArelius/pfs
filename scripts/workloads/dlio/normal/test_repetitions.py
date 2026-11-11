@@ -33,17 +33,25 @@ def configuration_module(common):
 
 
 class RepetitionTests(unittest.TestCase):
-    def test_colva2_caps_use_physical_device_and_clear_stale_partition_caps(self):
+    def test_all_caps_use_physical_devices_and_clear_stale_partition_caps(self):
         configure=configuration_module(throttled_module())
-        for pool,rate in ((14,45),(16,45),(18,15)):
+        devices={104:("colva1","/dev/nvme1n1"),205:("colva2","/dev/nvme1n1"),
+                 305:("colva3","/dev/nvme1n1"),306:("colva3","/dev/nvme2n1")}
+        self.assertEqual(configure.DEVICES,devices)
+        for pool,rates in ((14,{104:45,205:45,305:45,306:45}),
+                           (16,{104:45,205:45,305:15,306:15}),
+                           (18,{104:15,205:15,305:15,306:15})):
             with self.subTest(pool=pool),patch.object(configure,"remote") as remote:
                 configure.apply_limits(pool)
-                calls=[call.args for call in remote.call_args_list if call.args[0]=="colva2"]
-                self.assertEqual(len(calls),2)
-                self.assertEqual(calls[0][-2:],("IOReadBandwidthMax=","IOWriteBandwidthMax="))
-                for direction in ("IOReadBandwidthMax","IOWriteBandwidthMax"):
-                    self.assertIn(f"{direction}=/dev/nvme1n1 {rate*1048576}",calls[1])
-                self.assertFalse(any("nvme1n1p1" in arg for arg in calls[1]))
+                for host in ("colva1","colva2","colva3"):
+                    calls=[call.args for call in remote.call_args_list if call.args[0]==host]
+                    self.assertEqual(len(calls),2)
+                    self.assertEqual(calls[0][-2:],("IOReadBandwidthMax=","IOWriteBandwidthMax="))
+                    for target,(node,device) in devices.items():
+                        if node==host:
+                            for direction in ("IOReadBandwidthMax","IOWriteBandwidthMax"):
+                                self.assertIn(f"{direction}={device} {rates[target]*1048576}",calls[1])
+                    self.assertFalse(any("n1p1" in arg for arg in calls[1]))
 
     def test_missing_kernel_cap_is_still_rejected_when_systemd_matches(self):
         common=throttled_module()
