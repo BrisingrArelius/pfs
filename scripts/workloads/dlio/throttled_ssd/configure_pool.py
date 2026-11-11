@@ -6,6 +6,7 @@ import re
 import shlex
 
 from pool_common import DEVICES, FAST, TARGETS, beegfs, execute, verify, verify_membership
+from experiment_config import FAST_BYTES_S, SLOW_BYTES_S
 
 
 SERVICE = "beegfs-storage.service"
@@ -55,7 +56,7 @@ def apply_limits(pool):
         # the old partition paths. Caps must address the physical NVMe devices.
         remote(host, "sudo", "systemctl", "set-property", "--runtime", SERVICE,
                "IOReadBandwidthMax=", "IOWriteBandwidthMax=")
-        settings = [f"{direction}={device} {(45 if target in FAST[pool] else 15) * 1048576}"
+        settings = [f"{direction}={device} {FAST_BYTES_S if target in FAST[pool] else SLOW_BYTES_S}"
                     for direction in ("IOReadBandwidthMax", "IOWriteBandwidthMax")
                     for target, (node, device) in DEVICES.items() if node == host]
         remote(host, "sudo", "systemctl", "set-property", "--runtime", SERVICE, *settings)

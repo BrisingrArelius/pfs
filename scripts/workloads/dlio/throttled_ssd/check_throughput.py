@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 from pool_common import DATA_ROOT, DEVICES, FAST, TARGETS, pattern, verify
+from experiment_config import FAST_MIB_S, SLOW_MIB_S
 
 
 SAMPLE = r"""
@@ -187,7 +188,7 @@ def native_check(pool):
             print(f"{operation}: fio {app:.1f} MiB/s; physical SSD read/write by target:")
             for target in TARGETS:
                 amount, rate = device_rates[target]
-                cap = 45 if target in FAST[pool] else 15
+                cap = FAST_MIB_S if target in FAST[pool] else SLOW_MIB_S
                 print(f"  {target}: {amount:.0f} MiB, {rate:.1f} MiB/s (configured cap {cap})")
             if operation == "read" and sum(value[0] for value in device_rates.values()) < 1024:
                 print("  SSD reads were below half the 2-GiB input; caching masks this cap check.")

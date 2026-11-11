@@ -20,9 +20,11 @@ sys.path.insert(0, str(NORMAL.parent))
 from dlio_pool_profiles import DATA_ROOT, RANKS, RESULT_ROOT, WORKLOADS  # noqa: E402
 from normal.pool_common import FIELDS, checkpoint_sizes, metrics  # noqa: E402
 import dlio_darshan  # noqa: E402
+from experiment_config import FAST_MIB_S, SLOW_MIB_S, FAST_BYTES_S, SLOW_BYTES_S, RESULTS_SUBDIR  # noqa: E402
 
 TARGETS = (104, 205, 305, 306)
 FAST = {14: TARGETS, 15: (104, 205, 305), 16: (104, 205), 17: (104,), 18: ()}
+EXPERIMENT_POOLS = (14, 16, 18)
 DEVICES = {104: ("colva1", "/dev/nvme1n1"),
            205: ("colva2", "/dev/nvme1n1"),
            305: ("colva3", "/dev/nvme1n1"),
@@ -119,7 +121,7 @@ def verify(pool):
                 if line.startswith(direction + "="):
                     device, rate = line.split("=", 1)[1].split()
                     seen[device] = int(rate)
-            expected = {device: (45 if target in FAST[pool] else 15) * 1048576
+            expected = {device: FAST_BYTES_S if target in FAST[pool] else SLOW_BYTES_S
                         for target, device in selected}
             if seen != expected:
                 raise RuntimeError(f"{host}: {direction}={seen}, expected {expected}")
@@ -136,7 +138,7 @@ def verify(pool):
         limits = {line.split()[0]: dict(field.split("=", 1) for field in line.split()[1:])
                   for line in kernel.splitlines()}
         for (target, _), device_id in zip(selected, ids):
-            expected_rate = str((45 if target in FAST[pool] else 15) * 1048576)
+            expected_rate = str(FAST_BYTES_S if target in FAST[pool] else SLOW_BYTES_S)
             actual = limits.get(device_id, {})
             if actual.get("rbps") != expected_rate or actual.get("wbps") != expected_rate:
                 raise RuntimeError(f"{host} target {target}: io.max {device_id} is {actual}, "
@@ -262,12 +264,16 @@ def run(name, pool, pilot=False, *, output=None, completed=(), on_complete=None,
     verify(pool)
     profile = WORKLOADS[name]
     root = prepare(profile, pool)
-    output = output or RESULT_ROOT / "throttled_ssd" / profile.folder / (
+    output = output or RESULT_ROOT / RESULTS_SUBDIR / profile.folder / (
         ("pilot-" if pilot else "runs-") + f"pool{pool}-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
     output.mkdir(parents=True, exist_ok=True)
-    (output / "condition.json").write_text(json.dumps({"pool": pool, "fast": FAST[pool],
+    condition = {"pool": pool, "fast": FAST[pool],
         "slow": sorted(set(TARGETS) - set(FAST[pool])), "targets": TARGETS,
-        "fast_MiB_s": 45, "slow_MiB_s": 15, "profile": profile.profile}, indent=2) + "\n")
+        "fast_MiB_s": FAST_MIB_S, "slow_MiB_s": SLOW_MIB_S, "profile": profile.profile}
+    condition_path = output / "condition.json"
+    if condition_path.exists() and json.loads(condition_path.read_text()) != json.loads(json.dumps(condition)):
+        raise RuntimeError(f"Existing condition differs from configured rates or workload: {condition_path}")
+    condition_path.write_text(json.dumps(condition, indent=2) + "\n")
     env = os.environ.copy()
     if darshan is not None:
         env = dlio_darshan.clean_environment(env)
@@ -406,10 +412,12 @@ def run_all(name, darshan=None, repetitions=3, pools=None):
         raise ValueError(f"Unsupported workload: {name}")
     if repetitions<1:
         raise ValueError("repetitions must be positive")
-    allowed=(14,16,18) if name in ("cosmoflow","resnet") else tuple(FAST)
+    allowed=EXPERIMENT_POOLS
     pools=allowed if pools is None else tuple(pools)
     if not pools or len(set(pools))!=len(pools) or not set(pools)<=set(allowed):
         raise ValueError(f"Expected distinct pools from {allowed}")
+    if list(pools) != sorted(pools) or any((a,b) not in ((14,16),(16,18)) for a,b in zip(pools,pools[1:])):
+        raise ValueError("Selected pools must follow 14→16→18 without skipping transitions")
     if darshan is not None:
         darshan = dlio_darshan.validate(darshan)
     profile = WORKLOADS[name]

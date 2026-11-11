@@ -1,13 +1,44 @@
 # DLIO throttled-SSD comparison
 
 The [experiment spec](../../../../docs/specs/DL_Throttled_SSD.md) describes
-the five four-target conditions. Run from the repository root on `anjuna2`.
+the original four-target conditions. Run from the repository root on `anjuna2`.
 The normal scripts and datasets remain under `normal/` and their existing
 cluster paths; this suite stages copies in `dlio/throttled_ssd/` only.
 
+## Current experiment: 1.5:1
+
+[`experiment_config.py`](experiment_config.py) is the single place to set
+`FAST_MIB_S = 45`, `FAST_TO_SLOW_RATIO = 1.5`, and
+`RESULTS_SUBDIR = "throttled_ssd_1.5"`. Rates are per physical SSD target,
+in MiB/s; the slow rate is calculated as 45 / 1.5 = **30 MiB/s** and the
+kernel byte/s limits are rounded to whole bytes/s. Both workload runners use pools **14, 16, 18** with **three full
+five-epoch invocations per pool**; Darshan is enabled with `--darshan`.
+
+From restored original pool 6 with no caps, run these **sequentially**:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/run_cosmoflow_pools.py \
+  --all-pools --darshan "$HOME/darshan-nompi/lib/libdarshan.so.0.0.0"
+
+python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py \
+  --all-pools --darshan "$HOME/darshan-nompi/lib/libdarshan.so.0.0.0"
+```
+
+Each workload runs 14→16→18 (4/0, 2/2, 0/4), then restores pool 6 on
+success. The runner checks systemd and kernel `io.max` before each case;
+Darshan parser checks occur after each invocation. Existing staged datasets
+remain under `dlio/throttled_ssd/`; new results go to
+`~/tejas/dlio/throttled_ssd_1.5/{cosmoflow,unet3d}/`. A failure stops the
+existing sweep at its current pool; inspect and restore it before another run.
+
+Change the three config constants for a future experiment; choose a **new**
+`RESULTS_SUBDIR` when rates change. Restart Python processes after editing the
+config. `condition.json` records the actual configured rates per result;
+resuming into an existing condition with different rates is rejected.
+
 For a single `--pool` run, the four targets must already be in that pool,
-and `systemd` must report **45 MiB/s** read/write limits for its fast IDs
-and **15 MiB/s** for the other IDs. `pool_common.py` checks pool membership,
+and `systemd` must report the configured read/write limits (currently
+**45 MiB/s** fast and **30 MiB/s** slow). `pool_common.py` checks pool membership,
 systemd settings, and the kernel's actual `io.max` before a run. On `colva1`,
 the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
 the partition setting appeared in systemd but installed no kernel limit.
@@ -60,8 +91,8 @@ python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py \
 Run the commands sequentially, starting each sweep from restored original
 pool 6. Each sweep restores pool 6 after successful completion. `--pools`
 requires `--all-pools`; it selects the pool order and does not alter any
-individual invocation's workload. Without `--pools`, the original matrices
-remain: CosmoFlow uses 14/16/18 and U-Net uses 14–18. A single already-configured
+individual invocation's workload. Without `--pools`, both workloads use
+14/16/18. A single already-configured
 condition also accepts `--pool 14 --repetitions 1 --darshan`. Pilots remain one
 shortened invocation regardless of the full-run repetition setting.
 
@@ -96,7 +127,7 @@ is **restarted**, not resumed mid-epoch; completed repetitions are skipped.
 Each retry uses the full cache protocol.
 
 Progress is saved after every completed repetition in
-`~/tejas/dlio/throttled_ssd/resnet50/sweep-*.json`. Continuation reuses the
+`~/tejas/dlio/<RESULTS_SUBDIR>/resnet50/sweep-*.json`. Continuation reuses the
 same `runs-poolN-*` directories. Per-repetition CSV journals rebuild combined
 metrics without duplicate rows. Interrupted raw outputs are retained under
 `interrupted/`; partial checkpoints are renamed in place on BeeGFS, with
@@ -153,7 +184,7 @@ inspects a 65-file sample of OST assignments rather than querying all
 
 This moves the four selected SSD targets from pool 6 into pool 14, applies
 the 4:0 caps, and runs three full U-Net repetitions. It then moves through
-pools 15–18 in order, setting their read/write caps and doing three runs in
+pools 16 and 18, setting their read/write caps and doing three runs in
 each; after a successful sweep it returns the targets to pool 6 and clears
 the runtime limits. Dataset copies are outside measured runs. Before each
 DLIO invocation, the runner syncs and drops Linux page caches on
@@ -197,11 +228,11 @@ After each pool's runs finish, use the copyable commands in
 [POOL_CHANGES.md](POOL_CHANGES.md) or its one-step equivalent, for example:
 
 ```bash
-python3 scripts/workloads/dlio/throttled_ssd/configure_pool.py --from-pool 14 --to-pool 15
-python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --pool 15
+python3 scripts/workloads/dlio/throttled_ssd/configure_pool.py --from-pool 14 --to-pool 16
+python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --pool 16 --darshan
 ```
 
-Continue through pools 16–18, one pool at a time. `configure_pool.py` moves
+Continue to pool 18, one pool at a time. `configure_pool.py` moves
 targets and sets runtime limits; it never launches DLIO. It verifies the
 current pool and caps before moving, and the next condition after applying
 limits. A failed move may have partially completed: inspect the pool listing
@@ -214,7 +245,7 @@ python3 scripts/workloads/dlio/throttled_ssd/configure_pool.py --from-pool 18 --
 The restore command clears the experiment's runtime limits; use it only if
 there were no pre-existing service I/O limits. Moving targets does not
 restripe previous files: this suite stages fresh copies under each pool's
-pattern. Results go to `~/tejas/dlio/throttled_ssd/`.
+pattern. Results go to `~/tejas/dlio/<RESULTS_SUBDIR>/`.
 
 Each **new** throttled sweep writes `device_io.csv` beside `metrics.csv`:
 physical SSD read/write bytes and whole-invocation MiB/s for each of the
@@ -262,15 +293,17 @@ add further run directories as each condition finishes:
 
 ```bash
 python3 scripts/workloads/dlio/throttled_ssd/plot_results.py --unet \
-  results/workloads/runs/runs-pool14-20261102-124553-139890
+  results/workloads/runs/runs-pool14-TIMESTAMP \
+  results/workloads/runs/runs-pool16-TIMESTAMP \
+  results/workloads/runs/runs-pool18-TIMESTAMP
 ```
 
-When pool 15 finishes, rerun the same command with its copied directory
-appended; continue through pool 18. Use `--resnet` or `--cosmoflow` with
+The plotter also accepts a subset of completed pools. Use `--resnet` or `--cosmoflow` with
 completed sweeps of those workloads.
 The plotter validates three
 full repetitions per supplied pool, writes six PNGs and source CSVs to
-`results/workloads/plots/dlio/throttled_ssd/{unet,resnet,cosmoflow}/`, and never runs
+`results/workloads/plots/dlio/throttled_ssd_1.5/{unet,resnet,cosmoflow}/`
+under the current config, and never runs
 DLIO. Pool performance and per-run plots use **end-to-end samples/s**:
 total processed samples across all epochs divided by DLIO's full-run
 `end - start` seconds. Counts come from full batches and are checked against
@@ -281,6 +314,10 @@ average of DLIO's epoch rates or a physical-device byte rate. Pool error bars
 summarize three independent per-run rates. The redundant whole-run-time panel
 and inferred pool-summary figure are removed; timestamps and durations remain
 in the source data/CSVs.
+
+The plotter rejects mixed target-cap pairs. When plotting historical 45/15
+results while the current configuration is 45/30, pass `--output` explicitly
+to the historical plot location; this prevents silently mixing experiments.
 
 Per-epoch diagnostic plots retain DLIO-reported samples/s; zero-reported
 epochs are gaps, not interpolated. CSVs retain native and inferred fields.

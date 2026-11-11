@@ -6,6 +6,14 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Added shared throttled experiment configuration for fast target rate, ratio
+  and result directory, currently 45/30 MiB/s (1.5:1) and `throttled_ssd_1.5`. Both
+  U-Net and CosmoFlow now use pools 14/16/18 by default with three repetitions;
+  dataset staging reuses existing files, while result and performance-plot
+  output are separated. Runtime systemd/kernel checks and condition metadata
+  use the configured rates; mixed-rate plot inputs are rejected. Darshan is
+  opt-in using the existing `--darshan` flag. Added regressions for settings,
+  matrix, cap checks, output metadata and protection against mixed results.
 - Changed the combined CosmoFlow/U-Net transfer-estimate figure to use the
   same millisecond axis for both panels, exposing absolute differences while
   retaining numerical values and the illustrative-estimate qualification.

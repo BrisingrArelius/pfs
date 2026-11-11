@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import yaml
 
 from pool_common import FAST, RANKS, WORKLOADS
+from experiment_config import FAST_MIB_S, SLOW_MIB_S, RESULTS_SUBDIR
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -49,6 +50,19 @@ def mean_sd(values):
 
 def p95(values):
     return sorted(values)[math.ceil(.95 * len(values)) - 1]
+
+
+def validate_rates(directories, require_configured):
+    rates = set()
+    for directory in directories:
+        condition = json.loads((directory / "condition.json").read_text())
+        rates.add((condition["fast_MiB_s"], condition["slow_MiB_s"]))
+    if len(rates) != 1:
+        raise ValueError(f"Cannot combine runs with different target caps: {sorted(rates)}")
+    actual = next(iter(rates))
+    if require_configured and actual != (FAST_MIB_S, SLOW_MIB_S):
+        raise ValueError(f"Run caps {actual} differ from configured caps {(FAST_MIB_S, SLOW_MIB_S)}; select --output explicitly for historical results")
+    return actual
 
 
 def parse_sweep(root, workload):
@@ -271,8 +285,9 @@ def main():
     choice.add_argument("--resnet", action="store_const", dest="workload", const="resnet")
     choice.add_argument("--cosmoflow", action="store_const", dest="workload", const="cosmoflow")
     parser.add_argument("run_directories", type=Path, nargs="+", help="Completed runs-pool14-... etc. directories")
-    parser.add_argument("--output", type=Path, help="Default: results/workloads/plots/dlio/throttled_ssd/WORKLOAD")
+    parser.add_argument("--output", type=Path, help=f"Default: results/workloads/plots/dlio/{RESULTS_SUBDIR}/WORKLOAD")
     args = parser.parse_args()
+    rates = validate_rates(args.run_directories, require_configured=args.output is None)
     all_runs, all_epochs, all_checkpoints, all_loading = [], [], [], []
     pools = set()
     for directory in args.run_directories:
@@ -285,7 +300,7 @@ def main():
         all_checkpoints.extend(checkpoints)
         all_loading.extend(loading)
     pools = sorted(pools)
-    output = args.output or ROOT / "results/workloads/plots/dlio/throttled_ssd" / args.workload
+    output = args.output or ROOT / "results/workloads/plots/dlio" / RESULTS_SUBDIR / args.workload
     output.mkdir(parents=True, exist_ok=True)
     groups = []
     for metric, unit in (("end_to_end_samples_s", "samples/s (full run)"),
@@ -314,7 +329,7 @@ def main():
     plot_epochs(args.workload, pools, all_loading, "rank_load_p95_s",
                 "Data loading time per step (s, rank p95)",
                 "data loading time by epoch", "data_loading_time.png", output)
-    print(f"Validated {len(pools)} pool(s), {len(all_runs)} runs; "
+    print(f"Validated {len(pools)} pool(s), {len(all_runs)} runs; caps {rates[0]}/{rates[1]} MiB/s; "
           f"six PNGs and CSVs: {output}")
 
 

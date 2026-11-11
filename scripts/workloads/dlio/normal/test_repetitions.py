@@ -19,6 +19,7 @@ def throttled_module():
     spec=importlib.util.spec_from_file_location("throttled_repetition_test",path)
     module=importlib.util.module_from_spec(spec)
     with patch.object(sys,"path",list(sys.path)):
+        sys.path.insert(0,str(path.parent))
         spec.loader.exec_module(module)
     return module
 
@@ -39,8 +40,8 @@ class RepetitionTests(unittest.TestCase):
                  305:("colva3","/dev/nvme1n1"),306:("colva3","/dev/nvme2n1")}
         self.assertEqual(configure.DEVICES,devices)
         for pool,rates in ((14,{104:45,205:45,305:45,306:45}),
-                           (16,{104:45,205:45,305:15,306:15}),
-                           (18,{104:15,205:15,305:15,306:15})):
+                           (16,{104:45,205:45,305:30,306:30}),
+                           (18,{104:30,205:30,305:30,306:30})):
             with self.subTest(pool=pool),patch.object(configure,"remote") as remote:
                 configure.apply_limits(pool)
                 for host in ("colva1","colva2","colva3"):
@@ -166,6 +167,69 @@ class RepetitionTests(unittest.TestCase):
                 self.assertTrue(all(call.kwargs["repetitions"]==1 for call in run.call_args_list))
                 self.assertEqual([call.args for call in configure.transition.call_args_list],[(6,14),(14,16),(16,18)])
                 configure.restore.assert_called_once_with(18)
+
+    def test_default_throttled_matrix_for_both_workloads(self):
+        module=throttled_module()
+        for name in ("cosmoflow","unet"):
+            with self.subTest(workload=name),tempfile.TemporaryDirectory() as directory:
+                root=Path(directory)
+                source=root/f"{name}/pool1/dataset/train"
+                source.mkdir(parents=True)
+                (source/"sample.test").touch()
+                profile=SimpleNamespace(folder=name,files=1,extension="test")
+                configure=SimpleNamespace(transition=Mock(),restore=Mock())
+                with patch.dict(sys.modules,{"configure_pool":configure}), \
+                     patch.object(module,"DATA_ROOT",root), \
+                     patch.dict(module.WORKLOADS,{name:profile}), \
+                     patch.object(module.dlio_darshan,"validate",side_effect=lambda path:path), \
+                     patch.object(module,"run") as run,redirect_stdout(StringIO()):
+                    module.run_all(name,darshan=Path("/fake/libdarshan.so"))
+                self.assertEqual([call.args[:2] for call in run.call_args_list],[(name,14),(name,16),(name,18)])
+                self.assertTrue(all(call.kwargs["repetitions"]==3 for call in run.call_args_list))
+                self.assertTrue(all(call.kwargs["darshan"]==Path("/fake/libdarshan.so") for call in run.call_args_list))
+
+    def test_default_throttled_output_and_condition_metadata(self):
+        module=throttled_module()
+        self.assertEqual((module.FAST_MIB_S,module.SLOW_MIB_S,module.RESULTS_SUBDIR),(45,30,"throttled_ssd_1.5"))
+        with tempfile.TemporaryDirectory() as directory,ExitStack() as stack,redirect_stdout(StringIO()):
+            root=Path(directory)
+            profile=SimpleNamespace(folder="cosmoflow",profile="cosmoflow_v100",files=1,
+                                    batch_size=1,reader_threads=4,model_bytes=100)
+            (root/"checkpoints").mkdir()
+            for name,value in (("verify",None),("checkpoint_sizes",{}),("placement","104,205,305,306"),
+                               ("metrics",[]),("physical_counters",{}),("physical_io",[])):
+                stack.enter_context(patch.object(module,name,return_value=value))
+            stack.enter_context(patch.object(module,"prepare",return_value=root))
+            stack.enter_context(patch.object(module,"RESULT_ROOT",root/"results"))
+            stack.enter_context(patch.object(module.time,"sleep"))
+            stack.enter_context(patch.object(module.importlib.metadata,"version",return_value="2.0.0"))
+            stack.enter_context(patch.dict(module.WORKLOADS,{"cosmoflow":profile}))
+            stack.enter_context(patch.object(module,"execute"))
+            module.run("cosmoflow",14,repetitions=1)
+            condition=next((root/"results/throttled_ssd_1.5/cosmoflow").glob("runs-pool14-*/condition.json"))
+            data=json.loads(condition.read_text())
+            self.assertEqual((data["fast_MiB_s"],data["slow_MiB_s"]),(45,30))
+
+    def test_plotter_rejects_mixed_caps_and_protects_default_output(self):
+        path=Path(__file__).resolve().parents[1]/"throttled_ssd/plot_results.py"
+        spec=importlib.util.spec_from_file_location("throttled_plot_test",path)
+        plot=importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules,{"pool_common":throttled_module()}):
+            spec.loader.exec_module(plot)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            paths=[]
+            for index,rate in enumerate((30,30,15)):
+                case=root/str(index)
+                case.mkdir()
+                (case/"condition.json").write_text(json.dumps({"fast_MiB_s":45,"slow_MiB_s":rate}))
+                paths.append(case)
+            self.assertEqual(plot.validate_rates(paths[:2],True),(45,30))
+            with self.assertRaisesRegex(ValueError,"different target caps"):
+                plot.validate_rates(paths,False)
+            with self.assertRaisesRegex(ValueError,"differ from configured"):
+                plot.validate_rates(paths[2:],True)
+            self.assertEqual(plot.validate_rates(paths[2:],False),(45,15))
 
 
 if __name__=="__main__":

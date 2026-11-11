@@ -25,14 +25,14 @@ class LauncherTests(unittest.TestCase):
             script=root/f"run_{name}_pools.py"
             for flags,expected in (([],3),(["--repetitions","1"],1)):
                 run,run_all=Mock(),Mock()
-                common=types.SimpleNamespace(run=run,run_all=run_all,FAST=(14,15,16,17,18))
+                common=types.SimpleNamespace(run=run,run_all=run_all,EXPERIMENT_POOLS=(14,16,18))
                 with patch.dict(sys.modules,{"pool_common":common}), \
                      patch.object(sys,"argv",[str(script),"--pool","14",*flags]):
                     runpy.run_path(str(script),run_name="__main__")
                 self.assertEqual(run.call_args.kwargs["repetitions"],expected)
                 run_all.assert_not_called()
             run,run_all=Mock(),Mock()
-            common=types.SimpleNamespace(run=run,run_all=run_all,FAST=(14,15,16,17,18))
+            common=types.SimpleNamespace(run=run,run_all=run_all,EXPERIMENT_POOLS=(14,16,18))
             with patch.dict(sys.modules,{"pool_common":common}), \
                  patch.object(sys,"argv",[str(script),"--all-pools","--pools","14","16","18","--repetitions","1"]):
                 runpy.run_path(str(script),run_name="__main__")

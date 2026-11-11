@@ -1,5 +1,10 @@
 # DLIO throttled-SSD pool changes
 
+> **Current experiment:** use the [1.5:1 configuration and commands](README.md#current-experiment-151).
+> The detailed five-pool 45/15 examples below are historical and must not be
+> used as current run instructions. Both current workload runners use
+> pools 14, 16 and 18; current caps come from `experiment_config.py`.
+
 To run the **entire U-Net sweep in one command**, start on `anjuna2` with
 the original nine targets in pool 6, no storage-service bandwidth limits,
 and empty pools 14–18:
@@ -16,8 +21,8 @@ python3 scripts/workloads/dlio/throttled_ssd/run_cosmoflow_pools.py --all-pools
 ```
 
 Each command runs three full repetitions per condition and restores pool 6
-after all selected conditions succeed. CosmoFlow moves directly 6→14→16→18→6;
-U-Net uses all five conditions. If any step fails, it stops at the current
+after all selected conditions succeed. Both move directly 6→14→16→18→6.
+If any step fails, it stops at the current
 pool without restoring or launching further runs; inspect processes and pool
 membership before retrying.
 

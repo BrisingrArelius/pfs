@@ -236,7 +236,7 @@ def main():
         return
     if args.pilot:
         parser.error("--pilot requires a single --pool")
-    base = common.RESULT_ROOT / "throttled_ssd" / common.WORKLOADS["resnet"].folder
+    base = common.RESULT_ROOT / common.RESULTS_SUBDIR / common.WORKLOADS["resnet"].folder
     base.mkdir(parents=True, exist_ok=True)
     with (base / ".sweep.lock").open("a") as lock:
         try:
