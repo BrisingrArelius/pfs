@@ -24,6 +24,38 @@ def throttled_module():
 
 
 class RepetitionTests(unittest.TestCase):
+    def test_restore_from_pool14_does_not_require_working_caps(self):
+        common=throttled_module()
+        path=Path(__file__).resolve().parents[1]/"throttled_ssd/configure_pool.py"
+        spec=importlib.util.spec_from_file_location("restore_repetition_test",path)
+        configure=importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules,{"pool_common":common}):
+            spec.loader.exec_module(configure)
+        members={14:set(common.TARGETS),6:configure.NORMAL_TARGETS-set(common.TARGETS)}
+        def beegfs(*args):
+            if args==("--liststoragepools",):
+                return "\n".join(f"{pool} {name} {','.join(map(str,sorted(members[pool])))}"
+                                 for pool,name in ((6,"ssd"),(14,"dlio_ssd_f4_s0")))
+            pool=int(args[1].split("=")[1])
+            if args[2].startswith("--rmtargets="):
+                members[pool].difference_update(common.TARGETS)
+            elif args[2].startswith("--addtargets="):
+                members[pool].update(common.TARGETS)
+            else:
+                raise AssertionError(args)
+            return ""
+        with patch.object(common,"beegfs",side_effect=beegfs), \
+             patch.object(configure,"beegfs",side_effect=beegfs), \
+             patch.object(configure,"verify",side_effect=RuntimeError("broken io.max")) as caps, \
+             patch.object(configure,"remote",return_value="IOReadBandwidthMax=\nIOWriteBandwidthMax=\n") as remote, \
+             redirect_stdout(StringIO()):
+            configure.restore(14)
+        caps.assert_not_called()
+        self.assertEqual(members[6],configure.NORMAL_TARGETS)
+        self.assertFalse(members[14])
+        cleared=[call.args[0] for call in remote.call_args_list if call.args[1]=="sudo"]
+        self.assertEqual(cleared,["colva1","colva2","colva3"])
+
     def test_actual_normal_and_throttled_loops(self):
         throttled=throttled_module()
         profile=SimpleNamespace(folder="cosmoflow",profile="cosmoflow_v100",files=1,

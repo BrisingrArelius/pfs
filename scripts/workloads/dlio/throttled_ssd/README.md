@@ -13,6 +13,17 @@ the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
 the partition setting appeared in systemd but installed no kernel limit.
 Complete existing pool-6 jobs first.
 
+To return the four targets from pool 14 to the original pool 6 and clear
+runtime bandwidth limits, first finish/stop the workload, then run:
+
+```bash
+python3 scripts/workloads/dlio/throttled_ssd/configure_pool.py --from-pool 14 --restore
+```
+
+Restoration checks source target membership, not working throttle caps, so it
+also handles a transition that moved targets but failed `io.max` verification.
+It verifies original pool-6 membership and cleared service caps afterward.
+
 ## Optional built-in Darshan profiling
 
 The U-Net and CosmoFlow runners accept `--darshan [LIBRARY]` for the same

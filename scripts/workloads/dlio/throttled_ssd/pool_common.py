@@ -97,13 +97,17 @@ def beegfs(*args):
                           text=True, capture_output=True).stdout
 
 
-def verify(pool):
+def verify_membership(pool):
     listing = beegfs("--liststoragepools")
     fast = len(FAST[pool])
     match = re.search(rf"^[ \t]*{pool}[ \t]+dlio_ssd_f{fast}_s{4-fast}[ \t]+([\d,]+)", listing, re.M)
     members = set(map(int, match[1].split(","))) if match else set()
     if members != set(TARGETS):
         raise RuntimeError(f"Pool {pool} must contain {TARGETS}; found {members}")
+
+
+def verify(pool):
+    verify_membership(pool)
     for host in ("colva1", "colva2", "colva3"):
         text = execute(["ssh", host, shlex.join(("systemctl", "show",
             "beegfs-storage.service", "-p", "IOReadBandwidthMax", "-p", "IOWriteBandwidthMax"))],

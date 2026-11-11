@@ -6,6 +6,11 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Fixed pool restoration after a failed throttle-cap check: verify source
+  membership independently of caps before returning targets to pool 6 and
+  clearing limits. Retain full membership/cap verification for experiment
+  launches and verify the original pool after restoration. Added a regression
+  for pool 14 recovery with broken caps, target moves and all-host cap cleanup.
 - Added `--repetitions N` (default 3) to normal and throttled CosmoFlow/U-Net runners so
   plotting-only captures can finish cleanly after one full invocation per
   pool. Pilot shortening and all full-invocation workload arguments remain

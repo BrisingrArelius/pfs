@@ -5,7 +5,7 @@ import argparse
 import re
 import shlex
 
-from pool_common import DEVICES, FAST, TARGETS, beegfs, execute, verify
+from pool_common import DEVICES, FAST, TARGETS, beegfs, execute, verify, verify_membership
 
 
 SERVICE = "beegfs-storage.service"
@@ -80,7 +80,9 @@ def transition(source, destination):
 def restore(source):
     if source not in FAST:
         raise ValueError("Expected an experiment pool 14–18")
-    verify(source)
+    # Recovery must work after cap verification failed during a transition.
+    # Confirm ownership, then remove caps rather than requiring them to work.
+    verify_membership(source)
     move(source, 6)
     clear_limits()
     verify_normal()
