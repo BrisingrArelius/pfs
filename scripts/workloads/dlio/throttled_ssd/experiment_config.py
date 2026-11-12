@@ -5,8 +5,8 @@ cannot silently overwrite one another. Rates are per-target MiB/s.
 """
 
 FAST_MIB_S = 45
-FAST_TO_SLOW_RATIO = 1.2
-RESULTS_SUBDIR = "throttled_ssd_1.2"
+FAST_TO_SLOW_RATIO = 3
+RESULTS_SUBDIR = "throttled_ssd_3.0"
 
 if FAST_MIB_S <= 0 or FAST_TO_SLOW_RATIO < 1:
     raise ValueError("Expected a positive fast rate and a ratio >= 1")

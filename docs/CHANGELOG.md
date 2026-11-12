@@ -6,6 +6,9 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Set the current throttled experiment ratio to 3:1: 45 MiB/s fast and
+  15 MiB/s slow, with fresh outputs under `throttled_ssd_3.0`; updated
+  configuration-specific checks and documentation.
 - Generated 1.2:1 (45/37.5 MiB/s) CosmoFlow and U-Net performance plots and
   combined A/B/C Darshan views for all 18 completed repetitions. Added an
   optional safe output basename and repetition label to the existing Darshan
