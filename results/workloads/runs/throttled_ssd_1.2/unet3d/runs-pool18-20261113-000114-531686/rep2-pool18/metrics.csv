@@ -1,0 +1,9 @@
+pool,repetition,phase,epoch,duration_s,bytes_written,throughput,throughput_unit,ost_ids,raw_output
+18,2,training_epoch_wall_only,1,154.97,,,DLIO training rate unavailable,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18
+18,2,training_input_block,2,82.34,,1.94307595812568,samples/s,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18
+18,2,checkpoint_save_rank0,2,13.5,499154332,35.2615308408384,MiB/s (no fsync),"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18
+18,2,training_epoch_wall_only,3,82.37,,,DLIO training rate unavailable,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18
+18,2,training_input_block,4,82.35,,1.9430419277549567,samples/s,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18
+18,2,checkpoint_save_rank0,4,13.23,499154332,35.981153919222855,MiB/s (no fsync),"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18
+18,2,training_epoch_wall_only,5,82.39,,,DLIO training rate unavailable,"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18
+18,2,training_summary_incomplete,,,,108.6630482773082,MiB/s (DLIO native mean; incomplete epochs),"104,205,305,306",/home/pfs/tejas/dlio/throttled_ssd_1.2/unet3d/runs-pool18-20261113-000114-531686/rep2-pool18

@@ -6,6 +6,10 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Generated 1.2:1 (45/37.5 MiB/s) CosmoFlow and U-Net performance plots and
+  combined A/B/C Darshan views for all 18 completed repetitions. Added an
+  optional safe output basename and repetition label to the existing Darshan
+  plotter for flat, per-repetition plot galleries.
 - Changed the current configurable SSD ratio to 1.2:1: fast 45 and slow
   37.5 MiB/s, with new results/plots under `throttled_ssd_1.2`. Updated
   cap, metadata and plotting-isolation regression expectations.

@@ -1,0 +1,1 @@
+/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2-interrupted-rep2-20261112-214407-071245

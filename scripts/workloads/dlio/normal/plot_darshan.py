@@ -110,10 +110,12 @@ def collect(case, native_utc_offset=None):
         phases.append({"epoch":int(epoch),"start_s":start,"end_s":end,"rank0_checkpoints":checkpoints})
     pool_match=re.search(r"pool(\d+)$",case.name)
     pool=int(pool_match[1]) if pool_match else None
+    repetition_match=re.match(r"rep(\d+)-pool\d+$",case.name)
+    repetition=int(repetition_match[1]) if repetition_match else None
     pool_label={1:"Default",3:"HDD",6:"SSD",14:"4 fast / 0 slow",
                 15:"3 fast / 1 slow",16:"2 fast / 2 slow",
                 17:"1 fast / 3 slow",18:"0 fast / 4 slow"}.get(pool,"Pool")
-    return {"model":config["model"],"pool":pool,
+    return {"model":config["model"],"pool":pool,"repetition":repetition,
             "pool_label":f"{pool_label} (pool {pool})" if pool is not None else "Single invocation",
             "source":str(case.resolve()),"phases":phases,
             "rank_api_bytes":[dict(row) for row in totals],
@@ -169,9 +171,11 @@ def activity(ax, intervals, y, color):
             ax.scatter(zero,[y]*len(zero),marker="|",s=12,color=color,rasterized=True)
 
 
-def render(data, output, bin_seconds=1):
+def render(data, output, bin_seconds=1, name=None):
     if bin_seconds<=0:
         raise ValueError("bin_seconds must be positive")
+    if name is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*",name):
+        raise ValueError("Output name must contain only letters, digits, underscores or hyphens")
     events=data["events"]
     if not events:
         raise ValueError("No measured DXT events for A/B/C")
@@ -227,29 +231,32 @@ def render(data, output, bin_seconds=1):
                               "counts":[{"bin":key[0],"category":key[1],"op":key[2],"count":count}
                                         for key,count in sorted(counts.items())]}
     model={"cosmoflow":"CosmoFlow","unet3d":"U-Net 3D"}.get(data["model"],data["model"])
-    fig.suptitle(f"{model} · {data.get('pool_label','Single invocation')} · {len(data['phases'])} epochs",fontsize=16)
+    repetition=f" · repetition {data['repetition']}" if data.get("repetition") is not None else ""
+    fig.suptitle(f"{model} · {data.get('pool_label','Single invocation')}{repetition} · {len(data['phases'])} epochs",fontsize=16)
     fig.text(.5,.955,CLOCK_NOTE,ha="center",fontsize=9,color="#795123")
     stdio_write=sum(row.get("STDIO_BYTES_WRITTEN",0) for row in data["rank_api_bytes"])
     fig.text(.5,.025,f"STDIO writes: {format_bytes(stdio_write)} aggregate only; no individual STDIO request timing.",ha="center",fontsize=9)
     fig.text(.5,.01,"POSIX API calls, not disk service. Blank time is unclassified. Orange phase shading marks rank-0 checkpoint timers.",ha="center",fontsize=9)
     fig.tight_layout(rect=(0,.05,1,.94))
-    fig.savefig(output/"ABC.png",dpi=150)
+    fig.savefig(output/(f"{name}.png" if name else "ABC.png"),dpi=150)
     plt.close(fig)
     summary={key:value for key,value in data.items() if key!="events"}
     summary["event_count"]=len(events)
     summary["raw_event_source"]="Original per-process .darshan logs in the invocation's darshan/ directory"
-    (output/"plot-data.json").write_text(json.dumps(summary,indent=2)+"\n")
+    (output/(f"{name}.json" if name else "plot-data.json")).write_text(json.dumps(summary,indent=2)+"\n")
     # Remove only the superseded outputs of this plotter after successful save.
-    for name in ("A-phase-activity","B-rank-activity","C-request-sizes","pilot-darshan"):
-        for suffix in ("png","svg"):
-            (output/f"{name}.{suffix}").unlink(missing_ok=True)
-    (output/"pilot-darshan.json").unlink(missing_ok=True)
+    if name is None:
+        for old in ("A-phase-activity","B-rank-activity","C-request-sizes","pilot-darshan"):
+            for suffix in ("png","svg"):
+                (output/f"{old}.{suffix}").unlink(missing_ok=True)
+        (output/"pilot-darshan.json").unlink(missing_ok=True)
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run",type=Path,help="One invocation directory, or pilot directory containing rep1-pool1")
     parser.add_argument("--output",type=Path)
+    parser.add_argument("--name",help="Output basename for a shared plot directory (letters, digits, underscore, hyphen)")
     parser.add_argument("--bin-seconds",type=float,default=1)
     parser.add_argument("--native-utc-offset",type=float,help="Original run host UTC offset in seconds; defaults to this host's offset")
     args=parser.parse_args()
@@ -258,8 +265,8 @@ def main():
         parser.error("--bin-seconds must be positive")
     data=collect(case,args.native_utc_offset)
     output=args.output or case/"darshan-plots"
-    render(data,output,args.bin_seconds)
-    print(f"Saved one combined ABC.png and compact plot-data.json in {output}")
+    render(data,output,args.bin_seconds,name=args.name)
+    print(f"Saved combined {args.name or 'ABC'}.png and plotted values in {output}")
 
 
 if __name__=="__main__":

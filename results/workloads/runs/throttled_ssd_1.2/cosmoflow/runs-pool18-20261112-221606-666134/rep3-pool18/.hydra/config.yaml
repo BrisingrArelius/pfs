@@ -1,0 +1,36 @@
+workload:
+  model: cosmoflow
+  framework: tensorflow
+  workflow:
+    generate_data: false
+    train: true
+    checkpoint: true
+    profiling: true
+  dataset:
+    data_folder: /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool18/dataset
+    num_files_train: 8192
+    num_samples_per_file: 1
+    record_length: 2828486
+    record_length_stdev: 71311
+    format: tfrecord
+  reader:
+    data_loader: tensorflow
+    read_threads: 4
+    batch_size: 1
+    file_shuffle: seed
+    sample_shuffle: seed
+    prefetch_size: 2
+  train:
+    epochs: 5
+    computation_time: 0
+  checkpoint:
+    checkpoint_folder: /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool18/checkpoints/runs-pool18-20261112-221606-666134-rep3
+    type: all_ranks
+    checkpoint_mechanism_classname: normal.run_cosmoflow_pools.CosmoFlowCheckpointing
+    checkpoint_after_epoch: 2
+    epochs_between_checkpoints: 2
+    model_size: 100000000
+    num_layers: 0
+    layer_parameters: []
+  profiling:
+    profiler: darshan

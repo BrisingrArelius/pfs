@@ -79,6 +79,12 @@ class PilotPlotTests(unittest.TestCase):
             self.assertNotIn("events",saved)
             self.assertTrue(any("COARSE" in note for note in saved["limitations"]))
             self.assertEqual(sorted(path.name for path in output.iterdir()),["ABC.png","plot-data.json"])
+            plot.render(data,output,name="pool14-rep1")
+            self.assertTrue((output/"pool14-rep1.png").is_file())
+            self.assertTrue((output/"pool14-rep1.json").is_file())
+            self.assertTrue((output/"ABC.png").is_file())
+            with self.assertRaisesRegex(ValueError,"Output name"):
+                plot.render(data,output,name="../unsafe")
 
     def test_unknown_process_with_measured_io_is_not_dropped(self):
         with tempfile.TemporaryDirectory() as directory:

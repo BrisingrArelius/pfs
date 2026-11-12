@@ -1,0 +1,267 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967586 3106341 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967585 3106342 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967582 3106343 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967586 3106344 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967582 3106345 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967582 3106346 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967582 3106347 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479303.967584 3106348 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018064 3106341 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018070 3106342 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018067 3106343 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018069 3106344 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018067 3106345 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018066 3106346 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018067 3106347 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1794479306.018067 3106348 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[INFO] 2026-11-12T15:58:27.530282 Profiling DLIO /home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/trace-0-of-8.pfw [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/utils/config.py:193]
+[INFO] 2026-11-12T15:58:27.530535 Running DLIO with 8 process(es) [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py:97]
+[INFO] Total amount of data each host will consume is 2.6974544525146484 GB; each host has [np.float64(62.44810485839844), np.float64(62.44810485839844), np.float64(62.44810485839844), np.float64(62.44810485839844), np.float64(62.44810485839844), np.float64(62.44810485839844), np.float64(62.44810485839844), np.float64(62.44810485839844)] GB memory [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/utils/statscounter.py:121]
+[WARNING] The amount of dataset is smaller than the host memory; data might be cached after the first epoch. Increase the size of dataset to eliminate the caching effect!!! [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/utils/statscounter.py:125]
+[INFO] 2026-11-12T15:58:27.532819 Profiling Started with darshan [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py:167]
+[INFO] Discovered custom checkpointing mechanism CosmoFlowCheckpointing [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/utils/config.py:296]
+[INFO] 2026-11-12T15:58:28.120440 Running DLIO with custom checkpointing mechanism class CosmoFlowCheckpointing [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/checkpointing/checkpointing_factory.py:34]
+[INFO] 2026-11-12T15:58:28.234062 Max steps per epoch: 1024 = 1 * 8192 / 1 / 8 (samples per file * num files / batch size / comm size) [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py:317]
+[INFO] total sample: train 33550336 eval 0 [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/utils/config.py:416]
+[INFO] 2026-11-12T15:58:29.301364 Starting epoch 1: 1024 steps expected [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/utils/statscounter.py:192]
+[INFO] 2026-11-12T15:58:29.301563 Starting block 1 [/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/utils/statscounter.py:264]
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_7596_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 4, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_7783_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 7, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_7765_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 5, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_7051_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 3, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_7992_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 0, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_8137_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 1, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Error executing job with overrides: ['workload=cosmoflow_v100', '++workload.dataset.num_files_train=8192', '++workload.workflow.generate_data=False', '++workload.workflow.train=True', '++workload.workflow.checkpoint=True', '++workload.dataset.data_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', '++workload.checkpoint.checkpoint_folder=/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', '++workload.checkpoint.type=all_ranks', '++workload.checkpoint.checkpoint_mechanism_classname=normal.run_cosmoflow_pools.CosmoFlowCheckpointing', '++workload.checkpoint.checkpoint_after_epoch=2', '++workload.checkpoint.epochs_between_checkpoints=2', '++workload.checkpoint.model_size=100000000', '++workload.checkpoint.num_layers=0', '++workload.checkpoint.layer_parameters=[]', '++workload.reader.batch_size=1', '++workload.reader.read_threads=4', '++workload.reader.file_shuffle=seed', '++workload.reader.sample_shuffle=seed', '++workload.reader.prefetch_size=2', '++workload.train.epochs=5', '++workload.train.computation_time=0', '++workload.workflow.profiling=true', '++workload.profiling.profiler=darshan']
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_8054_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 6, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
+Traceback (most recent call last):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 386, in run_benchmark
+    benchmark.run()
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 338, in run
+    steps = self._train(epoch)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 199, in wrapper
+    x = func(*args, **kwargs)
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/main.py", line 260, in _train
+    for batch in loader.next():
+  File "/home/pfs/.local/lib/python3.10/site-packages/dlio_benchmark/data_loader/tf_data_loader.py", line 105, in next
+    for batch in dlp.iter(self._dataset):
+  File "/home/pfs/.local/lib/python3.10/site-packages/dftracer/logger.py", line 222, in iter
+    for v in func:
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 826, in __next__
+    return self._next_internal()
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 776, in _next_internal
+    ret = gen_dataset_ops.iterator_get_next(
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 3086, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/pfs/.local/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 6027, in raise_from_not_ok_status
+    raise core._status_to_exception(e) from None  # pylint: disable=protected-access
+tensorflow.python.framework.errors_impl.UnknownError: {{function_node __wrapped__IteratorGetNext_output_types_1_device_/job:localhost/replica:0/task:0/device:CPU:0}} /mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset/train/img_7618_of_8192.tfrecord; Communication error on send [Op:IteratorGetNext] name: 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+DEBUG: Attributes in self.args: {'comm_size': 8, 'my_rank': 2, 'framework': <FrameworkType.TENSORFLOW: 'tensorflow'>, 'model': 'cosmoflow', 'record_length': 2828486, 'record_length_stdev': 71311, 'num_files_train': 8192, 'num_samples_per_file': 1, 'data_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/dataset', 'format': <FormatType.TFRECORD: 'tfrecord'>, 'data_loader': <DataLoaderType.TENSORFLOW: 'tensorflow'>, 'read_threads': 4, 'batch_size': 1, 'prefetch_size': 2, 'file_shuffle': 'seed', 'sample_shuffle': <Shuffle.SEED: 'seed'>, 'epochs': 5, 'computation_time': 0, 'checkpoint_folder': '/mnt/beegfs/pfs/tejas/dlio/throttled_ssd/cosmoflow/pool16/checkpoints/runs-pool16-20261112-154140-840914-rep2', 'checkpoint_after_epoch': 2, 'epochs_between_checkpoints': 2, 'checkpoint_type': <CheckpointLocationType.ALL_RANKS: 'all_ranks'>, 'checkpoint_mechanism_classname': 'normal.run_cosmoflow_pools.CosmoFlowCheckpointing', 'model_size': 100000000, 'num_layers': 0, 'layer_parameters': [], 'output_folder': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16', 'logfile_path': '/home/pfs/tejas/dlio/throttled_ssd_1.2/cosmoflow/runs-pool16-20261112-154140-840914/rep2-pool16/dlio.log', 'generate_data': False, 'generate_only': False, 'do_checkpoint': True, 'do_profiling': True, 'profiler': <Profiler.DARSHAN: 'darshan'>}
