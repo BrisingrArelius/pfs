@@ -1,0 +1,13 @@
+metric,pool,n_runs,mean,stddev,unit
+end_to_end_samples_s,14,3,44.50728077305534,1.154325772279137,samples/s (full run)
+end_to_end_samples_s,16,3,44.03183023742621,1.38660783636375,samples/s (full run)
+end_to_end_samples_s,18,3,40.71647995717738,0.6603760296453607,samples/s (full run)
+training_input_MiB_s,14,3,128.61971290423426,0.2516665542146694,MiB/s (DLIO native summary)
+training_input_MiB_s,16,3,128.29280693788627,0.1303916718583796,MiB/s (DLIO native summary)
+training_input_MiB_s,18,3,124.30438938640106,0.05185768465212497,MiB/s (DLIO native summary)
+checkpoint_rank0_MiB_s_no_fsync,14,3,36.109723244477074,1.2967472116522485,MiB/s
+checkpoint_rank0_MiB_s_no_fsync,16,3,37.28031105006362,1.2260406147459233,MiB/s
+checkpoint_rank0_MiB_s_no_fsync,18,3,35.95026307369545,1.7082359534897096,MiB/s
+whole_run_minutes,14,3,15.345299716666666,0.4039979869488824,min
+whole_run_minutes,16,3,15.514382577777777,0.4976099711307578,min
+whole_run_minutes,18,3,16.76931646111111,0.274550211632839,min

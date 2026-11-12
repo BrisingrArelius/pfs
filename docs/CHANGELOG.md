@@ -6,6 +6,14 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Changed the current configurable SSD ratio to 1.2:1: fast 45 and slow
+  37.5 MiB/s, with new results/plots under `throttled_ssd_1.2`. Updated
+  cap, metadata and plotting-isolation regression expectations.
+- Generated standard performance galleries for the completed 45/30 MiB/s
+  CosmoFlow and U-Net sweeps (three pools and three repetitions each), under
+  `results/workloads/plots/dlio/throttled_ssd_1.5/`. Labelled actual cap values
+  on the main charts, retained precision for small standard deviations, and
+  corrected the CosmoFlow summary CSV's training-rate unit label.
 - Added a combined `throttled_ssd/run.sh --deadline 6hours` reservation
   runner: CosmoFlow then U-Net under one deadline, with Darshan, per-repetition
   atomic progress journals, automatic/explicit continuation, interrupted raw

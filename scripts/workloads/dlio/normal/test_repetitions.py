@@ -40,8 +40,8 @@ class RepetitionTests(unittest.TestCase):
                  305:("colva3","/dev/nvme1n1"),306:("colva3","/dev/nvme2n1")}
         self.assertEqual(configure.DEVICES,devices)
         for pool,rates in ((14,{104:45,205:45,305:45,306:45}),
-                           (16,{104:45,205:45,305:30,306:30}),
-                           (18,{104:30,205:30,305:30,306:30})):
+                           (16,{104:45,205:45,305:37.5,306:37.5}),
+                           (18,{104:37.5,205:37.5,305:37.5,306:37.5})):
             with self.subTest(pool=pool),patch.object(configure,"remote") as remote:
                 configure.apply_limits(pool)
                 for host in ("colva1","colva2","colva3"):
@@ -51,7 +51,7 @@ class RepetitionTests(unittest.TestCase):
                     for target,(node,device) in devices.items():
                         if node==host:
                             for direction in ("IOReadBandwidthMax","IOWriteBandwidthMax"):
-                                self.assertIn(f"{direction}={device} {rates[target]*1048576}",calls[1])
+                                self.assertIn(f"{direction}={device} {round(rates[target]*1048576)}",calls[1])
                     self.assertFalse(any("n1p1" in arg for arg in calls[1]))
 
     def test_missing_kernel_cap_is_still_rejected_when_systemd_matches(self):
@@ -190,7 +190,7 @@ class RepetitionTests(unittest.TestCase):
 
     def test_default_throttled_output_and_condition_metadata(self):
         module=throttled_module()
-        self.assertEqual((module.FAST_MIB_S,module.SLOW_MIB_S,module.RESULTS_SUBDIR),(45,30,"throttled_ssd_1.5"))
+        self.assertEqual((module.FAST_MIB_S,module.SLOW_MIB_S,module.RESULTS_SUBDIR),(45,37.5,"throttled_ssd_1.2"))
         with tempfile.TemporaryDirectory() as directory,ExitStack() as stack,redirect_stdout(StringIO()):
             root=Path(directory)
             profile=SimpleNamespace(folder="cosmoflow",profile="cosmoflow_v100",files=1,
@@ -206,9 +206,9 @@ class RepetitionTests(unittest.TestCase):
             stack.enter_context(patch.dict(module.WORKLOADS,{"cosmoflow":profile}))
             stack.enter_context(patch.object(module,"execute"))
             module.run("cosmoflow",14,repetitions=1)
-            condition=next((root/"results/throttled_ssd_1.5/cosmoflow").glob("runs-pool14-*/condition.json"))
+            condition=next((root/"results/throttled_ssd_1.2/cosmoflow").glob("runs-pool14-*/condition.json"))
             data=json.loads(condition.read_text())
-            self.assertEqual((data["fast_MiB_s"],data["slow_MiB_s"]),(45,30))
+            self.assertEqual((data["fast_MiB_s"],data["slow_MiB_s"]),(45,37.5))
 
     def test_plotter_rejects_mixed_caps_and_protects_default_output(self):
         path=Path(__file__).resolve().parents[1]/"throttled_ssd/plot_results.py"
@@ -219,12 +219,12 @@ class RepetitionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
             paths=[]
-            for index,rate in enumerate((30,30,15)):
+            for index,rate in enumerate((37.5,37.5,15)):
                 case=root/str(index)
                 case.mkdir()
                 (case/"condition.json").write_text(json.dumps({"fast_MiB_s":45,"slow_MiB_s":rate}))
                 paths.append(case)
-            self.assertEqual(plot.validate_rates(paths[:2],True),(45,30))
+            self.assertEqual(plot.validate_rates(paths[:2],True),(45,37.5))
             with self.assertRaisesRegex(ValueError,"different target caps"):
                 plot.validate_rates(paths,False)
             with self.assertRaisesRegex(ValueError,"differ from configured"):

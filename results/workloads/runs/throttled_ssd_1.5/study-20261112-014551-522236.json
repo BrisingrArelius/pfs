@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "id": "87eea55d905d43b6883f2e21edfdcc40",
+  "status": "complete",
+  "identity": {
+    "fast_MiB_s": 45,
+    "slow_MiB_s": 30.0,
+    "results_subdir": "throttled_ssd_1.5",
+    "pools": [
+      14,
+      16,
+      18
+    ],
+    "repetitions": 3,
+    "targets": [
+      104,
+      205,
+      305,
+      306
+    ],
+    "workloads": {
+      "cosmoflow": {
+        "folder": "cosmoflow",
+        "profile": "cosmoflow_v100",
+        "extension": "tfrecord",
+        "files": 8192,
+        "model_bytes": 100000000,
+        "batch_size": 1,
+        "reader_threads": 4,
+        "tensorflow": true
+      },
+      "unet": {
+        "folder": "unet3d",
+        "profile": "unet3d_v100",
+        "extension": "npz",
+        "files": 168,
+        "model_bytes": 499153191,
+        "batch_size": 4,
+        "reader_threads": 4,
+        "tensorflow": false
+      }
+    },
+    "dlio_version": "2.0.0",
+    "darshan_library": "/home/pfs/darshan-nompi/lib/libdarshan.so.0.0.0",
+    "darshan_sha256": "b28dbd3872609c7cbefd7ee5b987a881d7f59d4c6dfe567d49e458dc0cf46afd",
+    "sources": {
+      "throttled_ssd/run_study.py": "b5babeb1fb785b03e2600267878541b3a41a5717116088e9e95cbf139749fd64",
+      "throttled_ssd/pool_common.py": "ba2098e59ddb1ddccec8456ec1f7053148d27c5fde0630232124f3e5e897c391",
+      "throttled_ssd/configure_pool.py": "86cddcd4b59a7dec27593616ffd1f8a2ccacc190a0259e83556e44cf194503c4",
+      "throttled_ssd/experiment_config.py": "cd22664fd85a4f0c141e02792265952d68559b3bde0b08d67a25164fe7e7928c",
+      "normal/dlio_darshan.py": "9afe38b2e69cc01030592c9081ee36dcf0e4b635a8ef0fc33a6a94e1be04da77",
+      "normal/dlio_pool_profiles.py": "ed04492ab23caa5bb7fd2302d797d317d316bc5280d65cd69abccd126ca8e40d",
+      "normal/pool_common.py": "2c353f677e4655d560d9928f21df9842ae0c6a0e0cb9aaf5fe3f7614d2ac0e48",
+      "normal/run_cosmoflow_pools.py": "34611723678e50c22cbf493b9e1bb029bb8da9b898605ee4eece48c2962b81ed",
+      "normal/run_unet3d_pools.py": "644e5b6498c70e3f89b0d6fb8b37260b545f4eef5b0edf82cccbc791b7911a3c"
+    }
+  },
+  "workloads": {
+    "cosmoflow": {
+      "pools": {
+        "14": {
+          "output": "/home/pfs/tejas/dlio/throttled_ssd_1.5/cosmoflow/runs-pool14-20261112-014558-037607",
+          "completed": [
+            1,
+            2,
+            3
+          ]
+        },
+        "16": {
+          "output": "/home/pfs/tejas/dlio/throttled_ssd_1.5/cosmoflow/runs-pool16-20261112-023449-241840",
+          "completed": [
+            1,
+            2,
+            3
+          ]
+        },
+        "18": {
+          "output": "/home/pfs/tejas/dlio/throttled_ssd_1.5/cosmoflow/runs-pool18-20261112-032409-623072",
+          "completed": [
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    "unet": {
+      "pools": {
+        "14": {
+          "output": "/home/pfs/tejas/dlio/throttled_ssd_1.5/unet3d/runs-pool14-20261112-041716-798940",
+          "completed": [
+            1,
+            2,
+            3
+          ]
+        },
+        "16": {
+          "output": "/home/pfs/tejas/dlio/throttled_ssd_1.5/unet3d/runs-pool16-20261112-044420-032000",
+          "completed": [
+            1,
+            2,
+            3
+          ]
+        },
+        "18": {
+          "output": "/home/pfs/tejas/dlio/throttled_ssd_1.5/unet3d/runs-pool18-20261112-051434-694896",
+          "completed": [
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    }
+  }
+}

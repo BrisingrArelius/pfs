@@ -182,7 +182,7 @@ def save(fig, output, name, bottom=0):
     plt.close(fig)
 
 
-def plot_summary(workload, pools, groups, output):
+def plot_summary(workload, pools, groups, output, rates):
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.9))
     for ax, metric, title, unit in zip(axes,
             ("end_to_end_samples_s", "checkpoint_rank0_MiB_s_no_fsync"),
@@ -195,8 +195,9 @@ def plot_summary(workload, pools, groups, output):
             ax.barh(position, row["mean"], color=COLORS[pool], alpha=.85)
             ax.errorbar(row["mean"], position, xerr=row["stddev"], fmt="none",
                         color="#243447", capsize=4)
+            precision = 4 if metric == "end_to_end_samples_s" and row["stddev"] < .005 else 2
             ax.text(row["mean"] - ceiling * .015, position,
-                    f"{row['mean']:.2f} ± {row['stddev']:.2f}", ha="right", va="center",
+                    f"{row['mean']:.{precision}f} ± {row['stddev']:.{precision}f}", ha="right", va="center",
                     fontsize=8.5, bbox={"facecolor": "white", "alpha": .88, "edgecolor": "none"})
         ax.set_yticks(range(len(pools)), [label(pool) for pool in pools])
         ax.invert_yaxis()
@@ -204,7 +205,7 @@ def plot_summary(workload, pools, groups, output):
         ax.set_xlabel(unit)
         ax.set_title(title, fontweight="bold")
         ax.spines[["top", "right"]].set_visible(False)
-    fig.suptitle(f"{workload}: configured SSD speed mix"
+    fig.suptitle(f"{workload}: SSD mix · fast {rates[0]:g} / slow {rates[1]:g} MiB/s"
                  " · mean ± SD (3 runs)", fontweight="bold")
     fig.text(.5, .02, "End-to-end rate is derived from processed sample count and DLIO start/end timestamps;\n"
              "includes all epochs, checkpointing and overhead within those timestamps, not dataset staging or cache preparation.",
@@ -304,7 +305,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     groups = []
     for metric, unit in (("end_to_end_samples_s", "samples/s (full run)"),
-                         ("training_input_MiB_s", "MiB/s (inferred for U-Net)"),
+                         ("training_input_MiB_s", "MiB/s (inferred for U-Net)" if args.workload == "unet" else "MiB/s (DLIO native summary)"),
                          ("checkpoint_rank0_MiB_s_no_fsync", "MiB/s"),
                          ("whole_run_minutes", "min")):
         for pool in pools:
@@ -315,7 +316,7 @@ def main():
     write_csv(output / "comparison_runs.csv", sorted(all_runs, key=lambda row: (row["pool"], row["repetition"])))
     write_csv(output / "epochs.csv", sorted(all_epochs, key=lambda row: (row["pool"], row["repetition"], row["epoch"])))
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "axes.titlesize": 12})
-    plot_summary(args.workload, pools, groups, output)
+    plot_summary(args.workload, pools, groups, output, rates)
     (output / "pool_performance_inferred.png").unlink(missing_ok=True)
     plot_epochs(args.workload, pools, all_epochs, "native_samples_s",
                 "DLIO training throughput (samples/s)",
