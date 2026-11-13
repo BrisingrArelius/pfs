@@ -1,12 +1,12 @@
 """Shared, easily edited throttled-SSD experiment settings.
 
-Set a fresh RESULTS_SUBDIR whenever rates change so different experiments
-cannot silently overwrite one another. Rates are per-target MiB/s.
+Change FAST_TO_SLOW_RATIO to select an experiment. The output directory
+follows the ratio automatically. Rates are per-target MiB/s.
 """
 
 FAST_MIB_S = 45
-FAST_TO_SLOW_RATIO = 3
-RESULTS_SUBDIR = "throttled_ssd_3.0"
+FAST_TO_SLOW_RATIO = 2.0
+RESULTS_SUBDIR = f"throttled_ssd_{float(FAST_TO_SLOW_RATIO)}"
 
 if FAST_MIB_S <= 0 or FAST_TO_SLOW_RATIO < 1:
     raise ValueError("Expected a positive fast rate and a ratio >= 1")

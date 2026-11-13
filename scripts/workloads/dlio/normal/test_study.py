@@ -46,7 +46,7 @@ class StudyTests(unittest.TestCase):
             history=[]
             completed=[]
             first=[True]
-            identity={"dlio_version":"2.0.0","rate":"45/15"}
+            identity={"dlio_version":"2.0.0","rate":"test-configuration"}
             stack.enter_context(patch.object(study,"identity",return_value=identity))
             stack.enter_context(patch.object(study,"verify_normal"))
             stack.enter_context(patch.object(study.common,"stop_owned"))

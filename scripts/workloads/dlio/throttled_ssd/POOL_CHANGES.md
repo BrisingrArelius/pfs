@@ -1,6 +1,6 @@
 # DLIO throttled-SSD pool changes
 
-> **Current experiment:** use the [3:1 configuration and commands](README.md#current-experiment-31).
+> **Current experiment:** use the [2:1 configuration and commands](README.md#current-experiment-21).
 > The detailed five-pool 45/15 examples below are historical and must not be
 > used as current run instructions. Both current workload runners use
 > pools 14, 16 and 18; current caps come from `experiment_config.py`.

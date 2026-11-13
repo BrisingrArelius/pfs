@@ -39,10 +39,11 @@ class RepetitionTests(unittest.TestCase):
         devices={104:("colva1","/dev/nvme1n1"),205:("colva2","/dev/nvme1n1"),
                  305:("colva3","/dev/nvme1n1"),306:("colva3","/dev/nvme2n1")}
         self.assertEqual(configure.DEVICES,devices)
-        for pool,rates in ((14,{104:45,205:45,305:45,306:45}),
-                           (16,{104:45,205:45,305:15,306:15}),
-                           (18,{104:15,205:15,305:15,306:15})):
-            with self.subTest(pool=pool),patch.object(configure,"remote") as remote:
+        fast_bytes,slow_bytes=12345678,2345678
+        for pool,fast_targets in ((14,{104,205,305,306}),(16,{104,205}),(18,set())):
+            with self.subTest(pool=pool),patch.object(configure,"remote") as remote, \
+                 patch.object(configure,"FAST_BYTES_S",fast_bytes), \
+                 patch.object(configure,"SLOW_BYTES_S",slow_bytes):
                 configure.apply_limits(pool)
                 for host in ("colva1","colva2","colva3"):
                     calls=[call.args for call in remote.call_args_list if call.args[0]==host]
@@ -51,7 +52,8 @@ class RepetitionTests(unittest.TestCase):
                     for target,(node,device) in devices.items():
                         if node==host:
                             for direction in ("IOReadBandwidthMax","IOWriteBandwidthMax"):
-                                self.assertIn(f"{direction}={device} {round(rates[target]*1048576)}",calls[1])
+                                cap=fast_bytes if target in fast_targets else slow_bytes
+                                self.assertIn(f"{direction}={device} {cap}",calls[1])
                     self.assertFalse(any("n1p1" in arg for arg in calls[1]))
 
     def test_missing_kernel_cap_is_still_rejected_when_systemd_matches(self):
@@ -59,11 +61,11 @@ class RepetitionTests(unittest.TestCase):
         def execute(command,**kwargs):
             host,text=command[1:3]
             if "IOReadBandwidthMax" in text:
-                output="IOReadBandwidthMax=/dev/nvme1n1 47185920\nIOWriteBandwidthMax=/dev/nvme1n1 47185920\n"
+                output=f"IOReadBandwidthMax=/dev/nvme1n1 {common.FAST_BYTES_S}\nIOWriteBandwidthMax=/dev/nvme1n1 {common.FAST_BYTES_S}\n"
             elif "/sys/class/block/" in text:
                 output="259:0\n" if host=="colva1" else "259:7\n"
             else:
-                output="259:0 rbps=47185920 wbps=47185920\n" if host=="colva1" else ""
+                output=f"259:0 rbps={common.FAST_BYTES_S} wbps={common.FAST_BYTES_S}\n" if host=="colva1" else ""
             return SimpleNamespace(stdout=output)
         with patch.object(common,"beegfs",return_value="14 dlio_ssd_f4_s0 104,205,305,306"), \
              patch.object(common,"execute",side_effect=execute):
@@ -190,7 +192,6 @@ class RepetitionTests(unittest.TestCase):
 
     def test_default_throttled_output_and_condition_metadata(self):
         module=throttled_module()
-        self.assertEqual((module.FAST_MIB_S,module.SLOW_MIB_S,module.RESULTS_SUBDIR),(45,15,"throttled_ssd_3.0"))
         with tempfile.TemporaryDirectory() as directory,ExitStack() as stack,redirect_stdout(StringIO()):
             root=Path(directory)
             profile=SimpleNamespace(folder="cosmoflow",profile="cosmoflow_v100",files=1,
@@ -206,9 +207,9 @@ class RepetitionTests(unittest.TestCase):
             stack.enter_context(patch.dict(module.WORKLOADS,{"cosmoflow":profile}))
             stack.enter_context(patch.object(module,"execute"))
             module.run("cosmoflow",14,repetitions=1)
-            condition=next((root/"results/throttled_ssd_3.0/cosmoflow").glob("runs-pool14-*/condition.json"))
+            condition=next((root/"results"/module.RESULTS_SUBDIR/"cosmoflow").glob("runs-pool14-*/condition.json"))
             data=json.loads(condition.read_text())
-            self.assertEqual((data["fast_MiB_s"],data["slow_MiB_s"]),(45,15))
+            self.assertEqual((data["fast_MiB_s"],data["slow_MiB_s"]),(module.FAST_MIB_S,module.SLOW_MIB_S))
 
     def test_plotter_rejects_mixed_caps_and_protects_default_output(self):
         path=Path(__file__).resolve().parents[1]/"throttled_ssd/plot_results.py"
@@ -219,17 +220,19 @@ class RepetitionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
             paths=[]
-            for index,rate in enumerate((15,15,30)):
+            configured=(plot.FAST_MIB_S,plot.SLOW_MIB_S)
+            historical=(plot.FAST_MIB_S,plot.SLOW_MIB_S+1)
+            for index,(fast,slow) in enumerate((configured,configured,historical)):
                 case=root/str(index)
                 case.mkdir()
-                (case/"condition.json").write_text(json.dumps({"fast_MiB_s":45,"slow_MiB_s":rate}))
+                (case/"condition.json").write_text(json.dumps({"fast_MiB_s":fast,"slow_MiB_s":slow}))
                 paths.append(case)
-            self.assertEqual(plot.validate_rates(paths[:2],True),(45,15))
+            self.assertEqual(plot.validate_rates(paths[:2],True),configured)
             with self.assertRaisesRegex(ValueError,"different target caps"):
                 plot.validate_rates(paths,False)
             with self.assertRaisesRegex(ValueError,"differ from configured"):
                 plot.validate_rates(paths[2:],True)
-            self.assertEqual(plot.validate_rates(paths[2:],False),(45,30))
+            self.assertEqual(plot.validate_rates(paths[2:],False),historical)
 
 
 if __name__=="__main__":
