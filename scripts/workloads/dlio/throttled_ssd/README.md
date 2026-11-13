@@ -5,11 +5,11 @@ the original four-target conditions. Run from the repository root on `anjuna2`.
 The normal scripts and datasets remain under `normal/` and their existing
 cluster paths; this suite stages copies in `dlio/throttled_ssd/` only.
 
-## Current experiment: 2:1
+## Current experiment: 2.5:1
 
 [`experiment_config.py`](experiment_config.py) is the single place to set
-`FAST_MIB_S = 45` and `FAST_TO_SLOW_RATIO = 2.0`. Rates are per physical SSD target,
-in MiB/s; the slow rate is calculated as 45 / 2 = **22.5 MiB/s** and the
+`FAST_MIB_S = 45` and `FAST_TO_SLOW_RATIO = 2.5`. Rates are per physical SSD target,
+in MiB/s; the slow rate is calculated as 45 / 2.5 = **18 MiB/s** and the
 kernel byte/s limits are rounded to whole bytes/s. Both workload runners use pools **14, 16, 18** with **three full
 five-epoch invocations per pool**; Darshan is enabled with `--darshan`.
 
@@ -27,7 +27,7 @@ Each workload runs 14→16→18 (4/0, 2/2, 0/4), then restores pool 6 on
 success. The runner checks systemd and kernel `io.max` before each case;
 Darshan parser checks occur after each invocation. Existing staged datasets
 remain under `dlio/throttled_ssd/`; new results go to
-`~/tejas/dlio/throttled_ssd_2.0/{cosmoflow,unet3d}/`. A failure stops the
+`~/tejas/dlio/throttled_ssd_2.5/{cosmoflow,unet3d}/`. A failure stops the
 existing sweep at its current pool; inspect and restore it before another run.
 
 Change `FAST_TO_SLOW_RATIO` for a future experiment; the result-folder name
@@ -61,7 +61,7 @@ scripts/workloads/dlio/throttled_ssd/run.sh --continue --deadline 6hours
 
 Completed repetitions are journaled and skipped; an interrupted repetition
 restarts from the beginning, with partial raw output/checkpoints preserved.
-The study journal is `~/tejas/dlio/throttled_ssd_2.0/study-*.json` under the
+The study journal is `~/tejas/dlio/throttled_ssd_2.5/study-*.json` under the
 current config. Resume checks the workload, rates, source and runtime hashes;
 do not change these mid-study. SIGTERM/SIGHUP/Ctrl-C follow the cleanup path;
 SIGKILL cannot, so continuation checks for study-tagged processes and restores
@@ -71,7 +71,7 @@ for the shared-deadline workflow.
 
 For a single `--pool` run, the four targets must already be in that pool,
 and `systemd` must report the configured read/write limits (currently
-**45 MiB/s** fast and **22.5 MiB/s** slow). `pool_common.py` checks pool membership,
+**45 MiB/s** fast and **18 MiB/s** slow). `pool_common.py` checks pool membership,
 systemd settings, and the kernel's actual `io.max` before a run. On `colva1`,
 the limit for target 104 must be set on its whole `/dev/nvme1n1` device:
 the partition setting appeared in systemd but installed no kernel limit.
@@ -335,7 +335,7 @@ The plotter also accepts a subset of completed pools. Use `--resnet` or `--cosmo
 completed sweeps of those workloads.
 The plotter validates three
 full repetitions per supplied pool, writes six PNGs and source CSVs to
-`results/workloads/plots/dlio/throttled_ssd_2.0/{unet,resnet,cosmoflow}/`
+`results/workloads/plots/dlio/throttled_ssd_2.5/{unet,resnet,cosmoflow}/`
 under the current config, and never runs
 DLIO. Pool performance and per-run plots use **end-to-end samples/s**:
 total processed samples across all epochs divided by DLIO's full-run
@@ -349,7 +349,7 @@ and inferred pool-summary figure are removed; timestamps and durations remain
 in the source data/CSVs.
 
 The plotter rejects mixed target-cap pairs. When plotting historical 45/15,
-45/30 or 45/37.5 results while the current configuration is 45/22.5, pass `--output` explicitly
+45/30 or 45/37.5 results while the current configuration is 45/18, pass `--output` explicitly
 to the historical plot location; this prevents silently mixing experiments.
 
 Per-epoch diagnostic plots retain DLIO-reported samples/s; zero-reported

@@ -1,0 +1,528 @@
+{
+    "host_memory_GB": 62.44810485839844,
+    "host_cpu_count": 20,
+    "host_processor_name": "x86_64",
+    "potential_caching": 1,
+    "host_cpuinfo": {
+        "vendor_id": "GenuineIntel",
+        "cpu family": "6",
+        "model": "151",
+        "model name": "12th Gen Intel(R) Core(TM) i7-12700",
+        "stepping": "2",
+        "microcode": "0x3e",
+        "cpu MHz": "3400.931",
+        "cache size": "25600 KB",
+        "physical id": "0",
+        "siblings": "20",
+        "core id": "39",
+        "cpu cores": "12",
+        "apicid": "78",
+        "initial apicid": "78",
+        "fpu": "yes",
+        "fpu_exception": "yes",
+        "cpuid level": "32",
+        "wp": "yes",
+        "flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb invpcid_single ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb intel_pt sha_ni xsaveopt xsavec xgetbv1 xsaves split_lock_detect avx_vnni dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req umip pku ospke waitpkg gfni vaes vpclmulqdq tme rdpid movdiri movdir64b fsrm md_clear serialize pconfig arch_lbr flush_l1d arch_capabilities ibpb_exit_to_user",
+        "vmx flags": "vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs ept_mode_based_exec tsc_scaling usr_wait_pause",
+        "bugs": "spectre_v1 spectre_v2 spec_store_bypass swapgs eibrs_pbrsb rfds bhi vmscape",
+        "bogomips": "4224.00",
+        "clflush size": "64",
+        "cache_alignment": "64",
+        "address sizes": "46 bits physical, 48 bits virtual",
+        "power management": ""
+    },
+    "host_meminfo": {
+        "MemTotal": "65481584 kB",
+        "MemFree": "34473868 kB",
+        "MemAvailable": "38063708 kB",
+        "Buffers": "90864 kB",
+        "Cached": "4168424 kB",
+        "SwapCached": "112328 kB",
+        "Active": "3474188 kB",
+        "Inactive": "25766072 kB",
+        "Active(anon)": "1040348 kB",
+        "Inactive(anon)": "24130192 kB",
+        "Active(file)": "2433840 kB",
+        "Inactive(file)": "1635880 kB",
+        "Unevictable": "39068 kB",
+        "Mlocked": "39068 kB",
+        "SwapTotal": "8388604 kB",
+        "SwapFree": "648432 kB",
+        "Dirty": "368 kB",
+        "Writeback": "0 kB",
+        "AnonPages": "24907772 kB",
+        "Mapped": "2619200 kB",
+        "Shmem": "171404 kB",
+        "KReclaimable": "230864 kB",
+        "Slab": "568244 kB",
+        "SReclaimable": "230864 kB",
+        "SUnreclaim": "337380 kB",
+        "KernelStack": "71920 kB",
+        "PageTables": "191448 kB",
+        "NFS_Unstable": "0 kB",
+        "Bounce": "0 kB",
+        "WritebackTmp": "0 kB",
+        "CommitLimit": "41129396 kB",
+        "Committed_AS": "93168968 kB",
+        "VmallocTotal": "34359738367 kB",
+        "VmallocUsed": "334064 kB",
+        "VmallocChunk": "0 kB",
+        "Percpu": "25728 kB",
+        "HardwareCorrupted": "0 kB",
+        "AnonHugePages": "16384 kB",
+        "ShmemHugePages": "0 kB",
+        "ShmemPmdMapped": "0 kB",
+        "FileHugePages": "0 kB",
+        "FilePmdMapped": "0 kB",
+        "HugePages_Total": "0",
+        "HugePages_Free": "0",
+        "HugePages_Rsvd": "0",
+        "HugePages_Surp": "0",
+        "Hugepagesize": "2048 kB",
+        "Hugetlb": "0 kB",
+        "DirectMap4k": "25474876 kB",
+        "DirectMap2M": "41271296 kB",
+        "DirectMap1G": "0 kB"
+    },
+    "1": {
+        "load": {
+            "block1": [
+                167.60079050064087,
+                0.00021314620971679688,
+                0.0001895427703857422,
+                9.870529174804688e-05,
+                26.91279172897339
+            ]
+        },
+        "proc": {
+            "block1": [
+                167.60089540481567,
+                0.0002644062042236328,
+                0.00023794174194335938,
+                0.0001251697540283203,
+                26.91284704208374
+            ]
+        },
+        "throughput": {
+            "block1": []
+        },
+        "au": {
+            "block1": []
+        },
+        "compute": {
+            "block1": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        "host_meminfo": {
+            "MemTotal": "65481584 kB",
+            "MemFree": "30424516 kB",
+            "MemAvailable": "34023908 kB",
+            "Buffers": "91744 kB",
+            "Cached": "4178780 kB",
+            "SwapCached": "112332 kB",
+            "Active": "3477892 kB",
+            "Inactive": "29785488 kB",
+            "Active(anon)": "1040176 kB",
+            "Inactive(anon)": "28143920 kB",
+            "Active(file)": "2437716 kB",
+            "Inactive(file)": "1641568 kB",
+            "Unevictable": "39068 kB",
+            "Mlocked": "39068 kB",
+            "SwapTotal": "8388604 kB",
+            "SwapFree": "648432 kB",
+            "Dirty": "556 kB",
+            "Writeback": "0 kB",
+            "AnonPages": "28919956 kB",
+            "Mapped": "2623016 kB",
+            "Shmem": "173032 kB",
+            "KReclaimable": "230840 kB",
+            "Slab": "568320 kB",
+            "SReclaimable": "230840 kB",
+            "SUnreclaim": "337480 kB",
+            "KernelStack": "72112 kB",
+            "PageTables": "199560 kB",
+            "NFS_Unstable": "0 kB",
+            "Bounce": "0 kB",
+            "WritebackTmp": "0 kB",
+            "CommitLimit": "41129396 kB",
+            "Committed_AS": "97139688 kB",
+            "VmallocTotal": "34359738367 kB",
+            "VmallocUsed": "335648 kB",
+            "VmallocChunk": "0 kB",
+            "Percpu": "25728 kB",
+            "HardwareCorrupted": "0 kB",
+            "AnonHugePages": "16384 kB",
+            "ShmemHugePages": "0 kB",
+            "ShmemPmdMapped": "0 kB",
+            "FileHugePages": "0 kB",
+            "FilePmdMapped": "0 kB",
+            "HugePages_Total": "0",
+            "HugePages_Free": "0",
+            "HugePages_Rsvd": "0",
+            "HugePages_Surp": "0",
+            "Hugepagesize": "2048 kB",
+            "Hugetlb": "0 kB",
+            "DirectMap4k": "25474876 kB",
+            "DirectMap2M": "41271296 kB",
+            "DirectMap1G": "0 kB"
+        }
+    },
+    "2": {
+        "load": {
+            "block1": [
+                54.02527737617493,
+                0.00022721290588378906,
+                0.000148773193359375,
+                0.00014472007751464844,
+                9.366048097610474
+            ]
+        },
+        "proc": {
+            "block1": [
+                54.02537751197815,
+                0.0002751350402832031,
+                0.0001914501190185547,
+                0.00017976760864257812,
+                9.366108417510986
+            ]
+        },
+        "throughput": {
+            "block1": 0.24288321389053236
+        },
+        "au": {
+            "block1": 0.0
+        },
+        "compute": {
+            "block1": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        "host_meminfo": {
+            "MemTotal": "65481584 kB",
+            "MemFree": "28035224 kB",
+            "MemAvailable": "33348180 kB",
+            "Buffers": "107272 kB",
+            "Cached": "6085216 kB",
+            "SwapCached": "112836 kB",
+            "Active": "4823376 kB",
+            "Inactive": "30300452 kB",
+            "Active(anon)": "1059464 kB",
+            "Inactive(anon)": "28275048 kB",
+            "Active(file)": "3763912 kB",
+            "Inactive(file)": "2025404 kB",
+            "Unevictable": "39068 kB",
+            "Mlocked": "39068 kB",
+            "SwapTotal": "8388604 kB",
+            "SwapFree": "652784 kB",
+            "Dirty": "2228 kB",
+            "Writeback": "0 kB",
+            "AnonPages": "28858356 kB",
+            "Mapped": "3038160 kB",
+            "Shmem": "385000 kB",
+            "KReclaimable": "237900 kB",
+            "Slab": "610572 kB",
+            "SReclaimable": "237900 kB",
+            "SUnreclaim": "372672 kB",
+            "KernelStack": "69280 kB",
+            "PageTables": "257964 kB",
+            "NFS_Unstable": "0 kB",
+            "Bounce": "0 kB",
+            "WritebackTmp": "0 kB",
+            "CommitLimit": "41129396 kB",
+            "Committed_AS": "172771776 kB",
+            "VmallocTotal": "34359738367 kB",
+            "VmallocUsed": "335648 kB",
+            "VmallocChunk": "0 kB",
+            "Percpu": "25728 kB",
+            "HardwareCorrupted": "0 kB",
+            "AnonHugePages": "8192 kB",
+            "ShmemHugePages": "0 kB",
+            "ShmemPmdMapped": "0 kB",
+            "FileHugePages": "0 kB",
+            "FilePmdMapped": "0 kB",
+            "HugePages_Total": "0",
+            "HugePages_Free": "0",
+            "HugePages_Rsvd": "0",
+            "HugePages_Surp": "0",
+            "Hugepagesize": "2048 kB",
+            "Hugetlb": "0 kB",
+            "DirectMap4k": "25474876 kB",
+            "DirectMap2M": "41271296 kB",
+            "DirectMap1G": "0 kB"
+        }
+    },
+    "3": {
+        "load": {
+            "block1": [
+                55.61470556259155,
+                0.00022983551025390625,
+                0.00024819374084472656,
+                0.00012087821960449219,
+                9.66385555267334
+            ]
+        },
+        "proc": {
+            "block1": [
+                55.61477518081665,
+                0.0002894401550292969,
+                0.0003192424774169922,
+                0.00015616416931152344,
+                9.663943529129028
+            ]
+        },
+        "throughput": {
+            "block1": []
+        },
+        "au": {
+            "block1": []
+        },
+        "compute": {
+            "block1": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        "host_meminfo": {
+            "MemTotal": "65481584 kB",
+            "MemFree": "28968068 kB",
+            "MemAvailable": "34273764 kB",
+            "Buffers": "109072 kB",
+            "Cached": "6084708 kB",
+            "SwapCached": "112972 kB",
+            "Active": "5527032 kB",
+            "Inactive": "28711376 kB",
+            "Active(anon)": "1059064 kB",
+            "Inactive(anon)": "27397272 kB",
+            "Active(file)": "4467968 kB",
+            "Inactive(file)": "1314104 kB",
+            "Unevictable": "39036 kB",
+            "Mlocked": "39036 kB",
+            "SwapTotal": "8388604 kB",
+            "SwapFree": "653296 kB",
+            "Dirty": "480 kB",
+            "Writeback": "144 kB",
+            "AnonPages": "27971360 kB",
+            "Mapped": "3027048 kB",
+            "Shmem": "393540 kB",
+            "KReclaimable": "237868 kB",
+            "Slab": "609856 kB",
+            "SReclaimable": "237868 kB",
+            "SUnreclaim": "371988 kB",
+            "KernelStack": "66656 kB",
+            "PageTables": "250260 kB",
+            "NFS_Unstable": "0 kB",
+            "Bounce": "0 kB",
+            "WritebackTmp": "0 kB",
+            "CommitLimit": "41129396 kB",
+            "Committed_AS": "169455288 kB",
+            "VmallocTotal": "34359738367 kB",
+            "VmallocUsed": "333216 kB",
+            "VmallocChunk": "0 kB",
+            "Percpu": "25728 kB",
+            "HardwareCorrupted": "0 kB",
+            "AnonHugePages": "8192 kB",
+            "ShmemHugePages": "0 kB",
+            "ShmemPmdMapped": "0 kB",
+            "FileHugePages": "0 kB",
+            "FilePmdMapped": "0 kB",
+            "HugePages_Total": "0",
+            "HugePages_Free": "0",
+            "HugePages_Rsvd": "0",
+            "HugePages_Surp": "0",
+            "Hugepagesize": "2048 kB",
+            "Hugetlb": "0 kB",
+            "DirectMap4k": "25474876 kB",
+            "DirectMap2M": "41271296 kB",
+            "DirectMap1G": "0 kB"
+        }
+    },
+    "4": {
+        "load": {
+            "block1": [
+                52.65691542625427,
+                0.0001888275146484375,
+                0.0001590251922607422,
+                0.0001316070556640625,
+                8.988755464553833
+            ]
+        },
+        "proc": {
+            "block1": [
+                52.65700674057007,
+                0.0002334117889404297,
+                0.00020051002502441406,
+                0.00017118453979492188,
+                8.988807201385498
+            ]
+        },
+        "throughput": {
+            "block1": 0.2428728724468421
+        },
+        "au": {
+            "block1": 0.0
+        },
+        "compute": {
+            "block1": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        "host_meminfo": {
+            "MemTotal": "65481584 kB",
+            "MemFree": "25774624 kB",
+            "MemAvailable": "31088736 kB",
+            "Buffers": "112660 kB",
+            "Cached": "6181348 kB",
+            "SwapCached": "113024 kB",
+            "Active": "5532408 kB",
+            "Inactive": "31700068 kB",
+            "Active(anon)": "1058972 kB",
+            "Inactive(anon)": "30384888 kB",
+            "Active(file)": "4473436 kB",
+            "Inactive(file)": "1315180 kB",
+            "Unevictable": "39068 kB",
+            "Mlocked": "39068 kB",
+            "SwapTotal": "8388604 kB",
+            "SwapFree": "653296 kB",
+            "Dirty": "668 kB",
+            "Writeback": "0 kB",
+            "AnonPages": "30864032 kB",
+            "Mapped": "3337540 kB",
+            "Shmem": "487228 kB",
+            "KReclaimable": "241616 kB",
+            "Slab": "622604 kB",
+            "SReclaimable": "241616 kB",
+            "SUnreclaim": "380988 kB",
+            "KernelStack": "69568 kB",
+            "PageTables": "271956 kB",
+            "NFS_Unstable": "0 kB",
+            "Bounce": "0 kB",
+            "WritebackTmp": "0 kB",
+            "CommitLimit": "41129396 kB",
+            "Committed_AS": "178515936 kB",
+            "VmallocTotal": "34359738367 kB",
+            "VmallocUsed": "337552 kB",
+            "VmallocChunk": "0 kB",
+            "Percpu": "25728 kB",
+            "HardwareCorrupted": "0 kB",
+            "AnonHugePages": "16384 kB",
+            "ShmemHugePages": "0 kB",
+            "ShmemPmdMapped": "0 kB",
+            "FileHugePages": "0 kB",
+            "FilePmdMapped": "0 kB",
+            "HugePages_Total": "0",
+            "HugePages_Free": "0",
+            "HugePages_Rsvd": "0",
+            "HugePages_Surp": "0",
+            "Hugepagesize": "2048 kB",
+            "Hugetlb": "0 kB",
+            "DirectMap4k": "25474876 kB",
+            "DirectMap2M": "41271296 kB",
+            "DirectMap1G": "0 kB"
+        }
+    },
+    "5": {
+        "load": {
+            "block1": [
+                54.00881004333496,
+                0.00021886825561523438,
+                0.000156402587890625,
+                9.036064147949219e-05,
+                9.827242612838745
+            ]
+        },
+        "proc": {
+            "block1": [
+                54.00889182090759,
+                0.00026607513427734375,
+                0.0002040863037109375,
+                0.00011873245239257812,
+                9.82730484008789
+            ]
+        },
+        "throughput": {
+            "block1": []
+        },
+        "au": {
+            "block1": []
+        },
+        "compute": {
+            "block1": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        "host_meminfo": {
+            "MemTotal": "65481584 kB",
+            "MemFree": "25276592 kB",
+            "MemAvailable": "30627340 kB",
+            "Buffers": "114220 kB",
+            "Cached": "6212616 kB",
+            "SwapCached": "113112 kB",
+            "Active": "5540804 kB",
+            "Inactive": "32220020 kB",
+            "Active(anon)": "1058992 kB",
+            "Inactive(anon)": "30876900 kB",
+            "Active(file)": "4481812 kB",
+            "Inactive(file)": "1343120 kB",
+            "Unevictable": "39068 kB",
+            "Mlocked": "39068 kB",
+            "SwapTotal": "8388604 kB",
+            "SwapFree": "653552 kB",
+            "Dirty": "816 kB",
+            "Writeback": "0 kB",
+            "AnonPages": "31361552 kB",
+            "Mapped": "3450680 kB",
+            "Shmem": "483696 kB",
+            "KReclaimable": "242252 kB",
+            "Slab": "624352 kB",
+            "SReclaimable": "242252 kB",
+            "SUnreclaim": "382100 kB",
+            "KernelStack": "69824 kB",
+            "PageTables": "289152 kB",
+            "NFS_Unstable": "0 kB",
+            "Bounce": "0 kB",
+            "WritebackTmp": "0 kB",
+            "CommitLimit": "41129396 kB",
+            "Committed_AS": "187557420 kB",
+            "VmallocTotal": "34359738367 kB",
+            "VmallocUsed": "337696 kB",
+            "VmallocChunk": "0 kB",
+            "Percpu": "25728 kB",
+            "HardwareCorrupted": "0 kB",
+            "AnonHugePages": "16384 kB",
+            "ShmemHugePages": "0 kB",
+            "ShmemPmdMapped": "0 kB",
+            "FileHugePages": "0 kB",
+            "FilePmdMapped": "0 kB",
+            "HugePages_Total": "0",
+            "HugePages_Free": "0",
+            "HugePages_Rsvd": "0",
+            "HugePages_Surp": "0",
+            "Hugepagesize": "2048 kB",
+            "Hugetlb": "0 kB",
+            "DirectMap4k": "25474876 kB",
+            "DirectMap2M": "41271296 kB",
+            "DirectMap1G": "0 kB"
+        }
+    },
+    "hostname": "anjuna2"
+}

@@ -6,6 +6,8 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Changed the throttled SSD ratio to 2.5:1: 45 MiB/s fast and 18 MiB/s slow;
+  the automatically derived result directory is `throttled_ssd_2.5`.
 - Set the throttled experiment ratio to 2:1 (45/22.5 MiB/s) and derive its
   result-folder name from the ratio. Updated rate-dependent tests to check
   behavior with configured/synthetic values rather than fixed experiment rates.
