@@ -5,7 +5,7 @@ follows the ratio automatically. Rates are per-target MiB/s.
 """
 
 FAST_MIB_S = 45
-FAST_TO_SLOW_RATIO = 2.5
+FAST_TO_SLOW_RATIO = 10.0
 RESULTS_SUBDIR = f"throttled_ssd_{float(FAST_TO_SLOW_RATIO)}"
 
 if FAST_MIB_S <= 0 or FAST_TO_SLOW_RATIO < 1:

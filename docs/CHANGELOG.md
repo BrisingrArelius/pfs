@@ -6,6 +6,12 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Generated the 2.5:1 (45/18 MiB/s) standard performance plots and combined
+  Darshan A/B/C figures for all 18 completed CosmoFlow/U-Net repetitions.
+- Set the next throttled experiment to 10:1: 45 MiB/s fast and 4.5 MiB/s
+  slow, with automatically separated `throttled_ssd_10.0` output.
+- Generated the 2:1 (45/22.5 MiB/s) standard CosmoFlow/U-Net performance
+  galleries and per-repetition combined Darshan figures for all three pools.
 - Changed the throttled SSD ratio to 2.5:1: 45 MiB/s fast and 18 MiB/s slow;
   the automatically derived result directory is `throttled_ssd_2.5`.
 - Set the throttled experiment ratio to 2:1 (45/22.5 MiB/s) and derive its

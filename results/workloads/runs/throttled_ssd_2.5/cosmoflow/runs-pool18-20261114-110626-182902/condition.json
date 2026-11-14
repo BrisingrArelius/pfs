@@ -1,0 +1,19 @@
+{
+  "pool": 18,
+  "fast": [],
+  "slow": [
+    104,
+    205,
+    305,
+    306
+  ],
+  "targets": [
+    104,
+    205,
+    305,
+    306
+  ],
+  "fast_MiB_s": 45,
+  "slow_MiB_s": 18.0,
+  "profile": "cosmoflow_v100"
+}

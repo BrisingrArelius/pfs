@@ -1,0 +1,13 @@
+metric,pool,n_runs,mean,stddev,unit
+end_to_end_samples_s,14,3,1.6374748039552767,0.00163835316225588,samples/s (full run)
+end_to_end_samples_s,16,3,1.298550565598255,0.00038076607758832546,samples/s (full run)
+end_to_end_samples_s,18,3,1.2961786780344582,0.00023230390306202956,samples/s (full run)
+training_input_MiB_s,14,3,243.80198202071435,0.07465003491388972,MiB/s (inferred for U-Net)
+training_input_MiB_s,16,3,190.75086180465985,0.018499043664502852,MiB/s (inferred for U-Net)
+training_input_MiB_s,18,3,190.5039478005192,0.04859425120901482,MiB/s (inferred for U-Net)
+checkpoint_rank0_MiB_s_no_fsync,14,3,36.48619661607073,1.221582466041027,MiB/s
+checkpoint_rank0_MiB_s_no_fsync,16,3,38.10938644579677,2.6155235365740643,MiB/s
+checkpoint_rank0_MiB_s_no_fsync,18,3,35.790115179242534,1.055196747665523,MiB/s
+whole_run_minutes,14,3,8.14262436111111,0.008144818756089044,min
+whole_run_minutes,16,3,10.26785898888889,0.0030103973647978245,min
+whole_run_minutes,18,3,10.286647855555556,0.0018434041972762566,min
