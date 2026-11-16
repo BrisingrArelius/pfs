@@ -45,7 +45,7 @@ for saved-state locations and interruption behavior.
 For manual condition-by-condition execution, run the commands below on
 `anjuna2` **between** completed DLIO runs. All five
 conditions use the same targets `104,205,305,306`, with four targets and
-512-KiB chunks per file. Only one condition pool can contain them at a time.
+the configured chunk size per file. Only one condition pool can contain them at a time.
 `--rmtargets` is the removal flag on this cluster. Inspect the pool listing
 after each move; if either operation fails, stop rather than running DLIO
 against a partially configured pool. The cap changes are runtime-only

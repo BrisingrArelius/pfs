@@ -4,6 +4,12 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ---
 
+## 2026-11-16 — Two MiB stripe experiment preset
+
+- Set the next throttled study to 2:1 (45/22.5 MiB/s) with 2 MiB chunks.
+  Separate chunk-specific staging and result directories preserve the earlier
+  512 KiB studies and ensure the new inputs are freshly staged.
+
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
 - Added a percentage view of device-speed advantage versus end-to-end

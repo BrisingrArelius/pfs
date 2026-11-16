@@ -3,7 +3,7 @@
 The [experiment spec](../../../../docs/specs/DL_Throttled_SSD.md) describes
 the original four-target conditions. Run from the repository root on `anjuna2`.
 The normal scripts and datasets remain under `normal/` and their existing
-cluster paths; this suite stages copies in `dlio/throttled_ssd/` only.
+cluster paths; this suite stages copies in a chunk-specific `dlio/throttled_ssd_chunk*/` directory.
 
 ## Current experiment: 10:1
 
@@ -243,7 +243,7 @@ python3 scripts/workloads/dlio/throttled_ssd/run_unet3d_pools.py --pool 14 --pil
 ```
 
 The first invocation copies the normal input dataset into the experiment
-pool before DLIO starts and validates its four-target, 512-KiB pattern. It
+pool before DLIO starts and validates its four-target, configured chunk pattern. It
 can take time; the copy is outside measured runtime. The pilot has two steps
 per epoch, two epochs and a 16-MiB checkpoint per rank. Inspect its native
 output and retained checkpoint files. These pilots do not establish that
@@ -308,8 +308,8 @@ run between DLIO runs (example: all-slow pool 18):
 python3 scripts/workloads/dlio/throttled_ssd/check_throughput.py --native --pool 18
 ```
 
-This writes and reads a temporary **2-GiB**, four-target/512-KiB-striped
-file using `fio --direct=1`, printing fio throughput and actual backend MiB/s
+This writes and reads a temporary **2-GiB**, four-target file with the configured
+chunk size using `fio --direct=1`, printing fio throughput and actual backend MiB/s
 per target. It removes the probe file after success; on failure it prints
 the path for inspection. `fio` must be installed. This is I/O **through
 BeeGFS**, so it exercises the throttled storage service; running fio directly

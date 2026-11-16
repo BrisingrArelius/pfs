@@ -20,7 +20,8 @@ sys.path.insert(0, str(NORMAL.parent))
 from dlio_pool_profiles import DATA_ROOT, RANKS, RESULT_ROOT, WORKLOADS  # noqa: E402
 from normal.pool_common import FIELDS, checkpoint_sizes, metrics  # noqa: E402
 import dlio_darshan  # noqa: E402
-from experiment_config import FAST_MIB_S, SLOW_MIB_S, FAST_BYTES_S, SLOW_BYTES_S, RESULTS_SUBDIR  # noqa: E402
+from experiment_config import (CHUNK_SIZE_KIB, CHUNK_SUFFIX, FAST_MIB_S, SLOW_MIB_S,
+                               FAST_BYTES_S, SLOW_BYTES_S, RESULTS_SUBDIR, STAGING_SUBDIR)  # noqa: E402
 
 TARGETS = (104, 205, 305, 306)
 FAST = {14: TARGETS, 15: (104, 205, 305), 16: (104, 205), 17: (104,), 18: ()}
@@ -187,10 +188,13 @@ def pattern(path, pool):
     if not path.exists():
         path.mkdir()
         beegfs("--setpattern", "--pattern=raid0", f"--storagepoolid={pool}",
-               "--numtargets=4", "--chunksize=512k", path)
+               "--numtargets=4", f"--chunksize={CHUNK_SUFFIX}", path)
     info = beegfs("--getentryinfo", path)
+    chunks = [f"{CHUNK_SIZE_KIB}K"]
+    if CHUNK_SIZE_KIB % 1024 == 0:
+        chunks.append(f"{CHUNK_SIZE_KIB // 1024}M")
     if (not re.search(rf"Storage Pool:\s*{pool}\b", info, re.I)
-            or "Chunksize: 512K" not in info
+            or not re.search(rf"Chunksize:\s*(?:{'|'.join(chunks)})\b", info, re.I)
             or not re.search(r"Number of storage targets: desired: 4\b", info)):
         raise RuntimeError(f"Unexpected BeeGFS pattern: {path}\n{info}")
 
@@ -244,7 +248,7 @@ def prepare(profile, pool):
     inputs = sorted(source.glob(f"*.{profile.extension}"))
     if len(inputs) != profile.files:
         raise RuntimeError(f"Expected {profile.files} normal input files, got {len(inputs)}")
-    root = DATA_ROOT / "throttled_ssd" / profile.folder / f"pool{pool}"
+    root = DATA_ROOT / STAGING_SUBDIR / profile.folder / f"pool{pool}"
     root.mkdir(parents=True, exist_ok=True)
     dataset, checkpoints = root / "dataset", root / "checkpoints"
     pattern(dataset, pool)
