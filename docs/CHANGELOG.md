@@ -6,6 +6,13 @@ Per the [Working Rules](research/CONTEXT.md#working-rules), every change to the 
 
 ## 2026-11-11 — Persistent-reader shutdown and pilot capture plots
 
+- Added a percentage view of device-speed advantage versus end-to-end
+  all-fast/all-slow throughput gain for CosmoFlow and U-Net, using the same
+  validated three-repetition ratio-comparison source data.
+- Added an across-ratio comparison of all-fast/all-slow end-to-end throughput
+  for U-Net and CosmoFlow, using the ratio of three-run mean rates and the
+  recorded per-target speed ratios. The plotter validates study completion,
+  caps, workload inputs and Darshan settings and saves its plotted source CSV.
 - Generated the 2.5:1 (45/18 MiB/s) standard performance plots and combined
   Darshan A/B/C figures for all 18 completed CosmoFlow/U-Net repetitions.
 - Set the next throttled experiment to 10:1: 45 MiB/s fast and 4.5 MiB/s
